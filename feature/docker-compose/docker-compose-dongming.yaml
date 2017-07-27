@@ -1,0 +1,192 @@
+version: '2'
+networks:
+    bridge:
+
+services:
+  ca0:
+    image: hyperledger/fabric-ca
+    environment: 
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org1
+    ports: 
+      - 7054:7054
+    command: sh -c 'fabric-ca-server start --ca.certfile /etc/hyperledger/fabric-ca-server-config/ca.org1.example.com-cert.pem --ca.keyfile /etc/hyperledger/fabric-ca-server-config/cede575b2cc9f9418b14ea597e15836d7f609e093bc21cc4e5aa3ff2c34a6165_sk -b admin:adminpw -d'
+    volumes: 
+      #- /root/gopath/src/github.com/hyperledger/fabric/common/tools/cryptogen/crypto-config/peerOrganizations/org1.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
+      - ./configs/peerOrganizations/org1.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
+    container_name: ca0
+    networks: 
+      - bridge
+
+  ca1:
+    image: hyperledger/fabric-ca
+    environment: 
+      - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+      - FABRIC_CA_SERVER_CA_NAME=ca-org2
+    ports: 
+      - 7055:7054
+    command: sh -c 'fabric-ca-server start --ca.certfile /etc/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem --ca.keyfile /etc/hyperledger/fabric-ca-server-config/8deec35796da3fa97198d5c8406d58f527d7494acc99464a9d6c84d047dce6c0_sk -b admin:adminpw -d'
+    volumes: 
+      #- /root/gopath/src/github.com/hyperledger/fabric/common/tools/cryptogen/crypto-config/peerOrganizations/org2.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
+      - ./configs/peerOrganizations/org2.example.com/ca/:/etc/hyperledger/fabric-ca-server-config
+    container_name: ca1
+    networks: 
+      - bridge
+
+  zookeeper:
+    image: hyperledger/fabric-zookeeper:x86_64-1.0.0-alpha
+    container_name: zookeeper
+    networks: 
+      - bridge
+
+  kafka0:
+    image: hyperledger/fabric-kafka
+    environment: 
+      - KAFKA_BROKER_ID=0
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=1
+      - KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE=false
+    depends_on: 
+      - zookeeper
+    container_name: kafka0
+    ports: 
+      - 9092:9092
+    networks: 
+      - bridge
+
+  orderer0:
+    image: hyperledger/fabric-orderer
+    environment: 
+      - ORDERER_GENERAL_LOGLEVEL=debug
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_GENESISMETHOD=file
+      - ORDERER_GENERAL_GENESISFILE=/opt/hyperledger/fabric/msp/crypto-config/ordererOrganizations/orderer.block
+      - ORDERER_GENERAL_LOCALMSPID=OrdererOrg1
+      - ORDERER_GENERAL_LOCALMSPDIR=/opt/hyperledger/fabric/msp/crypto-config/ordererOrganizations/example.com/orderers/orderer0.example.com/msp
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric
+    command: sh -c "orderer; sleep 500"
+    volumes: 
+      #- /root/gopath/src/github.com/hyperledger/fabric/common/tools/cryptogen/crypto-config:/opt/hyperledger/fabric/msp/crypto-config
+      - ./configs:/opt/hyperledger/fabric/msp/crypto-config
+    ports: 
+      - 5005:7050
+    container_name: orderer0
+    depends_on: 
+      - zookeeper
+      - kafka0
+    networks: 
+      - bridge
+
+  peer0:
+    image: hyperledger/fabric-peer
+    environment: 
+      - CORE_PEER_ADDRESSAUTODETECT=true
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_ENDORSER_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_GOSSIP_ORGLEADER=true
+      - CORE_PEER_ID=peer0
+      - CORE_PEER_MSPCONFIGPATH=/opt/hyperledger/fabric/msp/crypto-config/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp
+      - CORE_PEER_LOCALMSPID=PeerOrg1
+    volumes: 
+      - /var/run/:/host/var/run/
+      #- /root/gopath/src/github.com/hyperledger/fabric/common/tools/cryptogen/crypto-config:/opt/hyperledger/fabric/msp/crypto-config
+      - ./configs:/opt/hyperledger/fabric/msp/crypto-config
+    ports: 
+      - 7061:7051
+      - 6051:7053
+    depends_on: 
+      - orderer0
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start --peer-defaultchain=false
+    container_name: peer0
+    networks: 
+      - bridge
+
+  peer1:
+    image: hyperledger/fabric-peer
+    environment: 
+      - CORE_PEER_ADDRESSAUTODETECT=true
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_ENDORSER_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_GOSSIP_ORGLEADER=false
+      - CORE_PEER_ID=peer1
+      - CORE_PEER_GOSSIP_BOOTSTRAP=0.0.0.0:7061
+      - CORE_PEER_MSPCONFIGPATH=/opt/hyperledger/fabric/msp/crypto-config/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/msp
+      - CORE_PEER_LOCALMSPID=PeerOrg1
+    volumes: 
+      - /var/run/:/host/var/run/
+      #- /root/gopath/src/github.com/hyperledger/fabric/common/tools/cryptogen/crypto-config:/opt/hyperledger/fabric/msp/crypto-config
+      - ./configs:/opt/hyperledger/fabric/msp/crypto-config
+    ports: 
+      - 7062:7051
+      - 6052:7053
+    depends_on: 
+      - orderer0
+      - peer0
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start --peer-defaultchain=false
+    container_name: peer1
+    networks: 
+      - bridge
+
+  peer2:
+    image: hyperledger/fabric-peer
+    environment: 
+      - CORE_PEER_ADDRESSAUTODETECT=true
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_ENDORSER_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_GOSSIP_ORGLEADER=true
+      - CORE_PEER_ID=peer2
+      - CORE_PEER_GOSSIP_BOOTSTRAP=0.0.0.0:7061
+      - CORE_PEER_MSPCONFIGPATH=/opt/hyperledger/fabric/msp/crypto-config/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/msp
+      - CORE_PEER_LOCALMSPID=PeerOrg2
+    volumes: 
+      - /var/run/:/host/var/run/
+      #- /root/gopath/src/github.com/hyperledger/fabric/common/tools/cryptogen/crypto-config:/opt/hyperledger/fabric/msp/crypto-config
+      - ./configs:/opt/hyperledger/fabric/msp/crypto-config
+    ports: 
+      - 7063:7051
+      - 6053:7053
+    depends_on: 
+      - orderer0
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start --peer-defaultchain=false
+    container_name: peer2
+    networks: 
+      - bridge
+
+  peer3:
+    image: hyperledger/fabric-peer
+    environment: 
+      - CORE_PEER_ADDRESSAUTODETECT=true
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_LOGGING_LEVEL=DEBUG
+      - CORE_PEER_ENDORSER_ENABLED=true
+      - CORE_PEER_PROFILE_ENABLED=true
+      - CORE_PEER_GOSSIP_ORGLEADER=false
+      - CORE_PEER_ID=peer3
+      - CORE_PEER_GOSSIP_BOOTSTRAP=0.0.0.0:7061
+      - CORE_PEER_MSPCONFIGPATH=/opt/hyperledger/fabric/msp/crypto-config/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/msp
+      - CORE_PEER_LOCALMSPID=PeerOrg2
+    volumes: 
+      - /var/run/:/host/var/run/
+      #- /root/gopath/src/github.com/hyperledger/fabric/common/tools/cryptogen/crypto-config:/opt/hyperledger/fabric/msp/crypto-config
+      - ./configs:/opt/hyperledger/fabric/msp/crypto-config
+    ports: 
+      - 7064:7051
+      - 6054:7053
+    depends_on: 
+      - orderer0
+      - peer2
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: peer node start --peer-defaultchain=false
+    container_name: peer3
+    networks: 
+      - bridge
+
