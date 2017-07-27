@@ -1,0 +1,52 @@
+version: '2'
+
+services:
+  zookeeper:
+    image: hyperledger/fabric-zookeeper
+    container_name: zookeeper
+    restart: always
+
+  kafka0:
+    image: hyperledger/fabric-kafka
+    container_name: kafka0
+    restart: always
+    environment:
+      - KAFKA_BROKER_ID=0
+      - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
+      - KAFKA_UNCLEAN_LEADER_ELECTION_ENABLE=false
+      - KAFKA_DEFAULT_REPLICATION_FACTOR=1
+    ports:
+      - 9092:9092
+    depends_on:
+      - zookeeper
+    links:
+      - zookeeper:zookeeper
+
+  orderer:
+    image: hyperledger/fabric-orderer
+    container_name: orderer
+    restart: always
+    environment:
+      - ORDERER_GENERAL_LOGLEVEL=debug
+      - ORDERER_GENERAL_QUEUESIZE=1000
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/localMspConfig
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=7050
+      - ORDERER_GENERAL_LEDGERTYPE=ram
+      - ORDERER_RAMLEDGER_HISTORY_SIZE=100
+      - CONFIGTX_ORDERER_ORDERERTYPE=kafka
+      - CONFIGTX_ORDERER_KAFKA_BROKERS=[kafka0:9092]
+      - CONFIGTX_ORDERER_ADDRESSES=[127.0.0.1:7050]
+      - CONFIGTX_ORDERER_BATCHTIMEOUT=10s
+      - CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT=10
+    ports:
+      - 7050:7050
+    command: orderer
+    volumes:
+      - ../../../../msp/sampleconfig:/var/hyperledger/orderer/localMspConfig
+    depends_on:
+      - zookeeper
+      - kafka0
+    links:
+      - zookeeper
+      - kafka0:kafka0

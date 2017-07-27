@@ -1,0 +1,9 @@
+{
+  "testYourChaincode.py::ChaincodeAPI::test_FAB3791_example03_negative_test_disallow_write_attempt_in_query": true, 
+  "testYourChaincode.py::ChaincodeAPI::test_FAB3792_marbles02_init_query_transfer_marbles": true, 
+  "testYourChaincode.py::ChaincodeAPI::test_FAB3793_chaincodeAPIDriver_2_exercise_chaincode_api_calls_as_direct_calls": true, 
+  "testYourChaincode.py::ChaincodeAPI::test_FAB3793_chaincodeAPIDriver_exercise_chaincode_api_calls_as_invoke_functions": true, 
+  "testYourChaincode.py::ChaincodeAPI::test_FAB3794_example02_invoke_query_inaloop_onallpeers": true, 
+  "testYourChaincode.py::ChaincodeAPI::test_FAB3796_example04_chaincode_to_chaincode_call_on_occurrence_of_an_event": true, 
+  "testYourChaincode.py::ChaincodeAPI::test_FAB3797_example05_chaincode_to_chaincode_call_on_same_and_different_channel": true
+}
