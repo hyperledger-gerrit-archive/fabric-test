@@ -25,10 +25,10 @@ Scenario Outline: FAB-3505: Test chaincode example02 deploy, invoke, and query
   And I wait "10" seconds
   Then the chaincode is deployed
   When a user queries on the chaincode named "mycc" with args ["query","a"]
-  Then a user receives expected response of 1000
+  Then a user receives a success response of 1000
   When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
   And a user queries on the chaincode named "mycc" with args ["query","a"]
-  Then a user receives expected response of 990
+  Then a user receives a success response of 990
 
   Given "peer0.org2.example.com" is taken down
   When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
@@ -36,7 +36,7 @@ Scenario Outline: FAB-3505: Test chaincode example02 deploy, invoke, and query
   Given "peer0.org2.example.com" comes back up
   And I wait "10" seconds
   When a user queries on the chaincode named "mycc" with args ["query","a"] on "peer0.org2.example.com"
-  Then a user receives expected response of 980 from "peer0.org2.example.com"
+  Then a user receives a success response of 980 from "peer0.org2.example.com"
   Examples:
     | type  | waitTime |
     | solo  |    5     |
@@ -50,7 +50,7 @@ Scenario Outline: FAB-1440: Test basic chaincode deploy, invoke, query
   When a user deploys chaincode
   Then the chaincode is deployed
   When a user queries on the chaincode with args ["query","a"]
-  Then a user receives expected response of 100
+  Then a user receives a success response of 100
   Examples:
     | type  | waitTime |
     | solo  |    5     |
