@@ -147,16 +147,40 @@ def step_impl(context):
     print(result)
     assert result[peers[0]] == "Query Result: {0}\n".format(value), "Expect {0} = {1}, received from the deploy: {2}".format(key, value, result[peers[0]])
 
-@then(u'a user receives expected response of {response} from "{peer}"')
-def expected_impl(context, response, peer):
+@then(u'a user receives {status} response of {response} from "{peer}"')
+def expected_impl(context, response, peer, status="a success"):
     assert peer in context.result, "There is no response from {0}".format(peer)
-    assert context.result[peer] == "Query Result: {0}\n".format(response), "Expected response was {0}; received {1}".format(response, context.result[peer])
+    if status == "a success":
+        assert context.result[peer] == "Query Result: {0}\n".format(response), "Expected response was {0}; received {1}".format(response, context.result[peer])
+    elif status == "an error":
+        assert "Error:" in context.result[peer], "There was not an error response: {0}".format(context.result[peer])
+        assert response in context.result[peer], "Expected response was {0}; received {1}".format(response, context.result[peer])
+    else:
+        assert False, "Unknown response type: {}. Please choose success or error".format(status)
 
-@then(u'a user receives an error response of {response} from "{peer}"')
-def step_impl(context, response, peer):
+
+@then(u'a user receives {status} response of {response}')
+def step_impl(context, response, status="a success"):
+    expected_impl(context, response, "peer0.org1.example.com", status)
+
+
+@then(u'a user receives a response containing set {valueType} value from "{peer}"')
+def set_response_impl(context, valueType, peer):
     assert peer in context.result, "There is no response from {0}".format(peer)
-    assert context.result[peer] == "Error: {0}\n".format(response), "Expected response was {0}; received {1}".format(response, context.result[peer])
+    assert "Error endorsing query" not in context.result[peer], "There was an error response: {0}".format(context.result[peer])
+    if valueType == "length":
+        assert len(context.result[peer])-15 == context.payload["len"], \
+             "Expected response to be of length {0}; received length {1}; Result: {2}".format(context.payload["len"], len(context.result[peer]), context.result[peer])
 
-@then(u'a user receives expected response of {response}')
+@then(u'a user receives a response containing {response} from "{peer}"')
+def containing_impl(context, response, peer):
+    assert peer in context.result, "There is no response from {0}".format(peer)
+    assert response in context.result[peer], "Expected response was {0}; received {1}".format(response, context.result[peer])
+
+@then(u'a user receives a response containing set {valueType} value')
+def step_impl(context, valueType):
+    set_response_impl(context, valueType, "peer0.org1.example.com")
+
+@then(u'a user receives a response containing {response}')
 def step_impl(context, response):
-    expected_impl(context, response, "peer0.org1.example.com")
+    containing_impl(context, response, "peer0.org1.example.com")
