@@ -28,8 +28,8 @@ PROFILE_TYPES = {"solo": "SampleInsecureSolo",
                  "solo-msp": "SampleSingleMSPSolo"}
 
 
-@given(u'a bootstrapped orderer network of type {networkType}')
-def step_impl(context, networkType):
+@given(u'a bootstrapped orderer network of type {ordererType}')
+def step_impl(context, ordererType):
     pass
 
 @given(u'an unbootstrapped network using "{dockerFile}"')
