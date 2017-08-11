@@ -80,3 +80,7 @@ def start_network_impl(context, ordererType):
 @when(u'I start a fabric network')
 def step_impl(context):
     start_network_impl(context, "solo")
+
+@then(u'there are no errors')
+def step_impl(context):
+    pass
