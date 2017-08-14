@@ -68,3 +68,10 @@ build the targeted repositories and the commit levels of those repositories that
   ./cleanup.sh    ### script to tear down network and remove artifacts ### WIP ###
 ```
 
+#### Run tests for channel config updates
+
+```
+  clone [FabricNodeAPI_V1](https://github.com/sandp125/FabricNodeAPI_V1)
+  Start the network using ./runApp.sh
+  Run the tests using ./testAPIs.sh
+```
