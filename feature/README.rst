@@ -57,6 +57,7 @@ You can install Behave and additional packages either using the ``fabric/scripts
 
 In addition, you should also install the following packages using `pip`_.
     * `pykafka`_
+    * `requests`_
 
 .. _pip: https://packaging.python.org/installing/#requirements-for-installing-packages
 .. _python-setuptools: https://packaging.python.org/installing/
@@ -67,6 +68,7 @@ In addition, you should also install the following packages using `pip`_.
 .. _protobuf: https://pypi.python.org/pypi/protobuf/2.6.1
 .. _pyyaml: https://pypi.python.org/pypi/PyYAML
 .. _pykafka: https://pypi.python.org/pypi/pykafka
+.. _requests: http://docs.python-requests.org/en/master/
 
 The following repositories are dependencies and are included as submodules at the designated locations
     * `hyperledger-fabric`_: /path/to/fabric-test/fabric
