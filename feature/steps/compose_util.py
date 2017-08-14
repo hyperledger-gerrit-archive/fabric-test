@@ -1,16 +1,7 @@
-# Copyright IBM Corp. 2017 All Rights Reserved.
 #
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
+# Copyright IBM Corp All Rights Reserved
 #
-#      http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# SPDX-License-Identifier: Apache-2.0
 #
 
 import os
@@ -45,8 +36,8 @@ class ContainerData:
 
 class Composition:
 
-    def __init__(self, context, composeFilesYaml= None, projectName = None,
-                 force_recreate = True, components = [], startContainers=True):
+    def __init__(self, context, composeFilesYaml=None, projectName=None,
+                 force_recreate=True, components=[], startContainers=True):
         if not projectName:
             projectName = str(uuid.uuid1()).replace('-','')
         self.projectName = projectName
@@ -85,7 +76,6 @@ class Composition:
         self.issueCommand(command, components)
 
     def start(self, components=[]):
-        self.serviceNames = self.collectServiceNames()
         command = ["start"]
         self.issueCommand(command, components)
 
@@ -210,7 +200,13 @@ class Composition:
         self.containerDataList = []
         for containerID in self.refreshContainerIDs():
             # get container metadata
-            container = json.loads(str(subprocess.check_output(["docker", "inspect", containerID])))[0]
+            cmd = ["docker", "inspect", containerID]
+            try:
+                output = subprocess.check_output(cmd)
+            except:
+                err = "Error occurred {0}: {1}".format(cmd, sys.exc_info()[1])
+                continue
+            container = json.loads(str(output))[0]
             # container name
             container_name = container['Name'][1:]
             # container ip address (only if container is running)
