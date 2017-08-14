@@ -188,6 +188,7 @@ def bringup_impl(context, component, bringUpType="start"):
 def start_network_impl(context, ordererType, tlsEnabled=True):
     assert ordererType in config_util.ORDERER_TYPES, "Unknown network type '%s'" % ordererType
     curpath = os.path.realpath('.')
+
     context.composeFile = "%s/docker-compose/docker-compose-%s.yml" % (curpath, ordererType)
     assert os.path.exists(context.composeFile), "The docker compose file does not exist: {0}".format(context.composeFile)
 
@@ -209,11 +210,7 @@ def step_impl(context):
 @then(u'the initial non-leader peer of "{org}" has become the leader')
 def step_impl(context, org):
     assert hasattr(context, 'initial_non_leader'), "Error: initial non-leader was not set previously. This statement works only with pre-set initial non-leader."
-    assert context.interface.is_in_log(context.initial_non_leader[org], "Becoming a leader"), "Error: initial non-lerader peer has not become leader."
-#    if not hasattr(context, 'initial_non_leader'):
-#        assert False, "Error: initial non-leader was not set previously. This statement works only with pre-set initial non-leader."
-#    elif not context.interface.is_in_log(context.initial_non_leader[org], "Becoming a leader"):
-#        assert False, "Error: initial non-lerader peer has not become leader."
+    assert context.interface.is_in_log(context.initial_non_leader[org], "Becoming a leader"), "Error: initial non-leader peer has not become leader."
 
 @then(u'there are no errors')
 def step_impl(context):

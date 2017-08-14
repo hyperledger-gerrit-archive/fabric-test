@@ -118,7 +118,6 @@ Scenario: FAB-3851: Message Payloads More than 1MB
 #    Then a user receives response with length value
 
 @daily
-#@doNotDecompose
 Scenario: FAB-4686: Test taking down all kafka brokers and bringing back last 3
     Given I have a bootstrapped fabric network of type kafka
     And I wait "60" seconds
@@ -154,6 +153,7 @@ Scenario: FAB-4686: Test taking down all kafka brokers and bringing back last 3
     Then a user receives a success response of 970
 
 @skip
+#@doNotDecompose
 Scenario Outline: FAB-3937: Message Broadcast
     Given a bootstrapped orderer network of type <type>
     When a message is broadcasted
