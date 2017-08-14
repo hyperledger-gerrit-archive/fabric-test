@@ -244,3 +244,37 @@ def deploy_chaincode(context, chaincode, containers, channelId=TEST_CHANNEL_ID):
     join_channel(context, peers, orderers, channelId)
     install_chaincode(context, chaincode, peers)
     instantiate_chaincode(context, chaincode, containers)
+
+def get_initial_leader(context, org):
+    if hasattr(context, 'initial_leader')==False:
+        context.initial_leader={}
+    if org not in context.initial_leader:
+        for container in context.composition.collectServiceNames():
+            if (container.startswith("peer") and (org in container) and
+                search_log(container, "Becoming a leader")):
+                context.initial_leader[org]=container
+                print("initial leader is "+context.initial_leader[org])
+                return context.initial_leader[org]
+        assert org in context.initial_leader.keys(), "Error: No gossip-leader found by looking at the logs, for "+org
+    return context.initial_leader[org]
+
+def get_initial_non_leader(context, org):
+    if hasattr(context, 'initial_non_leader')==False:
+        context.initial_non_leader={}
+    if org not in context.initial_non_leader:
+        for container in context.composition.collectServiceNames():
+            if (container.startswith("peer") and (org in container) and
+                not search_log(container, "Becoming a leader")):
+                context.initial_non_leader[org]=container
+                print("initial non-leader is "+context.initial_non_leader[org])
+                return context.initial_non_leader[org]
+        assert org in context.initial_non_leader.keys(), "Error: No gossip-leader found by looking at the logs, for "+org
+    return context.initial_non_leader[org]
+
+def search_log(container, keyText):
+    rc = subprocess.call(
+            "docker logs "+container+" 2>&1 | grep "+"\""+keyText+"\"",
+            shell=True)
+    if rc==0:
+        return True
+    return False
