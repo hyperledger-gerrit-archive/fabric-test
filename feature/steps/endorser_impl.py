@@ -14,6 +14,7 @@
 #
 
 from behave import *
+import sys
 import json
 import time
 import subprocess
@@ -64,7 +65,7 @@ def step_impl(context):
 def query_impl(context, channel, name, args, component):
     # Temporarily sleep for 2 sec. This delay should be able to be removed once we start using the python sdk
     time.sleep(2)
-    chaincode = {"args": args,
+    chaincode = {"args": args.format(random_key=context.random_key),
                  "name": name}
     context.result = endorser_util.query_chaincode(context, chaincode, component, channel)
 
@@ -115,9 +116,11 @@ def step_impl(context, numInvokes):
 @when(u'a user invokes on the chaincode named "{name}" with random args {args} of length {length:d} on peer "{peer}"')
 def random_invoke_impl(context, name, args, length, peer):
     payload = ''.join(random.choice(string.ascii_letters) for _ in range(length))
+    random_key = str(random.randint(0, sys.maxint))
     context.payload = {"payload": payload,
                     "len": length}
-    chaincode = {"args": args.format(random=payload),
+    context.random_key=random_key
+    chaincode = {"args": args.format(random_value=payload, random_key=random_key),
                  "name": name}
     orderers = endorser_util.get_orderers(context)
     context.result = endorser_util.invoke_chaincode(context,
