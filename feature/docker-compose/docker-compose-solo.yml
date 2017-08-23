@@ -56,6 +56,8 @@ services:
             - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
             - CORE_PEER_GOSSIP_ORGLEADER=false
             - CORE_PEER_GOSSIP_USELEADERELECTION=true
+            - CORE_PEER_GOSSIP_PVTDATA_MAXPEERS=3
+            - CORE_PEER_GOSSIP_PVTDATA_MINACK=0
             - CORE_LOGGING_GOSSIP=${CORE_LOGGING_GOSSIP}
             - CORE_PEER_PROFILE_ENABLED=true
             - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
@@ -99,6 +101,8 @@ services:
             - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:7051
             - CORE_PEER_GOSSIP_ORGLEADER=false
             - CORE_PEER_GOSSIP_USELEADERELECTION=true
+            - CORE_PEER_GOSSIP_PVTDATA_MAXPEERS=3
+            - CORE_PEER_GOSSIP_PVTDATA_MINACK=0
             - CORE_LOGGING_GOSSIP=${CORE_LOGGING_GOSSIP}
             - CORE_PEER_PROFILE_ENABLED=true
             - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
@@ -141,6 +145,8 @@ services:
             - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
             - CORE_PEER_GOSSIP_ORGLEADER=false
             - CORE_PEER_GOSSIP_USELEADERELECTION=true
+            - CORE_PEER_GOSSIP_PVTDATA_MAXPEERS=3
+            - CORE_PEER_GOSSIP_PVTDATA_MINACK=0
             - CORE_LOGGING_GOSSIP=${CORE_LOGGING_GOSSIP}
             - CORE_PEER_PROFILE_ENABLED=true
             - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp
@@ -183,6 +189,8 @@ services:
             - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org2.example.com:7051
             - CORE_PEER_GOSSIP_ORGLEADER=false
             - CORE_PEER_GOSSIP_USELEADERELECTION=true
+            - CORE_PEER_GOSSIP_PVTDATA_MAXPEERS=3
+            - CORE_PEER_GOSSIP_PVTDATA_MINACK=0
             - CORE_LOGGING_GOSSIP=${CORE_LOGGING_GOSSIP}
             - CORE_PEER_PROFILE_ENABLED=true
             - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/msp

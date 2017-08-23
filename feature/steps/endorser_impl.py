@@ -226,7 +226,7 @@ def step_impl(context, name, args, org):
 def step_impl(context, name, args, org):
     invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, context.interface.get_initial_non_leader(context, org))
 
-@when(u'a user invokes on the chaincode named "{name}" with args {args} on {peer}')
+@when(u'a user invokes on the chaincode named "{name}" with args {args} on "{peer}"')
 def step_impl(context, name, args, peer):
     invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, peer)
 
