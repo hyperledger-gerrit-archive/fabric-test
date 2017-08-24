@@ -59,31 +59,79 @@ def bootstrapped_impl(context, ordererType):
     config_util.generateConfig(context, channelID, config_util.CHANNEL_PROFILE, context.ordererProfile)
     compose_impl(context, context.composeFile, projectName=context.projectName)
 
+@given(u'the initial leader peer of "{org}" is taken down by doing a {takeDownType}')
+def step_impl(context, org, takeDownType):
+    context.takeDownType=takeDownType
+    bringdown_impl(context, endorser_util.get_initial_leader(context, org))
+
 @given(u'the initial leader peer of "{org}" is taken down')
 def step_impl(context, org):
+    context.takeDownType="stop"
     bringdown_impl(context, endorser_util.get_initial_leader(context, org))
+
+@given(u'the initial non-leader peer of "{org}" is taken down by doing a {takeDownType}')
+def step_impl(context, org, takeDownType):
+    context.takeDownType=takeDownType
+    bringdown_impl(context, endorser_util.get_initial_non_leader(context, org))
 
 @given(u'the initial non-leader peer of "{org}" is taken down')
 def step_impl(context, org):
+    context.takeDownType="stop"
     bringdown_impl(context, endorser_util.get_initial_non_leader(context, org))
+
+@given(u'"{component}" is taken down by doing a {takeDownType}')
+def step_impl(context, component, takeDownType):
+    context.takeDownType=takeDownType
+    bringdown_impl(context, component)
 
 @given(u'"{component}" is taken down')
 def bringdown_impl(context, component):
     assert component in context.composition.collectServiceNames(), "Unknown component '{0}'".format(component)
-    context.composition.stop([component])
+    if context.takeDownType=="stop":
+        context.composition.stop([component])
+    elif context.takeDownType=="pause":
+        context.composition.pause([component])
+    elif context.takeDownType=="disconnect":
+        context.composition.disconnect([component])
+    else:
+        assert False, "takedown process undefined: {}".format(context.takeDownType)
+
+@given(u'the initial leader peer of "{org}" comes back up by doing a {bringUpType}')
+def step_impl(context, org, bringUpType):
+    context.bringUpType=bringUpType
+    bringup_impl(context, endorser_util.get_initial_leader(context, org))
 
 @given(u'the initial leader peer of "{org}" comes back up')
 def step_impl(context, org):
+    context.bringUpType="start"
     bringup_impl(context, endorser_util.get_initial_leader(context, org))
+
+@given(u'the initial non-leader peer of "{org}" comes back up by doing a {bringUpType}')
+def step_impl(context, org, bringUpType):
+    context.bringUpType=bringUpType
+    bringup_impl(context, endorser_util.get_initial_non_leader(context, org))
 
 @given(u'the initial non-leader peer of "{org}" comes back up')
 def step_impl(context, org):
+    context.bringUpType="start"
     bringup_impl(context, endorser_util.get_initial_non_leader(context, org))
+
+@given(u'"{component}" comes back up by doing a {bringUpType}')
+def step_impl(context, component, bringUpType):
+    context.bringUpType=bringUpType
+    bringup_impl(context, component)
 
 @given(u'"{component}" comes back up')
 def bringup_impl(context, component):
     assert component in context.composition.collectServiceNames(), "Unknown component '{0}'".format(component)
-    context.composition.start([component])
+    if context.bringUpType=="start":
+        context.composition.start([component])
+    elif context.bringUpType=="unpause":
+        context.composition.unpause([component])
+    elif context.bringUpType=="connect":
+        context.composition.connect([component])
+    else:
+        assert False, "Bringing-up process undefined: {}".format(context.bringUpType)
 
 @when(u'I start a fabric network using a {ordererType} orderer service')
 def start_network_impl(context, ordererType):
