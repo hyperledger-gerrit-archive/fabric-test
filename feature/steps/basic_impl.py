@@ -134,3 +134,11 @@ def start_network_impl(context, ordererType):
 @when(u'I start a fabric network')
 def step_impl(context):
     start_network_impl(context, "solo")
+
+@given(u'the initial non-leader peer of "{org}" has become the leader')
+def step_impl(context, org):
+    if not hasattr(context, 'initial_non_leader'):
+        assert False, "Error: initial non-leader was not set previously. This statement works only with pre-set initial non-leader."
+    else:
+        if not endorser_util.is_in_log(context.initial_non_leader[org], "Becoming a leader"):
+            assert False, "Error: initial non-lerader peer has not become leader."
