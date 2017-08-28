@@ -81,7 +81,7 @@ class Composition:
         self.issueCommand(command, components)
 
     def disconnect(self, components=[]):
-        command = ["network", "disconnect", str(self.projectName)+"_default"]
+        command = ["network", "disconnect", str(self.projectName)+"_behave"]
         self.issueCommand(command, components)
 
     def start(self, components=[]):
@@ -94,7 +94,7 @@ class Composition:
         self.issueCommand(command, components)
 
     def connect(self, components=[]):
-        command = ["network", "connect", str(self.projectName)+"_default"]
+        command = ["network", "connect", str(self.projectName)+"_behave"]
         self.issueCommand(command, components)
 
     def docker_exec(self, command, components=[]):
