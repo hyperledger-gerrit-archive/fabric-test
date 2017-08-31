@@ -21,7 +21,8 @@ Feature: Peer Service
 Scenario Outline: FAB-3505: Test chaincode example02 deploy, invoke, and query
   Given I have a bootstrapped fabric network of type <type>
   And I wait "<waitTime>" seconds
-  When a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "mycc"
+  When I set up a channel
+  And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "mycc"
   And I wait "10" seconds
   Then the chaincode is deployed
   When a user queries on the chaincode named "mycc" with args ["query","a"]
@@ -47,7 +48,8 @@ Scenario Outline: FAB-3505: Test chaincode example02 deploy, invoke, and query
 Scenario Outline: FAB-1440: Test basic chaincode deploy, invoke, query
   Given I have a bootstrapped fabric network of type <type>
   And I wait "<waitTime>" seconds
-  When a user deploys chaincode
+  When I set up a channel
+  And a user deploys chaincode
   Then the chaincode is deployed
   When a user queries on the chaincode with args ["query","a"]
   Then a user receives a success response of 100
@@ -60,7 +62,8 @@ Scenario Outline: FAB-1440: Test basic chaincode deploy, invoke, query
 @daily
 Scenario: FAB-3861: Basic Chaincode Execution (example02)
     Given I have a bootstrapped fabric network
-    When a user deploys chaincode
+    When I set up a channel
+    And a user deploys chaincode
     Then the chaincode is deployed
 
 
@@ -68,10 +71,12 @@ Scenario: FAB-3861: Basic Chaincode Execution (example02)
 Scenario Outline: FAB-3865: Multiple Channels Per Peer
     Given I have a bootstrapped fabric network of type <type>
     And I wait "<waitTime>" seconds
-    When a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init", "a", "1000" , "b", "2000"] with name "cc1" on channel "chn1"
+    When I set up a channel named "chn1"
+    And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init", "a", "1000" , "b", "2000"] with name "cc1" on channel "chn1"
     And I wait "5" seconds
     Then the chaincode is deployed
-    When a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/map" with args ["init"] with name "cc2" on channel "chn2"
+    When I set up a channel named "chn2"
+    And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/map" with args ["init"] with name "cc2" on channel "chn2"
     And I wait "5" seconds
     And a user invokes on the channel "chn2" using chaincode named "cc2" with args ["put", "a", "1000"]
     And I wait "1" seconds
@@ -97,7 +102,8 @@ Examples:
 Scenario Outline: FAB-3866: Multiple Chaincodes Per Peer
     Given I have a bootstrapped fabric network of type <type>
     And I wait "<waitTime>" seconds
-    When a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/eventsender" with args [] with name "eventsender"
+    When I set up a channel
+    And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/eventsender" with args [] with name "eventsender"
     And I wait "5" seconds
     And a user invokes on the chaincode named "eventsender" with args ["invoke", "test_event"]
     And I wait "2" seconds
