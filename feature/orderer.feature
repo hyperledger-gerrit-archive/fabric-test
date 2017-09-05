@@ -59,6 +59,10 @@ Scenario: FAB-1306: Multiple organizations in a cluster - remove all, reinstate 
 
 @daily
 Scenario: Message Payloads Less than 1MB
+    # This test has limitations when using the CLI interface to execute the commands due to cli
+    # argument size limits. You can only have command line arguments of a certain size.
+    # Larger payload sizes can be tested and should pass when using SDK interfaces that should
+    # not have these limitations.
     Given I have a bootstrapped fabric network
     When a user sets up a channel
     And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/map" with args [""]
@@ -75,34 +79,23 @@ Scenario: Message Payloads Less than 1MB
     And a user queries on the chaincode named "mycc" with args ["get","b"]
     Then a user receives a response containing a value of length 65536
     #
-    When a user invokes on the chaincode named "mycc" with random args ["put","c","{random_value}"] of length 75000
-    And I wait "5" seconds
-    And a user queries on the chaincode named "mycc" with args ["get","c"]
-    Then a user receives a response containing a value of length 75000
-    #
     When a user invokes on the chaincode named "mycc" with random args ["put","d","{random_value}"] of length 100000
     And I wait "5" seconds
     And a user queries on the chaincode named "mycc" with args ["get","d"]
     Then a user receives a response containing a value of length 100000
-    #
-    When a user invokes on the chaincode named "mycc" with random args ["put","e","{random_value}"] of length 125000
-    And I wait "5" seconds
-    And a user queries on the chaincode named "mycc" with args ["get","e"]
-    Then a user receives a response containing a value of length 125000
-    And a user receives a response with the random value
-    #
-    When a user invokes on the chaincode named "mycc" with random args ["put","f","{random_value}"] of length 130000
-    And I wait "5" seconds
-    And a user queries on the chaincode named "mycc" with args ["get","f"]
-    Then a user receives a response containing a value of length 130000
-    And a user receives a response with the random value
     #
     When a user invokes on the chaincode named "mycc" with random args ["put","g","{random_value}"] of length 130610
     And I wait "5" seconds
     And a user queries on the chaincode named "mycc" with args ["get","g"]
     Then a user receives a response containing a value of length 130610
     And a user receives a response with the random value
-    #
+
+
+@skip
+Scenario: FAB-3851: Message Payloads More than 1MB
+    Given I have a bootstrapped fabric network
+    When a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/map" with args [""]
+    And I wait "30" seconds
 #    When a user invokes on the chaincode named "mycc" with random args ["put","g","{random_value}"] of length 130734
 #    And I wait "5" seconds
 #    And a user queries on the chaincode named "mycc" with args ["get","g"]
