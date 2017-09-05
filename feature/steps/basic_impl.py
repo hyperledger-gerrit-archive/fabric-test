@@ -11,7 +11,6 @@ import uuid
 import common_util
 import compose_util
 import config_util
-import endorser_util
 
 
 @given(u'I wait "{seconds}" seconds')
@@ -19,6 +18,20 @@ import endorser_util
 @then(u'I wait "{seconds}" seconds')
 def step_impl(context, seconds):
     time.sleep(float(seconds))
+
+@given(u'I use the {language} SDK interface')
+def step_impl(context, language):
+    context.interface = SDKInterface(language)
+
+@given(u'I use the CLI interface')
+def step_impl(context):
+    context.interface = CLIInterface()
+
+@given(u'I use the tool interface {toolCommand}')
+def step_impl(context, toolCommand):
+    # The tool command is what is used to generate the network that will be setup for use in the tests
+    context.network = toolCommand
+    context.interface = ToolInterface(context)
 
 @given(u'I compose "{composeYamlFile}"')
 def compose_impl(context, composeYamlFile, projectName=None, startContainers=True):
@@ -49,7 +62,7 @@ def bootstrapped_impl(context, ordererType, database, tlsEnabled):
 
     # Perform bootstrap process
     context.ordererProfile = config_util.PROFILE_TYPES.get(ordererType, "SampleInsecureSolo")
-    channelID = endorser_util.SYS_CHANNEL_ID
+    channelID = context.interface.SYS_CHANNEL_ID
     if hasattr(context, "composition"):
         context.projectName = context.composition.projectName
     else:
@@ -108,19 +121,19 @@ def step_impl(context):
 
 @given(u'the initial leader peer of "{org}" is taken down by doing a {takeDownType}')
 def step_impl(context, org, takeDownType):
-    bringdown_impl(context, endorser_util.get_initial_leader(context, org), takeDownType)
+    bringdown_impl(context, context.interface.get_initial_leader(context, org), takeDownType)
 
 @given(u'the initial leader peer of "{org}" is taken down')
 def step_impl(context, org):
-    bringdown_impl(context, endorser_util.get_initial_leader(context, org))
+    bringdown_impl(context, context.interface.get_initial_leader(context, org))
 
 @given(u'the initial non-leader peer of "{org}" is taken down by doing a {takeDownType}')
 def step_impl(context, org, takeDownType):
-    bringdown_impl(context, endorser_util.get_initial_non_leader(context, org), takeDownType)
+    bringdown_impl(context, context.interface.get_initial_non_leader(context, org), takeDownType)
 
 @given(u'the initial non-leader peer of "{org}" is taken down')
 def step_impl(context, org):
-    bringdown_impl(context, endorser_util.get_initial_non_leader(context, org))
+    bringdown_impl(context, context.interface.get_initial_non_leader(context, org))
 
 @given(u'"{component}" is taken down by doing a {takeDownType}')
 def step_impl(context, component, takeDownType):
@@ -140,19 +153,19 @@ def bringdown_impl(context, component, takeDownType="stop"):
 
 @given(u'the initial leader peer of "{org}" comes back up by doing a {bringUpType}')
 def step_impl(context, org, bringUpType):
-    bringup_impl(context, endorser_util.get_initial_leader(context, org), bringUpType)
+    bringup_impl(context, context.interface.get_initial_leader(context, org), bringUpType)
 
 @given(u'the initial leader peer of "{org}" comes back up')
 def step_impl(context, org):
-    bringup_impl(context, endorser_util.get_initial_leader(context, org))
+    bringup_impl(context, context.interface.get_initial_leader(context, org))
 
 @given(u'the initial non-leader peer of "{org}" comes back up by doing a {bringUpType}')
 def step_impl(context, org, bringUpType):
-    bringup_impl(context, endorser_util.get_initial_non_leader(context, org), bringUpType)
+    bringup_impl(context, context.interface.get_initial_non_leader(context, org), bringUpType)
 
 @given(u'the initial non-leader peer of "{org}" comes back up')
 def step_impl(context, org):
-    bringup_impl(context, endorser_util.get_initial_non_leader(context, org))
+    bringup_impl(context, context.interface.get_initial_non_leader(context, org))
 
 @given(u'"{component}" comes back up by doing a {bringUpType}')
 def step_impl(context, component, bringUpType):
