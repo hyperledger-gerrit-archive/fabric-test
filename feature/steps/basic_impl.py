@@ -20,6 +20,20 @@ import endorser_util
 def step_impl(context, seconds):
     time.sleep(float(seconds))
 
+@given(u'I use the {language} SDK interface')
+def step_impl(context, language):
+    context.interface = SDKInterface(language)
+
+@given(u'I use the CLI interface')
+def step_impl(context):
+    context.interface = CLIInterface()
+
+@given(u'I use the tool interface {toolCommand}')
+def step_impl(context, toolCommand):
+    # The tool command is what is used to generate the network that will be setup for use in the tests
+    context.network = toolCommand
+    context.interface = ToolInterface(context)
+
 @given(u'I compose "{composeYamlFile}"')
 def compose_impl(context, composeYamlFile, projectName=None, startContainers=True):
     if not hasattr(context, "composition"):
