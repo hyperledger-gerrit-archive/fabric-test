@@ -17,8 +17,8 @@ if ( process.env.GOPATH != null ) {
     GOPATHDir=process.env.GOPATH;
 }
 
-var MSPDir='/opt/hyperledger/fabric/msp/crypto-config';
-var srcMSPDir=GOPATHDir+'/src/github.com/hyperledger/fabric/common/tools/cryptogen/crypto-config';
+var srcMSPDir='/opt/hyperledger/fabric/msp/crypto-config';
+var MSPDir=GOPATHDir+'/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config';
 var CADir='/etc/hyperledger/fabric-ca-server-config';
 var CA=0;
 var CDB=0;
@@ -60,8 +60,8 @@ if ( process.env.SRCMSPDIR != null ) {
     srcMSPDir=process.env.SRCMSPDIR;
 }
 console.log('srcMSPDir: ', srcMSPDir);
-var ordererMSPDir=MSPDir+'/ordererOrganizations';
-var peerMSPDir=MSPDir+'/peerOrganizations';
+var ordererMSPDir=srcMSPDir+'/ordererOrganizations';
+var peerMSPDir=srcMSPDir+'/peerOrganizations';
 
 if ( process.env.CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT != null ) {
     console.log(' CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT= ', process.env.CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT);
@@ -418,9 +418,9 @@ for ( i0=0; i0<top_key.length; i0++ ) {
                                 if ( TLS.toUpperCase() == 'ENABLED' ) {
                                     var v1 = v+1;
                                     //var OrdTLSDir = MSPDir + '/ordererOrganizations/orderer' + v1 +'.example.com/orderers/orderer' + v1 + '.orderer' +v1 + '.example.com/msp';
-                                    var OrdTLSDir = MSPDir + '/ordererOrganizations/'+comName+'/orderers/'+ordererName+'/tls';
-                                    var org1TLSDir = MSPDir + '/peerOrganizations/org1.'+comName+'/tls';
-                                    var org2TLSDir = MSPDir + '/peerOrganizations/org2.'+comName+'/tls';
+                                    var OrdTLSDir = srcMSPDir + '/ordererOrganizations/'+comName+'/orderers/'+ordererName+'/tls';
+                                    var org1TLSDir = srcMSPDir + '/peerOrganizations/org1.'+comName+'/tls';
+                                    var org2TLSDir = srcMSPDir + '/peerOrganizations/org2.'+comName+'/tls';
 
                                     buff = '  ' + '    - ORDERER_GENERAL_TLS_ENABLED=true'+'\n';
                                     fs.appendFileSync(dFile, buff);
@@ -451,7 +451,7 @@ for ( i0=0; i0<top_key.length; i0++ ) {
                                 fs.appendFileSync(dFile, buff);
 
                             }
-                                buff = '  ' + '    - ' + srcMSPDir+'/crypto-config' + ':' + MSPDir + '\n';
+                                buff = '  ' + '    - ' + MSPDir+'/crypto-config' + ':' + srcMSPDir + '\n';
                                 fs.appendFileSync(dFile, buff);
 
                             if ( TLS.toUpperCase() == 'ENABLED' ) {
@@ -834,7 +834,7 @@ for ( i0=0; i0<top_key.length; i0++ ) {
                                 fs.appendFileSync(dFile, buff);
 
                             }
-                                buff = '  ' + '    - ' + srcMSPDir+'/crypto-config'+':'+ MSPDir + '\n';
+                                buff = '  ' + '    - ' + MSPDir+'/crypto-config'+':'+ srcMSPDir + '\n';
                                 fs.appendFileSync(dFile, buff);
 
                             //    if ( TLS.toUpperCase() == 'ENABLED' ) {
@@ -955,7 +955,7 @@ for ( i0=0; i0<top_key.length; i0++ ) {
                             fs.appendFileSync(dFile, buff);
 
                         }
-                            buff = '  ' + '    - ' + srcMSPDir+'/crypto-config'+':'+ MSPDir + '\n';
+                            buff = '  ' + '    - ' + MSPDir+'/crypto-config'+':'+ srcMSPDir + '\n';
                             fs.appendFileSync(dFile, buff);
 
                     } else {
@@ -1046,7 +1046,7 @@ for ( i0=0; i0<top_key.length; i0++ ) {
                                 // header 4
                                 var t0 = v+1;
                                 var t1 = 'org'+t0+'.'+comName;
-                                var tmp = srcMSPDir+'crypto-config/'+'/peerOrganizations/'+t1+'/ca/:/etc/hyperledger/fabric-ca-server-config';
+                                var tmp = MSPDir+'/crypto-config'+'/peerOrganizations/'+t1+'/ca/:/etc/hyperledger/fabric-ca-server-config';
                                 buff = '  ' + '    - ' + tmp + '\n';
                                 //buff = '  ' + '    - ' +lvl2_obj[m] + '\n';
                                 fs.appendFileSync(dFile, buff);
