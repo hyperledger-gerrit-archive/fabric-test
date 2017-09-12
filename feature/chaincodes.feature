@@ -5,7 +5,7 @@
 #
 
 Feature: FAB-5384 Chaincode Testing: As a user I want to be able verify that I can execute different chaincodes
-
+#Note: Example04 and Example05 chaincode tests are skipped because of a pending CR for bug FAB-5663
 
 @daily
 Scenario Outline: FAB-5797: Test chaincode - fabric/examples/chaincode_example02 deploy, invoke, and query with chaincode in all uppercase chars
@@ -289,12 +289,11 @@ Scenario Outline: FAB-3888: State Transfer Test using marbles02 chaincode fabric
     | solo  |    20    |
     | kafka |    30    |
 
-
-@skip
+@daily
 Scenario Outline: FAB-5791: Chaincode to test shim interface API
   Given I have a bootstrapped fabric network of type <type>
   And I wait "60" seconds
-  When a user deploys chaincode at path "github.com/hyperledger/fabric-test/chaincodes/chaincodeAPIDriver" with args ["init","a","1000","b","2000"] with name "mycc"
+  When a user deploys chaincode at path "github.com/hyperledger/fabric-test/feature/chaincode/chaincodeAPIDriver" with args ["init","a","1000","b","2000"] with name "mycc"
   And I wait "5" seconds
   Then the chaincode is deployed
   And I wait "5" seconds
