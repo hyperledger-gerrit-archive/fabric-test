@@ -66,6 +66,23 @@ The following are not covered in using this tool:
 * stress testing
 * timed tests
 
+# Continuous Integration
+
+Above mentioned tests are now integrated in CI. Every patch set triggers a `fabric-test-verify` job and execute `behave smoke` tests. Once the build is successfully
+execute, CI sends gerrit voting +1 back to corrsponding gerrit patch set otherwise it sends -1. Please see the below fabric-test CI job page
+
+https://jenkins.hyperledger.org/view/fabric-test/
+
+Jenkins also triggers CI daily job (https://jenkins.hyperledger.org/view/fabric-test/job/fabric-test-daily-x86_64/) to test tagged behave daily tests by cloning latest fabric and fabric-ca repo commits. Fabric-test daily job performs below steps
+
+* Clone latest fabric and fabric-ca commits
+* Build docker images and binary files
+* Build peer, orderer, cryptogen and configtxgen
+* Update git submodules and install all the python required modules in virtual env
+* Run `behave daily` tests
+* After the tests are completed, CI job generate test results and populate on Job console. Click here to view the Test Results
+https://jenkins.hyperledger.org/view/fabric-test/job/fabric-test-daily-x86_64/test_results_analyzer/
+
 #### NetworkLauncher - dynamically build a Fabric network
 Please see the README located in the `tools/NL` directory for more detailed information for using the Networker Launcher to dynamically build a Fabric network.
 
