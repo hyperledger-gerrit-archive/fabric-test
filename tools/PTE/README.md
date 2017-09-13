@@ -89,24 +89,24 @@ If planning to run your Fabric network locally, you'll need docker and a bit mor
     Optionally, you may choose to skip this step of obtaining `fabric` and `fabric-ca` images if plan to run PTE against a remote Fabric network. See [Creating a local Fabric network](#creating-a-local-fabric-network) for additional information on this.
 
     - fabric
-      - download from dockerhub:
-          * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric/scripts`
-          * If testing v1.0.0: `./bootstrap-1.0.0.sh`
-      - build images yourself (v1.0.0 shown here):
-          * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric/`
-          * `git checkout v1.0.0`
-          * `make docker`
+        - download from dockerhub:
+            * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric/scripts`
+            * If testing v1.0.0: `./bootstrap-1.0.0.sh`
+        - build images yourself (v1.0.0 shown here):
+            * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric/`
+            * `git checkout v1.0.0`
+            * `make docker`
     - fabric-ca
-          * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric-ca`
-          * `git checkout v1.0.0`
-          * `make docker`
+        * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric-ca`
+        * `git checkout v1.0.0`
+        * `make docker`
     - fabric-sdk-node
-          * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric-sdk-node`
-          * If testing v1.0.0: `git checkout v1.0.0`
-          * `npm install`
-              *  you should be able to safely ignore any warnings
-          *  `gulp ca`
-          *  `npm install singly-linked-list --save`
+        * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric-sdk-node`
+        * If testing v1.0.0: `git checkout v1.0.0`
+        * `npm install`
+            *  you should be able to safely ignore any warnings
+        *  `gulp ca`
+        *  `npm install singly-linked-list --save`
 
 4. Install PTE:
     - `cd $GOPATH/src/github.com/hyperledger/fabric-test/tools`
