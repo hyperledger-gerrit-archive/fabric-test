@@ -9,7 +9,19 @@ Feature: Smoke Test
 
 #@doNotDecompose
 @smoke
-Scenario: Setting of environment variables
+Scenario Outline: Setting of environment variables - <type>
+    Given the CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT environment variable is 10
+    And the CONFIGTX_ORDERER_BATCHTIMEOUT environment variable is 10 minutes
+    And I have a bootstrapped fabric network of type <type>
+    Then the CONFIGTX_ORDERER_BATCHTIMEOUT environment variable is 10 minutes on node "orderer0.example.com"
+    And the CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT environment variable is 10 on node "orderer0.example.com"
+Examples:
+    | type  |
+    | solo  |
+    | kafka |
+
+@smoke
+Scenario: Setting of environment variables on all components of same type
     Given the KAFKA_DEFAULT_REPLICATION_FACTOR environment variable is 1
     And the CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT environment variable is 10
     And the CONFIGTX_ORDERER_BATCHTIMEOUT environment variable is 10 minutes

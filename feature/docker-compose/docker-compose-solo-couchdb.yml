@@ -22,6 +22,8 @@ services:
             - ORDERER_GENERAL_GENESISFILE=/var/hyperledger/configs/orderer.block
             - ORDERER_GENERAL_LOCALMSPID=example.com
             - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/msp
+            - CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT=${CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT}
+            - CONFIGTX_ORDERER_BATCHTIMEOUT=${CONFIGTX_ORDERER_BATCHTIMEOUT}
             # enabled TLS
             - ORDERER_GENERAL_TLS_ENABLED=${ORDERER_GENERAL_TLS_ENABLED}
             - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/tls/server.key
