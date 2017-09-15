@@ -45,7 +45,7 @@ def compose_impl(context, composeYamlFile, projectName=None, startContainers=Tru
         context.composition.up()
     context.compose_containers = context.composition.collectServiceNames()
 
-def bootstrapped_impl(context, ordererType, database, tlsEnabled):
+def bootstrapped_impl(context, ordererType, database, tlsEnabled=False):
     assert ordererType in config_util.ORDERER_TYPES, "Unknown network type '%s'" % ordererType
     curpath = os.path.realpath('.')
 
@@ -58,8 +58,7 @@ def bootstrapped_impl(context, ordererType, database, tlsEnabled):
 
     # Should TLS be enabled
     context.tls = tlsEnabled
-    if tlsEnabled:
-        common_util.enableTls(context, tlsEnabled)
+    common_util.enableTls(context, tlsEnabled)
 
     # Perform bootstrap process
     context.ordererProfile = config_util.PROFILE_TYPES.get(ordererType, "SampleInsecureSolo")
