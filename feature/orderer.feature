@@ -235,3 +235,28 @@ Scenario: FAB-4770: Test taking down all (3) kafka brokers in the RF set, and br
     And I wait "10" seconds
     When a user queries on the chaincode named "mycc" with args ["query","a"]
     Then a user receives a success response of 960
+
+@daily
+Scenario Outline: FAB-4808: Orderer_BatchTimeOut is honored
+    Given the CONFIGTX_ORDERER_BATCHTIMEOUT environment variable is <envValue>
+    And I have a bootstrapped fabric network of type <type>
+    And I wait "<waitTime>" seconds
+    When a user sets up a channel
+    And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "mycc"
+    And I wait "20" seconds
+    Then the chaincode is deployed
+    When a user queries on the chaincode named "mycc" with args ["query","a"]
+    Then a user receives a success response of 1000
+    When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
+    And I wait "5" seconds
+    When a user queries on the chaincode named "mycc" with args ["query","a"]
+    Then a user receives a success response of <firstQuery>
+    And I wait "8" seconds
+    When a user queries on the chaincode named "mycc" with args ["query","a"]
+    Then a user receives a success response of <lastQuery>
+Examples:
+    | type  | waitTime |  envValue  | firstQuery | lastQuery |
+    | solo  |    20    | 2 seconds  |    990     |   990     |
+    | kafka |    30    | 2 seconds  |    990     |   990     |
+    | solo  |    20    | 10 seconds |    1000    |   990     |
+    | kafka |    30    | 10 seconds |    1000    |   990     |
