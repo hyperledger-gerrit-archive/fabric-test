@@ -102,10 +102,11 @@ def instantiate_chaincode(context, chaincode, peers):
 def create_channel(context, orderers, channelId=TEST_CHANNEL_ID):
     configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
     setup = get_env_vars(context, "peer0.org1.example.com")
+    timeout = str(10 + common_util.convertToSeconds(context.composition.environ.get('CONFIGTX_ORDERER_BATCHTIMEOUT', '0s')))
     command = ["peer", "channel", "create",
                "--file", "/var/hyperledger/configs/{0}/{1}.tx".format(context.composition.projectName, channelId),
                "--channelID", channelId,
-               "--timeout", "120", # This sets the timeout for the channel creation instead of the default 5 seconds
+               "--timeout", timeout,
                "--orderer", '{0}:7050'.format(orderers[0])]
     if context.tls:
         command = command + ["--tls",
@@ -129,6 +130,7 @@ def create_channel(context, orderers, channelId=TEST_CHANNEL_ID):
 
 def fetch_channel(context, peers, orderers, channelId=TEST_CHANNEL_ID):
     configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+    timeout = str(10 + common_util.convertToSeconds(context.composition.environ.get('CONFIGTX_ORDERER_BATCHTIMEOUT', '0s')))
     for peer in peers:
         peerParts = peer.split('.')
         org = '.'.join(peerParts[1:])
@@ -137,6 +139,7 @@ def fetch_channel(context, peers, orderers, channelId=TEST_CHANNEL_ID):
                    "/var/hyperledger/configs/{0}/{1}.block".format(context.composition.projectName, channelId),
                    "--file", "/var/hyperledger/configs/{0}/{1}.tx".format(context.composition.projectName, channelId),
                    "--channelID", channelId,
+                   "--timeout", timeout,
                    "--orderer", '{0}:7050'.format(orderers[0])]
         if context.tls:
             command = command + ["--tls",
