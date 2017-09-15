@@ -40,3 +40,14 @@ def enableTls(context, tlsEnabled):
         context.composition = compose_util.Composition(context, startContainers=False)
     context.composition.environ["ORDERER_GENERAL_TLS_ENABLED"] = "true"
     context.composition.environ["CORE_PEER_TLS_ENABLED"] = "true"
+
+def convertToSeconds(envValue):
+    if envValue[-1] == 'm':
+        value = 60 * int(envValue[:-1])
+    elif envValue[-1] == 's':
+        value = int(envValue[:-1])
+    elif envValue[-1] == 'h':
+        value = 3600 * int(envValue[:-1])
+    else:
+        raise "'{0}' is not in the expected format".format(envValue)
+    return value
