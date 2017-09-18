@@ -24,8 +24,6 @@ The following repositories will need to be cloned separately with their correspo
     * fabric-ca
 * fabric-sdk-node
     * fabric-sdk-node
-* fabric-cello
-    * fabric-cello
 
 #### Update git submodules
 The git submodules need to be initialized when the repository is first cloned. Use the following command.
@@ -48,8 +46,6 @@ git submodule foreach git pull origin master
 
   cd ../fabric
   make docker configtxgen cryptogen
-
-  # cello instructions coming soon  #WIP
 ```
 
 ## Tools Used to Execute Tests
@@ -85,7 +81,12 @@ Please see the README located in the `tools/OTE` directory for more detailed inf
 Please see the README located in the `tools/LTE` directory for more detailed information for using the Ledger Traffic Engine to execute APIs to test the functionality and throughput of Ledger code that exists inside the peer.
 
 #### Cello
-Cello resides in its own repository, fabric-cello: https://www.hyperledger.org/projects/cello. It is an easy-to-use method to create and manage a network on one or more hosts in the cloud.
+Cello is a Hyperledger Project (https://www.hyperledger.org/projects/cello) with its own repository.
+It contains an easy-to-use tool to create and manage a network on one or more hosts in the cloud.
+To use Cello (https://github.com/hyperledger/cello.git) for fabric deployment: read
+https://github.com/hyperledger/cello/blob/master/src/agent/ansible/README.md
+for instructions to clone it, `cd cello/src/agent/ansible`,
+and set up an ansible controller to deploy a network.
 
 
 # Continuous Integration
