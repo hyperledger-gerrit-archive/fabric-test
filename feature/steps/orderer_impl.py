@@ -62,11 +62,12 @@ def step_impl(context):
 def broadcast_impl(context, count):
     pass
 
-@when(u'the topic partition leader is stopped on {orderer}')
-def stop_leader_impl(context, orderer):
+@when(u'the topic partition leader is {takeDownType} on {orderer}')
+def stop_leader_impl(context, orderer, takeDownType):
     brokers = orderer_util.getKafkaBrokerList(context, orderer)
     kafkas = orderer_util.getKafkaIPs(context, brokers)
     leader = orderer_util.getKafkaPartitionLeader(kafkaBrokers=kafkas)
+    topic, isr_list = orderer_util.getKafkaTopic(kafkaBrokers=kafkas)
     print(leader)
 
     # Save stopped broker
@@ -76,9 +77,18 @@ def stop_leader_impl(context, orderer):
     # Now that we know the kafka leader, stop it
     context.composition.stop([leader])
 
-@when(u'the topic partition leader is stopped')
-def step_impl(context):
-    stop_leader_impl(context, "orderer0.example.com")
+    #get the remaining brokers from isr_list
+    for broker in context.stopped_brokers:
+       if broker not in isr_list:
+           continue
+       else:
+           isr_list.remove(broker)
+    context.isr_list=isr_list
+    context.leader=leader
+
+@when(u'the topic partition leader is {takeDownType}')
+def step_impl(context, takeDownType):
+    stop_leader_impl(context, "orderer0.example.com", takeDownType)
 
 @when(u'a kafka broker that is not in the ISR set is stopped on {orderer}')
 def stop_non_isr_impl(context, orderer):
@@ -95,15 +105,15 @@ def stop_non_isr_impl(context, orderer):
 def step_impl(context):
     stop_non_isr_impl(context, "orderer0.example.com")
 
-@when(u'a former topic partition leader is restarted for {orderer}')
-def start_leader_impl(context, orderer):
+@when(u'a former topic partition leader is {bringUpType} for {orderer}')
+def start_leader_impl(context, orderer, bringUpType):
     # Get the last stopped kafka broker from the stopped broker list
     broker = context.stopped_brokers.pop()
     context.composition.start([broker])
 
-@when(u'a former topic partition leader is restarted')
-def step_impl(context):
-    start_leader_impl(context, "orderer0.example.com")
+@when(u'a former topic partition leader is {bringUpType}')
+def step_impl(context, bringUpType):
+    start_leader_impl(context, "orderer0.example.com", bringUpType)
 
 @when(u'a new organization {organization} certificate is added')
 def step_impl(context, organization):
@@ -116,6 +126,18 @@ def step_impl(context, organization):
 @when(u'authorization for {organization} is added to the kafka cluster')
 def step_impl(context, organization):
     pass
+
+@then(u'ensure isr_set is one')
+def step_impl(context):
+    assert len(context.isr_list)==1, "isr_list has more than expected brokers"
+    for kafka in context.isr_list:
+        kafka=context.leader
+
+@then(u'the broker is reported as down')
+def step_impl(context):
+    #for each broker in isr_list check logs
+    for kafka in context.isr_list:
+        assert is_in_log(kafka, "Shutdown completed (kafka.server.ReplicaFetcherThread)"), "could not verify in the remaining broker logs that broker is down"
 
 @then(u'the broadcasted message is delivered')
 def step_impl(context):
@@ -169,3 +191,11 @@ def step_impl(context, key, value, node):
     container = context.composition.getContainerFromName(node, context.composition.containerDataList)
     containerValue = container.getEnv(key)
     assert containerValue == changedString, "The environment variable on the container was set to {}".format(containerValue)
+
+def is_in_log(container, keyText):
+    rc = subprocess.call(
+            "docker logs "+container+" 2>&1 | grep "+"\""+keyText+"\"",
+            shell=True)
+    if rc==0:
+        return True
+    return False
