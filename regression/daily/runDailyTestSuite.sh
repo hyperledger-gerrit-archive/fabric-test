@@ -21,6 +21,6 @@ cd -
 echo "========== Ledger component performance tests..."
 py.test -v --junitxml results_ledger_lte.xml ledger_lte.py
 
-# the auction_daily test is disabled until the CI issue is fixed
+# the auction_smoke test is disabled until the CI issue is fixed
 #echo "========== Test Auction Chaincode ..."
-#py.test -v --junitxml results_auction_daily.xml testAuctionChaincode.py
+#py.test -v --junitxml results_auction_smoke.xml testAuctionChaincode.py
