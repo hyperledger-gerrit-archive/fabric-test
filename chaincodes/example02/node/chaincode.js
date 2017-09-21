@@ -111,9 +111,7 @@ var Chaincode = class {
     let A = args[0];
 
     // Delete the key from the state in ledger
-    await stub.DelState(A)
-
-    return shim.success(nil)
+    await stub.deleteState(A);
   }
 
   // query callback representing the query of a chaincode
