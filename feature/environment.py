@@ -57,8 +57,10 @@ def after_scenario(context, scenario):
 # stop any running peer that could get in the way before starting the tests
 def before_all(context):
     context.interface = CLIInterface()
+    context.remote = False
     if context.config.userdata.get("network", None) is not None:
         context.network = context.config.userdata["network"]
+        context.remote = True
         context.interface = ToolInterface(context)
 
 # stop any running peer that could get in the way before starting the tests
