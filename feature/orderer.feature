@@ -64,11 +64,12 @@ Scenario Outline: Message Payloads Less than 1MB, for <type> orderer
     # argument size limits. You can only have command line arguments of a certain size.
     # Larger payload sizes can be tested and should pass when using SDK interfaces that should
     # not have these limitations.
-    Given I have a bootstrapped fabric network of type <type> 
+    Given I have a bootstrapped fabric network of type <type>
+    And I use the NodeJS SDK interface
     When a user sets up a channel
     And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/map" with args [""]
     # 1K
-    And a user invokes on the chaincode named "mycc" with random args ["put","a","{random_value}"] of length 1024
+    And a user invokes on the chaincode named "mycc" with random args ["invoke","put","a","{random_value}"] of length 1024
     And I wait "3" seconds
     And a user queries on the chaincode named "mycc" with args ["get","a"]
     Then a user receives a response containing a value of length 1024
@@ -95,33 +96,38 @@ Examples:
     | kafka |
 
 @skip
+@doNotDecompose
 Scenario Outline: FAB-3851: Message Payloads More than 1MB, for <type> orderer
-    Given I have a bootstrapped fabric network of type <type> 
+    Given I have a bootstrapped fabric network of type <type> using state-database couchdb
+    And I use the NodeJS SDK interface
     When a user sets up a channel
     And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/map" with args [""]
-#    When a user invokes on the chaincode named "mycc" with random args ["put","g","{random_value}"] of length 130734
-#    And I wait "5" seconds
-#    And a user queries on the chaincode named "mycc" with args ["get","g"]
-#    Then a user receives a response containing a value of length 130734
-#    And a user receives a response with the random value
-#    #
-#    When a user invokes on the chaincode named "mycc" with random args ["put","h","{random_value}"] of length 1048576
-#    And I wait "30" seconds
-#    And a user queries on the chaincode named "mycc" with args ["get","h"]
-#    Then a user receives response with length value
-#    #
-#    When a user invokes on the chaincode named "mycc" with random args ["put","i","{random_value}"] of length 2097152
-#    And I wait "30" seconds
-#    And a user queries on the chaincode named "mycc" with args ["get","i"]
-#    Then a user receives response with length value
-#    #
-#    When a user invokes on the chaincode named "mycc" with random args ["put","j","{random_value}"] of length 4194304
-#    And I wait "30" seconds
-#    And a user queries on the chaincode named "mycc" with args ["get","j"]
-#    Then a user receives response with length value
+    When a user invokes on the chaincode named "mycc" with random args ["put","g","{random_value}"] of length 130734
+    And I wait "5" seconds
+    And a user queries on the chaincode named "mycc" with args ["get","g"]
+    Then a user receives a response containing a value of length 130734
+    And a user receives a response with the random value
+    #
+    When a user invokes on the chaincode named "mycc" with random args ["put","h","{random_value}"] of length 1048576
+    And I wait "30" seconds
+    And a user queries on the chaincode named "mycc" with args ["get","h"]
+    Then a user receives a response containing a value of length 1048576
+    #Then a user receives response with length value
+    #
+    When a user invokes on the chaincode named "mycc" with random args ["put","i","{random_value}"] of length 2097152
+    And I wait "30" seconds
+    And a user queries on the chaincode named "mycc" with args ["get","i"]
+    Then a user receives a response containing a value of length 2097152
+    #Then a user receives response with length value
+    #
+    When a user invokes on the chaincode named "mycc" with random args ["put","j","{random_value}"] of length 4194304
+    And I wait "30" seconds
+    And a user queries on the chaincode named "mycc" with args ["get","j"]
+    Then a user receives a response containing a value of length 4194304
+    #Then a user receives response with length value
 Examples:
     | type  |
-    | solo  |
+#    | solo  |
     | kafka |
 
 @daily

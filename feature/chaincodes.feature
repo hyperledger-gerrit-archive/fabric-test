@@ -260,7 +260,6 @@ Scenario Outline: FAB-5790: Test chaincode marbles02 initMarble/readMarble/delet
 
 @daily
 Scenario Outline: FAB-3888: State Transfer Test, bouncing a non-leader peer, using marbles02, for <type> orderer
-
   Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
   And I have a bootstrapped fabric network of type <type>
   When a user sets up a channel
