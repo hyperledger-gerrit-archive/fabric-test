@@ -1,0 +1,55 @@
+{
+    "network-config": {
+        "orderer": {
+            "url": "grpcs://localhost:7050",
+            "server-hostname": "orderer0.example.com",
+            "tls_cacerts": "%(config)s/ordererOrganizations/example.com/orderers/orderer0.example.com/tls/ca.crt"
+        },
+        "Org1ExampleCom": {
+            "name": "Org1ExampleCom",
+            "mspid": "org1.example.com",
+            "ca": "https://localhost:7054",
+            "peers": {
+                "peer0.org1.example.com": {
+                    "requests": "grpcs://localhost:7051",
+                    "events": "grpcs://localhost:7053",
+                    "server-hostname": "peer0.org1.example.com",
+                    "tls_cacerts": "%(config)s/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls/ca.crt"
+                },
+                "peer1.org1.example.com": {
+                    "requests": "grpcs://localhost:8051",
+                    "events": "grpcs://localhost:8053",
+                    "server-hostname": "peer1.org1.example.com",
+                    "tls_cacerts": "%(config)s/peerOrganizations/org1.example.com/peers/peer1.org1.example.com/tls/ca.crt"
+                }
+            },
+            "admin": {
+                "key": "%(config)s/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/keystore",
+                "cert": "%(config)s/peerOrganizations/org1.example.com/users/Admin@org1.example.com/msp/signcerts"
+            }
+        },
+        "Org2ExampleCom": {
+            "name": "Org2ExampleCom",
+            "mspid": "org2.example.com",
+            "ca": "https://localhost:8054",
+            "peers": {
+                "peer0.org2.example.com": {
+                    "requests": "grpcs://localhost:9051",
+                    "events": "grpcs://localhost:9053",
+                    "server-hostname": "peer0.org2.example.com",
+                    "tls_cacerts": "%(config)s/peerOrganizations/org2.example.com/peers/peer0.org2.example.com/tls/ca.crt"
+                },
+                "peer1.org2.example.com": {
+                    "requests": "grpcs://localhost:10051",
+                    "events": "grpcs://localhost:10053",
+                    "server-hostname": "peer1.org2.example.com",
+                    "tls_cacerts": "%(config)s/peerOrganizations/org2.example.com/peers/peer1.org2.example.com/tls/ca.crt"
+                }
+            },
+            "admin": {
+                "key": "%(config)s/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/keystore",
+                "cert": "%(config)s/peerOrganizations/org2.example.com/users/Admin@org2.example.com/msp/signcerts"
+            }
+        }
+    }
+}
