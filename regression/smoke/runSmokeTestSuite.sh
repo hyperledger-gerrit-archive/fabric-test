@@ -8,6 +8,7 @@ SMOKEDIR="$GOPATH/src/github.com/hyperledger/fabric-test/regression/smoke"
 
 echo "========== Behave feature and system tests..."
 cd ../../feature
+nvm use 8.4.0
 behave --junit --junit-directory ../regression/smoke/. --tags=-skip --tags=smoke -k -D logs=y
 cd -
 

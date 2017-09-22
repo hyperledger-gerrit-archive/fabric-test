@@ -234,14 +234,19 @@ These docker composition files are used when setting up and tearing down network
 .. _version 2 docker compose: https://docs.docker.com/compose/compose-file/compose-file-v2/
 
 
+============================
 How to execute Feature tests
-----------------------------
+============================
 There are multiple ways to execute behave tests.
    * Execute all feature tests in the current directory
    * Execute all tests in a specific feature file
    * Execute all tests with a specified tag
    * Execute a specific test
+   * Remote execution
 
+Local Execution
+---------------
+When executing the behave tests locally, there are some simple commands that may be useful.
 
 **Executes all tests in directory**
 ::
@@ -258,10 +263,21 @@ There are multiple ways to execute behave tests.
 
     $ behave -t mytag
 
+**Executes tests labelled with tags not running the tests with skip label**
+::
+
+    $ behave --tags=mytag1 --tags=mytag2 --tags=-skip
+
 **Executes a specific test**
 ::
 
     $ behave -n 'my scenario name'
+
+
+Remote Execution
+---------------
+When executing the behave tests remotely, there is some setup that needs to take place. Namely, it is important to know the information for the network that you are testing on.
+
 
 
 Helpful Tools
