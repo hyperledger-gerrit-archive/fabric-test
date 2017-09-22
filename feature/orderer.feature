@@ -129,7 +129,6 @@ Examples:
     | kafka |    30    |
 
 @daily
-#@doNotDecompose
 Scenario: FAB-4686: Test taking down all kafka brokers and bringing back last 3
     Given I have a bootstrapped fabric network of type kafka
     And I wait "30" seconds
@@ -159,9 +158,11 @@ Scenario: FAB-4686: Test taking down all kafka brokers and bringing back last 3
     And I wait "5" seconds
 
     When "kafka3" comes back up
+    And I wait "60" seconds
     And "kafka2" comes back up
+    And I wait "60" seconds
     And "kafka1" comes back up
-    And I wait "240" seconds
+    And I wait "90" seconds
     When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
     And I wait "10" seconds
     When a user queries on the chaincode named "mycc" with args ["query","a"]
@@ -206,6 +207,7 @@ Scenario Outline: [FAB-4770] [FAB-4845]: <takeDownType> all kafka brokers in the
     When I <takeDownType> the current kafka topic partition leader
     And I wait "60" seconds
     Then the broker is reported as down
+    And ensure kafka ISR set contains 2 brokers
     #new leader is elected
     When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
     And I wait "5" seconds
@@ -215,11 +217,11 @@ Scenario Outline: [FAB-4770] [FAB-4845]: <takeDownType> all kafka brokers in the
     When I <takeDownType> the current kafka topic partition leader
     And I wait "65" seconds
     Then the broker is reported as down
-    And ensure kafka ISR set contains <count> brokers
+    And ensure kafka ISR set contains 1 brokers
     And I wait "10" seconds
     When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
     And I wait "60" seconds
-    #skip this service_unavailable check, to see query value returned
+    # Do not do this service_unavailable check, to see query value returned for an error
     #Then a user receives an error response of SERVICE_UNAVAILABLE
     When a user queries on the chaincode named "mycc" with args ["query","a"]
     Then a user receives a success response of 980
@@ -255,10 +257,10 @@ Scenario Outline: [FAB-4770] [FAB-4845]: <takeDownType> all kafka brokers in the
     When a user queries on the chaincode named "mycc" with args ["query","a"]
     Then a user receives a success response of 960
     Examples:
-        | takeDownType | bringUpType |  count |
-        | stop         | start       |    1   |
-        | pause        | unpause     |    1   |
-        | disconnect   | connect     |    1   |
+        | takeDownType | bringUpType |
+        | stop         | start       |
+        | pause        | unpause     |
+        | disconnect   | connect     |
 
 @skip
 Scenario Outline: FAB-4808: Orderer_BatchTimeOut is honored, for <type> orderer

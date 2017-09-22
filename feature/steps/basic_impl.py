@@ -22,7 +22,7 @@ def step_impl(context, seconds):
 
 @given(u'I use the {language} SDK interface')
 def step_impl(context, language):
-    context.interface = SDKInterface(language)
+    context.interface = SDKInterface(context, language)
 
 @given(u'I use the CLI interface')
 def step_impl(context):
@@ -188,6 +188,7 @@ def bringup_impl(context, component, bringUpType="start"):
 def start_network_impl(context, ordererType, tlsEnabled=True):
     assert ordererType in config_util.ORDERER_TYPES, "Unknown network type '%s'" % ordererType
     curpath = os.path.realpath('.')
+
     context.composeFile = "%s/docker-compose/docker-compose-%s.yml" % (curpath, ordererType)
     assert os.path.exists(context.composeFile), "The docker compose file does not exist: {0}".format(context.composeFile)
 
@@ -215,6 +216,10 @@ def step_impl(context, org):
 def step_impl(context, org):
     assert hasattr(context, 'initial_non_leader'), "Error: initial non-leader was not set previously. This statement works only with pre-set initial non-leader."
     assert not common_util.is_in_log(context.initial_non_leader[org], "Becoming a leader"), "Error: initial non-leader peer has already become leader."
+
+@then(u'the logs on {component} contains {data}')
+def step_impl(context, component, data):
+    assert common_util.is_in_log(component, data), "Error: the {0} log does not contain {1}.".format(component, data)
 
 @then(u'there are no errors')
 def step_impl(context):

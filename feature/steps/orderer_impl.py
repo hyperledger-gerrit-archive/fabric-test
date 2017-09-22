@@ -68,7 +68,6 @@ def stop_leader_impl(context, orderer, takeDownType):
     kafkas = orderer_util.getKafkaIPs(context, brokers)
     leader = orderer_util.getKafkaPartitionLeader(kafkaBrokers=kafkas)
     topic, isr_list = orderer_util.getKafkaTopic(kafkaBrokers=kafkas)
-    print(leader)
 
     # Save stopped broker
     if not hasattr(context, "stopped_brokers"):
