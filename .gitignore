@@ -33,3 +33,5 @@ bin/
 *.block
 # vscode settings
 .vscode
+feature/node_modules
+feature/package-lock.json
