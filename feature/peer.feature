@@ -10,7 +10,8 @@ Feature: Peer Service
 #@doNotDecompose
 @daily
 Scenario Outline: FAB-3505: Test chaincode example02 deploy, invoke, and query, with <type> orderer
-    Given I have a bootstrapped fabric network of type <type>
+    Given I have a bootstrapped fabric network of type <type> <security>
+    And I use the <interface> interface
     When a user sets up a channel
     And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "mycc"
     When a user queries on the chaincode named "mycc" with args ["query","a"]
@@ -28,12 +29,13 @@ Scenario Outline: FAB-3505: Test chaincode example02 deploy, invoke, and query, 
     And a user queries on the chaincode named "mycc" with args ["query","a"] on "peer0.org2.example.com"
     Then a user receives a success response of 980 from "peer0.org2.example.com"
 Examples:
-    | type  |
-    | solo  |
-    | kafka |
+    | type  |   security  |  interface |
+    | solo  | without tls | NodeJS SDK |
+    | kafka |   with tls  | NodeJS SDK |
+    | solo  | without tls |     CLI    |
+    | kafka |   with tls  |     CLI    |
 
 
-#@doNotDecompose
 @smoke
 Scenario Outline: FAB-1440, FAB-3861: Basic Chaincode Execution - <type> orderer type, using <database>, <security>
     Given I have a bootstrapped fabric network of type <type> using state-database <database> <security>
@@ -55,6 +57,26 @@ Examples:
     | kafka | leveldb  | without tls |
     | kafka | couchdb  |  with tls   |
     | kafka | couchdb  | without tls |
+
+@daily
+Scenario Outline: FAB-4776/FAB-4777: Bring up a kafka based network and check peers
+    Given I have a bootstrapped fabric network of type kafka using database <database>
+    When a user sets up a channel
+    And a user deploys chaincode
+    And a user queries on the chaincode with args ["query","a"]
+    And a user receives a success response of 100
+    And I wait "30" seconds
+    And a user fetches genesis information from peer "peer1.org1.example.com" using "orderer0.example.com"
+    When a user queries on the chaincode with args ["query","a"] from "peer1.org1.example.com"
+    Then a user receives a success response of 100 from "peer1.org1.example.com"
+    And I wait "30" seconds
+    And a user fetches genesis information from peer "peer1.org2.example.com" using "orderer1.example.com"
+    When a user queries on the chaincode with args ["query","a"] from "peer1.org2.example.com"
+    Then a user receives a success response of 100 from "peer1.org2.example.com"
+Examples:
+    | database |
+    | leveldb  |
+    | couchdb  |
 
 
 @daily
@@ -119,3 +141,16 @@ Examples:
     | type  |
     | solo  |
     | kafka |
+
+
+@daily
+Scenario: FAB-4773: Fetching of a channel genesis block
+    Given I have a crypto config file with 2 orgs, 2 peers, 3 orderers, and 2 users
+    And I have a fabric config file
+    When the crypto material is generated for TLS network
+    And the network is bootstrapped for an orderer
+    And the network is bootstrapped for a channel named "mychannel"
+    And I start a fabric network
+    And a user creates a channel named "mychannel"
+    And a user fetches genesis information for a channel "mychannel" from peer "peer1.org1.example.com"
+    Then the file "mychannel.block" file is fetched from peer "peer1.org1.example.com"
