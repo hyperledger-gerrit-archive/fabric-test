@@ -46,9 +46,9 @@
     "ccType": "marblescc",
     "ccOpt": {
         "keyIdx": [0],
-        "keyPayLoad": [2],
+        "keyPayLoad": [],
         "keyStart": "0",
-        "payLoadMin": "1",
+        "payLoadMin": "1024",
         "payLoadMax": "1024"
     },
     "deploy": {
@@ -62,8 +62,8 @@
             "args": ["marble"]
         },
         "move": {
-            "fcn": "initMarble",
-            "args": ["marble", "yellow","35","tom"]
+            "fcn": "transferMarblesBasedOnColor",
+            "args": ["yellow", "tom", "jerry"]
         }
     },
     "SCFile": [

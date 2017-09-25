@@ -2,15 +2,16 @@
     "channelID": "_ch3",
     "chaincodeID": "marbles_cc",
     "chaincodeVer": "v0",
+    "chainID": "testchainid",
     "logLevel": "ERROR",
     "invokeCheck": "TRUE",
     "transMode": "Constant",
     "transType": "Invoke",
-    "invokeType": "Move",
+    "invokeType": "Query",
     "targetPeers": "OrgAnchor",
     "nProcPerOrg": "1",
     "nRequest": "1000",
-    "runDur": "600",
+    "runDur": "1200",
     "TLS": "enabled",
     "channelOpt": {
         "name": "testorgschannel3",
@@ -40,15 +41,14 @@
         "org2": ["peer1"]
     },
     "eventOpt": {
-        "listener": "Transaction",
-        "timeout": "300000"
+        "timeout": "240000"
     },
     "ccType": "marblescc",
     "ccOpt": {
         "keyIdx": [0],
         "keyPayLoad": [2],
         "keyStart": "0",
-        "payLoadMin": "1",
+        "payLoadMin": "1024",
         "payLoadMax": "1024"
     },
     "deploy": {
@@ -58,8 +58,8 @@
     },
     "invoke": {
         "query": {
-            "fcn": "readMarble",
-            "args": ["marble"]
+            "fcn": "getMarblesByRange",
+            "args": ["marble", "marble"]
         },
         "move": {
             "fcn": "initMarble",

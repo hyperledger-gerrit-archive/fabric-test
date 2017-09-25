@@ -1,9 +1,9 @@
 {
-    "channelID": "_ch3",
+    "channelID": "_ch1",
     "chaincodeID": "marbles_cc",
     "chaincodeVer": "v0",
     "logLevel": "ERROR",
-    "invokeCheck": "TRUE",
+    "invokeCheck": "FALSE",
     "transMode": "Constant",
     "transType": "Invoke",
     "invokeType": "Move",
@@ -13,11 +13,11 @@
     "runDur": "600",
     "TLS": "enabled",
     "channelOpt": {
-        "name": "testorgschannel3",
+        "name": "testorgschannel1",
         "action":  "create",
         "orgName": [
-            "org5",
-            "org6"
+            "org1",
+            "org2"
         ]
     },
     "burstOpt": {
@@ -45,10 +45,10 @@
     },
     "ccType": "marblescc",
     "ccOpt": {
-        "keyIdx": [0],
-        "keyPayLoad": [2],
+	"keyIdx": [0],
+	"keyPayLoad": [],
         "keyStart": "0",
-        "payLoadMin": "1",
+        "payLoadMin": "1024",
         "payLoadMax": "1024"
     },
     "deploy": {
@@ -62,11 +62,11 @@
             "args": ["marble"]
         },
         "move": {
-            "fcn": "initMarble",
-            "args": ["marble", "yellow","35","tom"]
+            "fcn": "delete",
+            "args": ["marble"]
         }
     },
     "SCFile": [
-		{"ServiceCredentials":"SCFiles/config-chan3-TLS.json"}
+		{"ServiceCredentials":"SCFiles/config-chan1-TLS.json"}
 	]
 }
