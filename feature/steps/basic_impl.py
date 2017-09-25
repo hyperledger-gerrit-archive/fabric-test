@@ -51,10 +51,13 @@ def bootstrapped_impl(context, ordererType, database, tlsEnabled=False):
 
     # Get the correct composition file
     if database == "leveldb":
-        context.composeFile = "%s/docker-compose/docker-compose-%s.yml" % (curpath, ordererType)
+        context.composeFile = ["%s/docker-compose/docker-compose-%s.yml" % (curpath, ordererType)]
     else:
-        context.composeFile = "%s/docker-compose/docker-compose-%s-%s.yml" % (curpath, ordererType, database)
-    assert os.path.exists(context.composeFile), "The docker compose file does not exist: {0}".format(context.composeFile)
+        context.composeFile = ["%s/docker-compose/docker-compose-%s.yml" % (curpath, ordererType)]
+        context.composeFile.append("%s/docker-compose/docker-compose-%s.yml" % (curpath, database))
+    context.composeFile.append("%s/docker-compose/docker-compose-cli.yml" % (curpath))
+    for composeFile in context.composeFile:
+        assert os.path.exists(composeFile), "The docker compose file does not exist: {0}".format(composeFile)
 
     # Should TLS be enabled
     context.tls = tlsEnabled
