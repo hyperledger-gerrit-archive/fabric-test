@@ -29,6 +29,7 @@ function printHelp {
    echo "    -f: profile name, default=testOrg"
    echo "    -b: MSP directory, default=/mnt/crypto-config"
    echo "    -w: host ip 1, default=0.0.0.0"
+   echo "    -v: array of organization name, default=0"
    echo "    -C: company name, default=example.com"
    echo " "
    echo "Example:"

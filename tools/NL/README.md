@@ -110,11 +110,13 @@ The script is used to create configtx.yaml.
        -t: orderer service [solo|kafka], default=solo
        -b: MSP directory, default=/mnt/crypto-config
        -w: host ip 1, default=0.0.0.0
+       -v: array of organization name, default=0
+       -C: company name, default=example.com
 
 
 ## Example:
 
-    ./gen_configtx_cfg.sh -o 1 -k 1 -p 2 -r 6 -h SHA2 -s 256 -t kafka -b /root/gopath/src/github.com/hyperledger/fabric/common/tools/cryptogen/ -w 10.120.223.35
+    ./gen_configtx_cfg.sh -o 1 -k 1 -p 2 -r 6 -h SHA2 -s 256 -t kafka -b /root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/ -w 10.120.223.35
 
 
 
@@ -139,13 +141,16 @@ The script is used to create a docker-compose.yml and launch the network with sp
     options:
        network variables
        -a: action [create|add]
-       -z: number of CAs
-       -p: number of peers
+       -p: number of peers per organization
        -o: number of orderers
        -k: number of brokers
+       -z: number of zookeeper
        -r: number of organiztions
-       -F: local MSP base directory, default=/root/gopath/src/github.com/hyperledger/fabric/common/tools/cryptogen/crypto-config
+       -S: TLS enablement [enabled|disabled], default=disabled
+       -x: number of ca
+       -F: local MSP base directory, default=$GOPATH/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config
        -G: src MSP base directory, default=/opt/hyperledger/fabric/msp/crypto-config
+       -C: company name, default=example.com
 
        peer environment variables
        -l: core logging level [(default = not set)|CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG]
@@ -159,7 +164,7 @@ The script is used to create a docker-compose.yml and launch the network with sp
 
 ## Example
 
-    ./gen_network.sh -a create -z 2 -p 2 -r 2 -o 1 -k 1 -t kafka -d goleveldb -F /root/gopath/src/github.com/hyperledger/fabric/common/tools/cryptogen/crypto-config -G /opt/hyperledger/fabric/msp/crypto-config
+    ./gen_network.sh -a create -z 2 -p 2 -r 2 -o 1 -k 1 -z 1 -t kafka -d goleveldb -F /root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen -G /opt/hyperledger/fabric/msp/crypto-config
 
 
 ## IP address and port
