@@ -1,0 +1,15 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+- name: Get start timestamp
+  hosts: '{{ host }}'
+  connection: local
+  tasks:
+    - set_fact:
+        starttime: "{{ ansible_date_time }}"
+
+- name: Run the plays
+  include: "roles/tool_{{ tool_type | default('pte') }}/plays.yml"

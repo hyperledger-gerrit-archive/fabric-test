@@ -1,0 +1,21 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+version: '2'
+
+services:
+
+  PTE:
+    container_name: PTE
+    image: pte:latest
+    network_mode: bridge
+    hostname: PTE
+    environment:
+      - TESTCASE="{{ TESTCASE }}"
+    volumes:
+      - {{ fabricworkdir }}/run/keyfiles:/var/hyperledger/fabric/artifacts
+      - {{ fabricworkdir }}/SCFiles:/root/gopath/src/github.com/hyperledger/fabric-sdk-node/test/v1performance/SCFiles
+      - {{ fabricworkdir }}/run/keyfiles:/var/hyperledger/allorgs
