@@ -9,6 +9,7 @@ import time
 import os
 import uuid
 import common_util
+import subprocess
 import compose_util
 import config_util
 from endorser_util import CLIInterface, ToolInterface, SDKInterface
@@ -119,6 +120,13 @@ def step_impl(context):
 def step_impl(context):
     bootstrapped_impl(context, "solo", "leveldb", False)
 
+
+@when(u'the chaincode container in "{peer}" is taken down by doing a {takeDownType}')
+def step_impl(context, peer, takeDownType):
+    cc_container_partial_name = "{0}-{1}-{2}-0".format(context.projectName, peer, context.chaincode['name'])
+    cc_container = subprocess.check_output(["docker ps --format \"{{.Names}}\" -f name="+cc_container_partial_name], shell=True)
+    bringdown_impl(context, cc_container, takeDownType)
+
 @when(u'the initial leader peer of "{org}" is taken down by doing a {takeDownType}')
 def step_impl(context, org, takeDownType):
     bringdown_impl(context, context.interface.get_initial_leader(context, org), takeDownType)
@@ -141,7 +149,7 @@ def step_impl(context, component, takeDownType):
 
 @when(u'"{component}" is taken down')
 def bringdown_impl(context, component, takeDownType="stop"):
-    assert component in context.composition.collectServiceNames(), "Unknown component '{0}'".format(component)
+    assert component in context.composition.collectServiceNames() or context.projectName in component, "Unknown component '{0}'".format(component)
     if takeDownType=="stop":
         context.composition.stop([component])
     elif takeDownType=="pause":
@@ -150,6 +158,12 @@ def bringdown_impl(context, component, takeDownType="stop"):
         context.composition.disconnect([component])
     else:
         assert False, "takedown process undefined: {}".format(context.takeDownType)
+
+@when(u'the chaincode container in "{peer}" comes back up by doing a {bringUpType}')
+def step_impl(context, peer, bringUpType):
+    cc_container_partial_name = "{0}-{1}-{2}-0".format(context.projectName, peer, context.chaincode['name'])
+    cc_container = subprocess.check_output(["docker ps --format \"{{.Names}}\" -f name="+cc_container_partial_name], shell=True)
+    bringup_impl(context, cc_container, bringUpType)
 
 @when(u'the initial leader peer of "{org}" comes back up by doing a {bringUpType}')
 def step_impl(context, org, bringUpType):
@@ -173,7 +187,7 @@ def step_impl(context, component, bringUpType):
 
 @when(u'"{component}" comes back up')
 def bringup_impl(context, component, bringUpType="start"):
-    assert component in context.composition.collectServiceNames(), "Unknown component '{0}'".format(component)
+    assert component in context.composition.collectServiceNames() or context.projectName in component, "Unknown component '{0}'".format(component)
     if bringUpType=="start":
         context.composition.start([component])
     elif bringUpType=="unpause":
