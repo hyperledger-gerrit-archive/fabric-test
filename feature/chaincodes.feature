@@ -385,6 +385,8 @@ Scenario Outline: FAB-6211: Test example02 chaincode written in various language
     And I wait "3" seconds
     When a user queries on the chaincode named "mycc" with args ["query","a"]
     Then a user receives a success response of 990
+    When a user queries on the chaincode named "mycc" with args ["query","b"]
+    Then a user receives a success response of 2010
 Examples:
     |                            path                                         | lang   | security    |
     | github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02 | GOLANG | with tls    |
