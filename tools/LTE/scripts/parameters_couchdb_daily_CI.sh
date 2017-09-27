@@ -6,7 +6,7 @@
 #
 
 export useCouchDB="yes"
-DataDir="/tmp/fabric/test/tools/LTE/data"
+DataDir="/tmp/fabric-test/tools/LTE/data"
 NumChains=10
 NumParallelTxPerChain=10
 NumKVs=10000
