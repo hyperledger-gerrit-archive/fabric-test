@@ -1,0 +1,19 @@
+---
+# This variable defines fabric network attributes
+pte: {
+
+  # The user to connect to the server
+  ssh_user: "ibmadmin",
+  ptechannels: {
+    1: {
+      name: "testorgschannel1",
+      orgs: ["orga", "orgb"],
+      orderer: "orderer0"
+    },
+    2: {
+      name: "testorgschannel2",
+      orgs: ["orgc", "orgd"],
+      orderer: "orderer1"
+    }
+  }
+}
