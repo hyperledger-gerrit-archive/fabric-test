@@ -12,7 +12,7 @@ Scenario Outline: FAB-5797: Test chaincode fabric/examples/chaincode_example02 d
     And I wait "<waitTime>" seconds
     When a user sets up a channel
     And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "<ccName>"
-    And I wait "5" seconds
+    And I wait "30" seconds
     Then the chaincode is deployed
     When a user queries on the chaincode named "<ccName>" with args ["query","a"]
     Then a user receives a success response of 1000
@@ -153,7 +153,7 @@ Scenario Outline: FAB-5789: Test chaincode fabric/examples/marbles02 : initMarbl
     And I wait "<waitTime>" seconds
     When a user sets up a channel
     And a user deploys chaincode at path "<path>" with args [""] with language "<language>"
-    And I wait "5" seconds
+    And I wait "30" seconds
     Then the chaincode is deployed
 
     When a user invokes on the chaincode with args ["initMarble","marble1","red","35","tom"]
@@ -244,7 +244,7 @@ Scenario Outline: FAB-5790: Test chaincode fabric/examples/marbles02: initMarble
   And I wait "<waitTime>" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "<path>" with args [""] with name "mycc" with language "<language>"
-  And I wait "5" seconds
+  And I wait "30" seconds
   Then the chaincode is deployed
 
   When a user invokes on the chaincode named "mycc" with args ["initMarble","marble1","red","35","tom"]
@@ -310,7 +310,7 @@ Scenario Outline: FAB-3888: State Transfer Test using marbles02 where a non-lead
   And I wait "<waitTime>" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/marbles02" with args [""] with name "mycc"
-  And I wait "5" seconds
+  And I wait "30" seconds
   Then the chaincode is deployed
 
   When a user invokes on the chaincode named "mycc" with args ["initMarble","marble1","red","35","tom"]
@@ -352,7 +352,7 @@ Scenario Outline: FAB-5791: Chaincode to test shim interface API
   And I wait "60" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "github.com/hyperledger/fabric-test/chaincodes/chaincodeAPIDriver" with args ["init","a","1000","b","2000"] with name "mycc"
-  And I wait "5" seconds
+  And I wait "30" seconds
   Then the chaincode is deployed
   And I wait "5" seconds
   When a user invokes on the chaincode named "mycc" with args ["invoke","getTxTimeStamp"]
@@ -374,10 +374,10 @@ Scenario Outline: FAB-5791: Chaincode to test shim interface API
 @smoke
 Scenario Outline: FAB-6211: Test example02 chaincode written in various languages
     Given I have a bootstrapped fabric network of type solo <security>
-    And I wait "5" seconds
+    And I wait "30" seconds
     When a user sets up a channel
     And a user deploys chaincode at path "<path>" with args ["init","a","1000","b","2000"] with name "mycc" with language "<lang>"
-    And I wait "5" seconds
+    And I wait "30" seconds
     Then the chaincode is deployed
     When a user queries on the chaincode named "mycc" with args ["query","a"]
     Then a user receives a success response of 1000
@@ -385,6 +385,8 @@ Scenario Outline: FAB-6211: Test example02 chaincode written in various language
     And I wait "3" seconds
     When a user queries on the chaincode named "mycc" with args ["query","a"]
     Then a user receives a success response of 990
+    When a user queries on the chaincode named "mycc" with args ["query","b"]
+    Then a user receives a success response of 2010
 Examples:
     |                            path                                         | lang   | security    |
     | github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02 | GOLANG | with tls    |
@@ -398,7 +400,7 @@ Scenario Outline: FAB-6256: Test rich queries using marbles chaincode using <lan
     And I wait "5" seconds
     When a user sets up a channel
     And a user deploys chaincode at path "<path>" with args [""] with language "<language>"
-    And I wait "5" seconds
+    And I wait "30" seconds
     Then the chaincode is deployed
 
     When a user invokes on the chaincode with args ["initMarble","marble1","blue","35","tom"]
