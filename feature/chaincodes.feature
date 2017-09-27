@@ -7,12 +7,12 @@
 Feature: FAB-5384 Chaincode Testing: As a user I want to be able verify that I can execute different chaincodes
 
 @daily
-Scenario Outline: FAB-5797: Test chaincode fabric/examples/chaincode_example02 deploy, invoke, and query with chaincode install name in all uppercase/lowercase/mixedcase chars
+Scenario Outline: FAB-5797: Test chaincode fabric/examples/chaincode_example02 deploy, invoke, and query with chaincode install name in all lowercase/uppercase/mixedcase chars, for <type> orderer
     Given I have a bootstrapped fabric network of type <type>
     And I wait "<waitTime>" seconds
     When a user sets up a channel
     And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "<ccName>"
-    And I wait "5" seconds
+    And I wait "15" seconds
     Then the chaincode is deployed
     When a user queries on the chaincode named "<ccName>" with args ["query","a"]
     Then a user receives a success response of 1000
@@ -22,17 +22,17 @@ Scenario Outline: FAB-5797: Test chaincode fabric/examples/chaincode_example02 d
     Then a user receives a success response of 990
 Examples:
     | type  | waitTime |  ccName   |
-    | solo  |    5     |   mycc    |
-    | solo  |    5     |   MYCC    |
-    | solo  |    5     | MYcc_Test |
-    | kafka |    30    |   mycc    |
-    | kafka |    30    |   MYCC    |
-    | kafka |    30    | MYcc_Test |
+    | solo  |    15    |   mycc    |
+    | solo  |    15    |   MYCC    |
+    | solo  |    15    | MYcc_Test |
+    | kafka |    70    |   mycc    |
+    | kafka |    70    |   MYCC    |
+    | kafka |    70    | MYcc_Test |
 
 @daily
 Scenario: FAB-4703: <FAB-5663> Test chaincode calling chaincode - fabric/examples/chaincode_example04
   Given I have a bootstrapped fabric network of type kafka
-  And I wait "30" seconds
+  And I wait "70" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example04" with args ["init","Event","1"] with name "myex04"
   And I wait "30" seconds
@@ -49,7 +49,7 @@ Scenario: FAB-4703: <FAB-5663> Test chaincode calling chaincode - fabric/example
 @daily
 Scenario: FAB-4717: <FAB-5663> chaincode-to-chaincode testing passing in channel name as a third argument to chaincode_ex05 when cc_05 and cc_02 are on different channels
   Given I have a bootstrapped fabric network of type kafka
-  And I wait "30" seconds
+  And I wait "70" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example05" with args ["init","sum","0"] with name "myex05"
   And I wait "30" seconds
@@ -66,7 +66,7 @@ Scenario: FAB-4717: <FAB-5663> chaincode-to-chaincode testing passing in channel
 @daily
 Scenario: FAB-4718: <FAB-5663> chaincode-to-chaincode testing passing an empty string for channel_name when cc_05 and cc_02 are on the same channel
   Given I have a bootstrapped fabric network of type kafka
-  And I wait "30" seconds
+  And I wait "70" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example05" with args ["init","sum","0"] with name "myex05"
   And I wait "30" seconds
@@ -82,7 +82,7 @@ Scenario: FAB-4718: <FAB-5663> chaincode-to-chaincode testing passing an empty s
 @daily
 Scenario: FAB-4720: <FAB-5663> Test chaincode calling chaincode -ve test case passing an incorrect or non-existing channnel name when cc_ex02 and cc_ex05 installed on same channels
   Given I have a bootstrapped fabric network of type kafka
-  And I wait "30" seconds
+  And I wait "70" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example05" with args ["init","sum","0"] with name "myex05"
   And I wait "30" seconds
@@ -98,7 +98,7 @@ Scenario: FAB-4720: <FAB-5663> Test chaincode calling chaincode -ve test case pa
 @daily
 Scenario: FAB-4721: <FAB-5663> Test chaincode calling chaincode -ve testcase passing an incorrect ot non-existing string for channelname when cc_ex02 and cc_ex05 installed on different channels
   Given I have a bootstrapped fabric network of type kafka
-  And I wait "30" seconds
+  And I wait "70" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example05" with args ["init","sum","0"] with name "myex05"
   And I wait "30" seconds
@@ -116,7 +116,7 @@ Scenario: FAB-4721: <FAB-5663> Test chaincode calling chaincode -ve testcase pas
 @daily
 Scenario: FAB-4722: <FAB-5663> Test chaincode calling chaincode -ve testcase passing an empty string for channelname when cc_ex02 and cc_ex05 installed on different channels
   Given I have a bootstrapped fabric network of type kafka
-  And I wait "30" seconds
+  And I wait "70" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example05" with args ["init","sum","0"] with name "myex05"
   And I wait "30" seconds
@@ -133,7 +133,7 @@ Scenario: FAB-4722: <FAB-5663> Test chaincode calling chaincode -ve testcase pas
 @daily
 Scenario: FAB-5384: <FAB-5663> Test chaincode calling chaincode with two args cc_ex02 and cc_ex05 installed on same channels
   Given I have a bootstrapped fabric network of type kafka
-  And I wait "30" seconds
+  And I wait "70" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example05" with args ["init","sum","0"] with name "myex05"
   And I wait "30" seconds
@@ -147,13 +147,13 @@ Scenario: FAB-5384: <FAB-5663> Test chaincode calling chaincode with two args cc
   Then a user receives a success response of 3000
 
 @daily
-Scenario Outline: FAB-5789: Test chaincode fabric/examples/marbles02 : initMarble, readMarble, transferMarble, transferMarblesBasedOnColor
+Scenario Outline: FAB-5789: Test chaincode marbles02 initMarble/readMarble/transferMarble/transferMarblesBasedOnColor in <language> language and <database> database for <type> orderer
 
     Given I have a bootstrapped fabric network of type <type> using state-database <database>
     And I wait "<waitTime>" seconds
     When a user sets up a channel
     And a user deploys chaincode at path "<path>" with args [""] with language "<language>"
-    And I wait "5" seconds
+    And I wait "15" seconds
     Then the chaincode is deployed
 
     When a user invokes on the chaincode with args ["initMarble","marble1","red","35","tom"]
@@ -228,23 +228,23 @@ Scenario Outline: FAB-5789: Test chaincode fabric/examples/marbles02 : initMarbl
     And a user receives a response containing "owner":"jerry"
 Examples:
     | type  | waitTime | path                                                          | language | database |
-    | solo  |    5     | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |  leveldb |
-    | kafka |    30    | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |  leveldb |
-    | solo  |    5     | ../../fabric-test/chaincodes/marbles/node                     | NODE     |  leveldb |
-    | kafka |    30    | ../../fabric-test/chaincodes/marbles/node                     | NODE     |  leveldb |
-    | solo  |    5     | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |  couchdb |
-    | kafka |    30    | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |  couchdb |
-    | solo  |    5     | ../../fabric-test/chaincodes/marbles/node                     | NODE     |  couchdb |
-    | kafka |    30    | ../../fabric-test/chaincodes/marbles/node                     | NODE     |  couchdb |
+    | solo  |    15    | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |  leveldb |
+    | kafka |    70    | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |  leveldb |
+    | solo  |    15    | ../../fabric-test/chaincodes/marbles/node                     | NODE     |  leveldb |
+    | kafka |    70    | ../../fabric-test/chaincodes/marbles/node                     | NODE     |  leveldb |
+    | solo  |    15    | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |  couchdb |
+    | kafka |    70    | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |  couchdb |
+    | solo  |    15    | ../../fabric-test/chaincodes/marbles/node                     | NODE     |  couchdb |
+    | kafka |    70    | ../../fabric-test/chaincodes/marbles/node                     | NODE     |  couchdb |
 
 
 @daily
-Scenario Outline: FAB-5790: Test chaincode fabric/examples/marbles02: initMarble, readMarble, deleteMarble, getHistoryForMarble, getMarblesByRange
+Scenario Outline: FAB-5790: Test chaincode marbles02 initMarble/readMarble/deleteMarble/getHistoryForMarble/getMarblesByRange in <language> language for <type> orderer
   Given I have a bootstrapped fabric network of type <type>
   And I wait "<waitTime>" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "<path>" with args [""] with name "mycc" with language "<language>"
-  And I wait "5" seconds
+  And I wait "15" seconds
   Then the chaincode is deployed
 
   When a user invokes on the chaincode named "mycc" with args ["initMarble","marble1","red","35","tom"]
@@ -296,21 +296,21 @@ Scenario Outline: FAB-5790: Test chaincode fabric/examples/marbles02: initMarble
 
   Examples:
     | type  | waitTime | path                                                          | language |
-    | solo  |    5     | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |
-    | kafka |    30    | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |
-    | solo  |    5     | ../../fabric-test/chaincodes/marbles/node                     | NODE     |
-    | kafka |    30    | ../../fabric-test/chaincodes/marbles/node                     | NODE     |
+    | solo  |    15    | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |
+    | kafka |    70    | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |
+    | solo  |    15    | ../../fabric-test/chaincodes/marbles/node                     | NODE     |
+    | kafka |    70    | ../../fabric-test/chaincodes/marbles/node                     | NODE     |
 
 
 @daily
-Scenario Outline: FAB-3888: State Transfer Test using marbles02 where a non-leader is brought down , and then after few invokes it is brought back up, to check if the non-leader successfully receives the blocks and update itself
+Scenario Outline: FAB-3888: State Transfer Test, bouncing a non-leader peer, using marbles02, for <type> orderer
 
   Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
   And I have a bootstrapped fabric network of type <type>
   And I wait "<waitTime>" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/marbles02" with args [""] with name "mycc"
-  And I wait "5" seconds
+  And I wait "15" seconds
   Then the chaincode is deployed
 
   When a user invokes on the chaincode named "mycc" with args ["initMarble","marble1","red","35","tom"]
@@ -344,15 +344,15 @@ Scenario Outline: FAB-3888: State Transfer Test using marbles02 where a non-lead
   Examples:
     | type  | waitTime |
     | solo  |    20    |
-    | kafka |    30    |
+    | kafka |    70    |
 
 @daily
-Scenario Outline: FAB-5791: Chaincode to test shim interface API
+Scenario Outline: FAB-5791: Chaincode to test shim interface API, for <type> orderer
   Given I have a bootstrapped fabric network of type <type>
-  And I wait "60" seconds
+  And I wait "<waitTime>" seconds
   When a user sets up a channel
   And a user deploys chaincode at path "github.com/hyperledger/fabric-test/chaincodes/chaincodeAPIDriver" with args ["init","a","1000","b","2000"] with name "mycc"
-  And I wait "5" seconds
+  And I wait "15" seconds
   Then the chaincode is deployed
   And I wait "5" seconds
   When a user invokes on the chaincode named "mycc" with args ["invoke","getTxTimeStamp"]
@@ -368,16 +368,16 @@ Scenario Outline: FAB-5791: Chaincode to test shim interface API
 
   Examples:
     | type  | waitTime |
-    | solo  |    20    |
-    | kafka |    30    |
+    | solo  |    15    |
+    | kafka |    70    |
 
 @smoke
-Scenario Outline: FAB-6211: Test example02 chaincode written in various languages
+Scenario Outline: FAB-6211: Test example02 chaincode written using <lang> <security>
     Given I have a bootstrapped fabric network of type solo <security>
-    And I wait "5" seconds
+    And I wait "15" seconds
     When a user sets up a channel
     And a user deploys chaincode at path "<path>" with args ["init","a","1000","b","2000"] with name "mycc" with language "<lang>"
-    And I wait "5" seconds
+    And I wait "15" seconds
     Then the chaincode is deployed
     When a user queries on the chaincode named "mycc" with args ["query","a"]
     Then a user receives a success response of 1000
@@ -385,6 +385,8 @@ Scenario Outline: FAB-6211: Test example02 chaincode written in various language
     And I wait "3" seconds
     When a user queries on the chaincode named "mycc" with args ["query","a"]
     Then a user receives a success response of 990
+    When a user queries on the chaincode named "mycc" with args ["query","b"]
+    Then a user receives a success response of 2010
 Examples:
     |                            path                                         | lang   | security    |
     | github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02 | GOLANG | with tls    |
@@ -395,10 +397,10 @@ Examples:
 @daily
 Scenario Outline: FAB-6256: Test rich queries using marbles chaincode using <language>
     Given I have a bootstrapped fabric network of type solo using state-database couchdb with tls
-    And I wait "5" seconds
+    And I wait "15" seconds
     When a user sets up a channel
     And a user deploys chaincode at path "<path>" with args [""] with language "<language>"
-    And I wait "5" seconds
+    And I wait "15" seconds
     Then the chaincode is deployed
 
     When a user invokes on the chaincode with args ["initMarble","marble1","blue","35","tom"]
