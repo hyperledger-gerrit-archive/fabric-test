@@ -1,0 +1,39 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+- name: Setup variables
+  set_fact:
+    goroot: "/opt/go"
+    gopath: "/opt/gopath/{{ env }}"
+    fabricworkdir: "/opt/gopath/{{ env }}/fabric"
+    fabrictestpath: "/opt/gopath/{{ env }}/src/github.com/hyperledger/fabric-test"
+
+- name: Setup hyperledger directory
+  file:
+    path: "{{ fabrictestpath }}"
+    state: directory
+    force: yes
+    mode: 0775
+
+- name: Clean the build log file
+  file:
+    path: "{{ gopath }}/build.log"
+    state: "absent"
+
+- name: Extract hyperledger fabric-test code
+  git:
+    repo: "http://gerrit.hyperledger.org/r/fabric-test"
+    dest: "{{ fabrictestpath }}"
+    force: yes
+    #refspec: "{{ GERRIT_REFSPEC | default('') }}"
+    #version: "{{ (GERRIT_REFSPEC == '') | ternary('HEAD','FETCH_HEAD') }}"
+    depth: 1
+  #tags: "code"
+
+- name: Initializing the git submodules in fabric-test 
+  shell: "git submodule update --init --recursive"
+  args:
+    chdir: "{{ fabrictestpath }}"

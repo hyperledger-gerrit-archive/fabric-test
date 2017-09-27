@@ -1,0 +1,98 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+- name: Setup few variables
+  set_fact:
+    fabricworkdir: "/opt/gopath/{{ env }}/fabric"
+    fabrictestpath: "/opt/gopath/{{ env }}/src/github.com/hyperledger/fabric-test"
+    gopath: "/opt/gopath/{{ env }}"
+
+- name: Create component list
+  set_fact:
+    cals: "{{ cals | default([]) + item.value.cas | default([]) }}"
+    peerls: "{{ peerls | default([]) + item.value.peers | default([]) }}"
+    ordererls: "{{ ordererls | default([]) + item.value.orderers | default([]) }}"
+    kafkals: "{{ kafkals | default([]) + item.value.kafkas | default([]) }}"
+  with_dict: "{{ fabric.network }}"
+
+- debug:
+    var: kafkals
+
+- name: Get ca object list
+  set_fact:
+    cas: |
+      {{ cas | default([]) + [{ 'org':item.split('.')[-1],
+        'name':item | replace('.', '-') }] }}
+  with_items: "{{ cals }}"
+  when: cals | length > 0
+
+- name: Get ca object list
+  set_fact:
+    cas: "{{ cas | default([]) }}"
+
+- name: Sort the ca list
+  set_fact:
+    cas: "{{ cas | sort(attribute='org') }}"
+
+- name: Get peer object list
+  set_fact:
+    peers: |
+      {{ peers | default([]) + [{'org':item.split('@')[1].split('.')[-1],
+        'name':item.split('@')[1] | replace('.','-'),
+        'role':item.split('@')[0]}] }}
+  with_items: "{{ peerls }}"
+
+- name: Sort the peer list
+  set_fact:
+    peers: "{{ peers | sort(attribute='org') }}"
+
+- name: Get orderer object list
+  set_fact:
+    orderers: |
+      {{ orderers | default([]) + [{'org':item.split('.')[-1],
+        'name':item | replace('.', '-') }] }}
+  with_items: "{{ ordererls }}"
+
+- name: Sort the orderer list
+  set_fact:
+    orderers: "{{ orderers | sort(attribute='org') }}"
+    allorgs: "{{ [] }}"
+
+- name: Sort the ca and kafka list
+  set_fact:
+    caorgs: "{{ cas | map(attribute='org') | list  | unique | sort }}"
+    peerorgs: "{{ peers | map(attribute='org') | list  | unique | sort }}"
+    ordererorgs: "{{ orderers | map(attribute='org') | list  | unique | sort }}"
+    kafkas: "{{ kafkals | sort }}"
+
+- name: Create testcases.sh for PTE
+  template:
+    src: "{{ playbook_dir }}/ptesetup/templates/testcases.j2"
+    dest: "{{ fabrictestpath }}/testcases.sh"
+    mode: 0755
+
+- name: Generating the Dockerfile for PTE
+  template:
+    src: "{{ playbook_dir }}/ptesetup/templates/dockerfile.j2"
+    dest: "{{ fabrictestpath }}/Dockerfile"
+
+- name: Building the docker image for PTE
+  shell: "docker build -t pte:latest . "
+  args:
+    chdir: "{{ fabrictestpath }}"
+
+- name: Create config file
+  template:
+    src: "{{ playbook_dir }}/ptesetup/templates/wrapper.j2"
+    dest: "{{ fabricworkdir }}/SCFiles/config-chan1-TLS.json"
+
+- name: Create docker compose file
+  template:
+    src: "{{ playbook_dir }}/ptesetup/templates/pte-compose.j2"
+    dest: "{{ fabricworkdir }}/run/pte-compose.yml"
+
+- name: Start PTE docker container
+  command: "docker-compose -p {{ env }}.pte-compose -f {{ fabricworkdir }}/run/pte-compose.yml up -d"
