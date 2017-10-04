@@ -1,0 +1,4 @@
+driver=ctlr ibmadmin@multihost11 ctlrInputs/pteHost11-samplecc-q.sh
+driver=ctlr ibmadmin@multihost11 ctlrInputs/pteHost11-samplecc-i.sh
+driver=ctlr ibmadmin@multihost11 ctlrInputs/pteHost11-marbles-q.sh
+#driver=ctlr ibmadmin@multihost11 ctlrInputs/pteHost11-marbles-i.sh
