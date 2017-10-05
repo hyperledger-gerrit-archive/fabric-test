@@ -70,11 +70,8 @@ Scenario: Access to the fabric protobuf files
 @smoke
 Scenario: Basic operations to create a useful blockchain network
     Given I have a bootstrapped fabric network
-    When I wait "5" seconds
-    And a user sets up a channel
+    When a user sets up a channel
     And a user deploys chaincode
-    When I wait "15" seconds
-    Then the chaincode is deployed
 
 @skip
 Scenario: Setting of environment variables
@@ -82,16 +79,19 @@ Scenario: Setting of environment variables
     And the CONFIGTX_ORDERER_BATCHTIMEOUT environment variable is 10 minutes
     And the CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT environment variable is 10
     And I have a bootstrapped fabric network of type kafka with tls
-    When I wait "30" seconds
     Then the KAFKA_DEFAULT_REPLICATION_FACTOR environment variable is 1 on node "kafka1"
     And the CONFIGTX_ORDERER_BATCHTIMEOUT environment variable is 10 minutes on node "orderer0.example.com"
     And the CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT environment variable is 10 on node "orderer1.example.com"
 
-   #TODO: set variables in core.yaml and orderer.yaml too, which are in our .env file.
+   #TODO: set variables in configtx.yaml as needed (verify defaults set in .env file).
     # And the CORE_LOGGING_GOSSIP environment variable is INFO
     # ORDERER_GENERAL_TLS_ENABLED and CORE_PEER_TLS_ENABLED are also
     # defined (default to false) in file fabric-test/feature/.env.
     # They are set to true when we process the bootstrap statement "with tls".
+    #
+    # ??? The last 2 files are defaults set when building fabric. We should be able to 
+    # modify using configtx and env vars...
+    #
    # Check these three, so we can say we can set variables in all 3 config files:
    #configtx.yaml, orderer.yaml, core.yaml; they are all defined, but adding these checks cause
    #all following subsequent tests to fail to deploy or query, so let's do this later separately.
