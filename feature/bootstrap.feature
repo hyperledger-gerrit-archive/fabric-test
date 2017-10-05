@@ -70,11 +70,9 @@ Scenario: Access to the fabric protobuf files
 @smoke
 Scenario: Basic operations to create a useful blockchain network
     Given I have a bootstrapped fabric network
-    When I wait "5" seconds
-    And a user sets up a channel
+    When a user sets up a channel
     And a user deploys chaincode
-    When I wait "15" seconds
-    Then the chaincode is deployed
+    #Then the chaincode is deployed
 
 @skip
 Scenario: Setting of environment variables
@@ -82,7 +80,7 @@ Scenario: Setting of environment variables
     And the CONFIGTX_ORDERER_BATCHTIMEOUT environment variable is 10 minutes
     And the CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT environment variable is 10
     And I have a bootstrapped fabric network of type kafka with tls
-    When I wait "30" seconds
+    #When I wait "30" seconds
     Then the KAFKA_DEFAULT_REPLICATION_FACTOR environment variable is 1 on node "kafka1"
     And the CONFIGTX_ORDERER_BATCHTIMEOUT environment variable is 10 minutes on node "orderer0.example.com"
     And the CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT environment variable is 10 on node "orderer1.example.com"
