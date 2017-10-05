@@ -30,9 +30,7 @@ function printHelp {
    echo "       -d: core ledger state DB [goleveldb|couchdb] "
    echo " "
    echo "    orderer environment variables"
-   echo "       -b: batch size [10|msgs in batch/block]"
    echo "       -t: orderer type [solo|kafka] "
-   echo "       -c: batch timeout [10s|max secs before send an unfilled batch] "
    echo " "
    echo "Example:"
    echo "   ./gen_network.sh -a create -x 2 -p 2 -r 2 -o 1 -k 1 -z 1 -t kafka -d goleveldb -F /root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config -G /opt/hyperledger/fabric/msp/crypto-config "
@@ -48,7 +46,7 @@ MSPDIR="$GOPATH/src/github.com/hyperledger/fabric-test/fabric/common/tools/crypt
 SRCMSPDIR="/opt/hyperledger/fabric/msp/crypto-config"
 TLSEnabled="disabled"
 
-while getopts ":x:z:l:d:b:c:t:a:o:k:p:r:F:G:S:C:" opt; do
+while getopts ":x:z:l:d:t:a:o:k:p:r:F:G:S:C:" opt; do
   case $opt in
     # peer environment options
     S)
@@ -71,16 +69,6 @@ while getopts ":x:z:l:d:b:c:t:a:o:k:p:r:F:G:S:C:" opt; do
       ;;
 
     # orderer environment options
-    b)
-      CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT=$OPTARG
-      export CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT=$CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT
-      echo "CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT: $CONFIGTX_ORDERER_BATCHSIZE_MAXMESSAGECOUNT"
-      ;;
-    c)
-      CONFIGTX_ORDERER_BATCHTIMEOUT=$OPTARG
-      export CONFIGTX_ORDERER_BATCHTIMEOUT=$CONFIGTX_ORDERER_BATCHTIMEOUT
-      echo "CONFIGTX_ORDERER_BATCHTIMEOUT: $CONFIGTX_ORDERER_BATCHTIMEOUT"
-      ;;
     F)
       MSPDIR=$OPTARG
       export MSPDIR=$MSPDIR
