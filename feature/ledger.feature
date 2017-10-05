@@ -16,9 +16,9 @@ Feature: Ledger Service
 Scenario Outline: FAB-6036-1: Test marbles02_private initMarble, readMarble, deleteMarble, transferMarble, getMarblesByRange, stateTransfer
   Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
   And I have a bootstrapped fabric network of type <type>
-  And I wait "<waitTime>" seconds
+  #And I wait "<waitTime>" seconds
   When a user deploys chaincode at path "github.com/hyperledger/fabric-test/chaincodes/marbles02_private" with args [""] with name "mycc"
-  And I wait "15" seconds
+  #And I wait "15" seconds
   Then the chaincode is deployed
 
 
@@ -193,9 +193,9 @@ Given the initial non-leader peer of "org1" comes back up
 @skip
 Scenario Outline: FAB-6036-2: Test marbles02_private : getHistoryForMarble
   Given I have a bootstrapped fabric network of type <type>
-  And I wait "<waitTime>" seconds
+  #And I wait "<waitTime>" seconds
   When a user deploys chaincode at path "github.com/hyperledger/fabric-test/chaincodes/marbles02_private" with args [""] with name "mycc"
-  And I wait "30" seconds
+  #And I wait "30" seconds
   Then the chaincode is deployed
 
   When a user invokes on the chaincode named "mycc" with args ["initMarble","marble1","red","35","tom"]
