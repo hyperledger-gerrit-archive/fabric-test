@@ -717,8 +717,7 @@ for ( i0=0; i0<top_key.length; i0++ ) {
                                         }
                                     } else if ( lvl3_key[m] == 'CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS' ) {
                                         if (dbType == 'couchdb') {
-                                            tmp = couchdbPort+v;
-                                            buff = '  ' + '    - ' + lvl3_key[m] + '=' + 'couchdb'+v +':'+ tmp + '\n';
+                                            buff = '  ' + '    - ' + lvl3_key[m] + '=' + 'couchdb'+v +':'+ couchdbPort + '\n';
                                             fs.appendFileSync(dFile, buff);
                                         }
                                     } else if ( lvl3_key[m] == 'CORE_PEER_GOSSIP_ORGLEADER' ) {
@@ -840,6 +839,11 @@ for ( i0=0; i0<top_key.length; i0++ ) {
                             buff = '  ' + '  ' + lvl2_key[k] + ': ' + '\n';
                             fs.appendFileSync(dFile, buff);
 
+                            // header 4
+                            if (dbType == 'couchdb') {
+                                buff = '  ' + '    - ' + 'couchdb'+v + '\n';
+                                fs.appendFileSync(dFile, buff);
+                            }
                             // header 4
                             for ( m=0; m< lvl2_obj.length; m++ ) {
                                 //buff = '  ' + '    - ' +lvl2_obj[m]+m + '\n';
