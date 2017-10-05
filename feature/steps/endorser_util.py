@@ -97,6 +97,16 @@ class InterfaceBase:
             assert org in context.initial_non_leader.keys(), "Error: No gossip-leader found by looking at the logs, for "+org
         return context.initial_non_leader[org]
 
+    def wait_for_deploy_completion(self, context, chaincode_container, timeout):
+        containers = subprocess.check_output(["docker ps -a"], shell=True)
+        try:
+            with common_util.Timeout(timeout):
+                while chaincode_container not in containers:
+                    containers = subprocess.check_output(["docker ps -a"], shell=True)
+                    time.sleep(1)
+        finally:
+            assert chaincode_container in containers, "The chaincode container is not running"
+
 
 class ToolInterface(InterfaceBase):
     def __init__(self, context):

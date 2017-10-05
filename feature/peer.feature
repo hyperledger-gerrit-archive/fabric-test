@@ -11,10 +11,10 @@ Feature: Peer Service
 @daily
 Scenario Outline: FAB-3505: Test chaincode example02 deploy, invoke, and query, with <type> orderer
     Given I have a bootstrapped fabric network of type <type>
-    And I wait "<waitTime>" seconds
+    #And I wait "<waitTime>" seconds
     When a user sets up a channel
     And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "mycc"
-    And I wait "15" seconds
+    #And I wait "15" seconds
     Then the chaincode is deployed
     When a user queries on the chaincode named "mycc" with args ["query","a"]
     Then a user receives a success response of 1000
@@ -40,10 +40,8 @@ Examples:
 @smoke
 Scenario Outline: FAB-1440, FAB-3861: Basic Chaincode Execution - <type> orderer type, using <database>, <security>
     Given I have a bootstrapped fabric network of type <type> using state-database <database> <security>
-    And I wait "<waitSetup>" seconds
     When a user sets up a channel
     And a user deploys chaincode
-    And I wait "15" seconds
     Then the chaincode is deployed
     When a user queries on the chaincode
     Then a user receives a success response of 100
@@ -52,28 +50,28 @@ Scenario Outline: FAB-1440, FAB-3861: Basic Chaincode Execution - <type> orderer
     And a user queries on the chaincode
     Then a user receives a success response of 95
 Examples:
-    | type  | database | waitSetup |  security   |
-    | solo  | leveldb  |     5     |  with tls   |
-    | solo  | leveldb  |     5     | without tls |
-    | solo  | couchdb  |     5     |  with tls   |
-    | solo  | couchdb  |     5     | without tls |
-    | kafka | leveldb  |    30     |  with tls   |
-    | kafka | leveldb  |    30     | without tls |
-    | kafka | couchdb  |    30     |  with tls   |
-    | kafka | couchdb  |    30     | without tls |
+    | type  | database |  security   |
+    | solo  | leveldb  |  with tls   |
+    | solo  | leveldb  | without tls |
+    | solo  | couchdb  |  with tls   |
+    | solo  | couchdb  | without tls |
+    | kafka | leveldb  |  with tls   |
+    | kafka | leveldb  | without tls |
+    | kafka | couchdb  |  with tls   |
+    | kafka | couchdb  | without tls |
 
 
 @daily
 Scenario Outline: FAB-3865: Multiple Channels Per Peer, with <type> orderer
     Given I have a bootstrapped fabric network of type <type>
-    And I wait "<waitTime>" seconds
+    #And I wait "<waitTime>" seconds
     When a user sets up a channel named "chn1"
     And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init", "a", "1000" , "b", "2000"] with name "cc1" on channel "chn1"
-    And I wait "15" seconds
+    #And I wait "15" seconds
     Then the chaincode is deployed
     When a user sets up a channel named "chn2"
     And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/map" with args ["init"] with name "cc2" on channel "chn2"
-    And I wait "15" seconds
+    #And I wait "15" seconds
     Then the chaincode is deployed
     When a user invokes on the channel "chn2" using chaincode named "cc2" with args ["put", "a", "1000"]
     And I wait "3" seconds
@@ -98,31 +96,31 @@ Examples:
 @daily
 Scenario Outline: FAB-3866: Multiple Chaincodes Per Peer, with <type> orderer
     Given I have a bootstrapped fabric network of type <type>
-    And I wait "<waitTime>" seconds
+    #And I wait "<waitTime>" seconds
     When a user sets up a channel
     And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/eventsender" with args [] with name "eventsender"
-    And I wait "15" seconds
+    #And I wait "15" seconds
     Then the chaincode is deployed
     When a user invokes on the chaincode named "eventsender" with args ["invoke", "test_event"]
     And I wait "3" seconds
     And a user queries on the chaincode named "eventsender" with args ["query"]
     Then a user receives a success response of {"NoEvents":"1"}
     When a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init", "a", "1000" , "b", "2000"] with name "example02"
-    And I wait "15" seconds
+    #And I wait "15" seconds
     Then the chaincode is deployed
     When a user invokes on the chaincode named "example02" with args ["invoke", "a", "b", "10"]
     And I wait "3" seconds
     And a user queries on the chaincode named "example02" with args ["query", "a"]
     Then a user receives a success response of 990
     When a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/map" with args ["init"] with name "map"
-    And I wait "15" seconds
+    #And I wait "15" seconds
     Then the chaincode is deployed
     When a user invokes on the chaincode named "map" with args ["put", "a", "1000"]
     And I wait "3" seconds
     And a user queries on the chaincode named "map" with args ["get", "a"]
     Then a user receives a success response of 1000
     When a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/marbles02" with args [] with name "marbles"
-    And I wait "15" seconds
+    #And I wait "15" seconds
     Then the chaincode is deployed
     When a user invokes on the chaincode named "marbles" with args ["initMarble", "marble1", "blue", "35", "tom"]
     And I wait "3" seconds
@@ -131,7 +129,7 @@ Scenario Outline: FAB-3866: Multiple Chaincodes Per Peer, with <type> orderer
     And a user queries on the chaincode named "marbles" with args ["readMarble", "marble1"]
     Then a user receives a success response of {"docType":"marble","name":"marble1","color":"blue","size":35,"owner":"jerry"}
     When a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/sleeper" with args ["1"] with name "sleeper"
-    And I wait "15" seconds
+    #And I wait "15" seconds
     Then the chaincode is deployed
     When a user invokes on the chaincode named "sleeper" with args ["put", "a", "1000", "1"]
     And I wait "3" seconds
