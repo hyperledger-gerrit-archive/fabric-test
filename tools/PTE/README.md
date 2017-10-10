@@ -410,6 +410,8 @@ The output includes network id, process id, transaction type, total transactions
         "transType": "Invoke",
         "invokeType": "Move",
         "targetPeers": "OrgAnchor",
+        "peerFailover": "TRUE",
+        "ordererFailover": "TRUE",
         "nProcPerOrg": "4",
         "nRequest": "0",
         "runDur": "600",
@@ -495,6 +497,8 @@ where:
     * **Instantiate**: instantiate chaincode
     * **QueryBlock**: query blockchain information
     * **Invoke**: invokes transaction
+* **peerFailover**: if this parameter is set to `TRUE`, the transaction will be sent the next peer in the peer list if fails to deliver to the targeted peer.  The list consists of all peers in the configuration json.
+* **ordererFailover**: if this parameter is set to `TRUE`, the transaction will be sent the next orderer in the orderer list if fails to deliver to the targeted orderer.  The list consists of all orderers in the configuration json.
 * **invokeType**: invoke transaction type. This parameter is valid only if the transType is set to invoke
     * **Move**: move transaction
     * **Query**: query transaction
