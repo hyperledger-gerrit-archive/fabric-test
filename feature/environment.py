@@ -6,14 +6,8 @@
 
 import subprocess
 import shutil
+import os
 from steps.endorser_util import CLIInterface, ToolInterface
-
-def getDockerComposeFileArgsFromYamlFile(composeYaml):
-    parts = composeYaml.split()
-    args = []
-    for part in parts:
-        args = args + ["-f"] + [part]
-    return args
 
 
 def getLogFiles(containers, fileSuffix):
@@ -56,6 +50,7 @@ def after_scenario(context, scenario):
         context.composition.decompose()
     elif hasattr(context, 'projectName'):
         shutil.rmtree("configs/%s" % context.projectName)
+
 
 # stop any running peer that could get in the way before starting the tests
 def before_all(context):
