@@ -4,7 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+
 Feature: FAB-5384 Chaincode Testing: As a user I want to be able verify that I can execute different chaincodes
+
 
 @daily
 Scenario Outline: FAB-5797: Test chaincode fabric/examples/chaincode_example02 deploy, invoke, and query with chaincode install name in all lowercase/uppercase/mixedcase chars, for <type> orderer
@@ -38,17 +40,19 @@ Scenario: FAB-4703: FAB-5663, Test chaincode calling chaincode - fabric/examples
   When a user queries on the chaincode named "myex04" with args ["query","Event", "myex02_a", "a", "channel2"]
   Then a user receives a success response of 1000
 
-@daily
-Scenario: FAB-4717: FAB-5663, chaincode-to-chaincode testing passing in channel name as a third argument to chaincode_ex05 when cc_05 and cc_02 are on different channels
-  Given I have a bootstrapped fabric network of type kafka
-  When a user sets up a channel
-  And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example05" with args ["init","sum","0"] with name "myex05"
-  When a user sets up a channel named "channel2"
-  And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "myex02_b" on channel "channel2"
-  When a user queries on the channel "channel2" using chaincode named "myex02_b" with args ["query","a"]
-  Then a user receives a success response of 1000
-  When a user queries on the chaincode named "myex05" with args ["query","myex02_b", "sum", "channel2"]
-  Then a user receives a success response of 3000
+
+  @daily
+  Scenario: FAB-4717: FAB-5663, chaincode-to-chaincode testing passing in channel name as a third argument to chaincode_ex05 when cc_05 and cc_02 are on different channels
+    Given I have a bootstrapped fabric network of type kafka
+    When a user sets up a channel
+    And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example05" with args ["init","sum","0"] with name "myex05"
+    When a user sets up a channel named "channel2"
+    And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "myex02_b" on channel "channel2"
+    When a user queries on the channel "channel2" using chaincode named "myex02_b" with args ["query","a"]
+    Then a user receives a success response of 1000
+    When a user queries on the chaincode named "myex05" with args ["query","myex02_b", "sum", "channel2"]
+    Then a user receives a success response of 3000
+
 
 @daily
 Scenario: FAB-4718: FAB-5663, chaincode-to-chaincode testing passing an empty string for channel_name when cc_05 and cc_02 are on the same channel
@@ -390,3 +394,49 @@ Examples:
     |                             path                              | language |
     | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |
     |        ../../fabric-test/chaincodes/marbles/node              | NODE     |
+
+
+@daily
+Scenario Outline: FAB-6439: Test chaincode enccc_example.go which uses encshim library extensions
+
+  #For the key we have used what is provided in README.md under enccc_example/folder
+  # ENCKEY=`openssl rand 32 -base64`
+  # IV=`openssl rand 16 -base64`
+  # SIGKEY=`openssl ecparam -name prime256v1 -genkey | tail -n5 | base64 -w0`
+
+  Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
+  And I have a bootstrapped fabric network of type <type>
+  And I wait "<waitTime>" seconds
+  When a user sets up a channel
+  And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/enccc_example" with args ["init", ""] with name "mycc"
+
+  When a user invokes on the chaincode named "mycc" with args ["ENC","PUT","key","value"] and transient args "{\\"ENCKEY\\":\\"<ENCKEY>\\"}"
+  And I wait "20" seconds
+  When a user queries on the chaincode named "mycc" with args ["ENC","GET", "key"] and transient args "{\\"ENCKEY\\":\\"<ENCKEY>\\"}"
+  And I wait "20" seconds
+  Then a user receives a success response of value
+  When a user invokes on the chaincode named "mycc" with args ["ENC","PUT","key","1234"] and transient args "{\\"ENCKEY\\":\\"<ENCKEY>\\",\\"IV\\":\\"<IV>\\"}"
+  And I wait "10" seconds
+  When a user queries on the chaincode named "mycc" with args ["ENC","GET","key"] and transient args "{\\"ENCKEY\\":\\"<ENCKEY>\\",\\"IV\\":\\"<IV>\\"}"
+  And I wait "20" seconds
+  Then a user receives a response containing 1234
+  When a user invokes on the chaincode named "mycc" with args ["SIG","PUT","key","123!"] and transient args "{\\"ENCKEY\\":\\"<ENCKEY>\\",\\"SIGKEY\\":\\"<SIGKEY>\\"}"
+  And I wait "10" seconds
+  When a user queries on the chaincode named "mycc" with args ["SIG","GET","key"] and transient args "{\\"ENCKEY\\":\\"<ENCKEY>\\",\\"SIGKEY\\":\\"<SIGKEY>\\"}"
+  And I wait "20" seconds
+  Then a user receives a response containing 123!
+  When a user invokes on the chaincode named "mycc" with args ["ENC","PUT","key1","value1"] and transient args "{\\"ENCKEY\\":\\"<ENCKEY>\\"}"
+  And I wait "20" seconds
+  When a user invokes on the chaincode named "mycc" with args ["ENC","PUT","key2","value2"] and transient args "{\\"ENCKEY\\":\\"<ENCKEY>\\"}"
+  And I wait "20" seconds
+  When a user queries on the chaincode named "mycc" with args ["RANGE"] and transient args "{\\"ENCKEY\\":\\"<ENCKEY>\\"}"
+  And I wait "20" seconds
+  Then a user receives a response containing value 
+  And a user receives a response containing key1 
+  And a user receives a response containing key2 
+
+
+Examples:
+    | type  | waitTime |         ENCKEY                                 |            IV              |                           SIGKEY                                                                                                                                                                                                                                                                                 |
+    | solo  |    5     |   L6P9jLWR6d6E1KdGJBsUpzEm5QS6uVlS4onsteB+KaQ= |  +4DANc5uYLTnsH6Yy7v32g==  | LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSUhYRkd1eWxyTlQ1WUdtd1E0MVBWeTJqVlZrcXhMMTdBN1pSM0lDL1RGakJvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFVHdWSEhrbklmUnUyZ3YwWU50R210akpDSHJzdThhekZ1OWZvUy9raUlPN2Q2aWhTWWRjdgpHbEoyNlF0WmtTTlhWNkJDLy91Z25ycGN3bldTdERsc1lRPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo= |
+    | kafka |    60    |   L6P9jLWR6d6E1KdGJBsUpzEm5QS6uVlS4onsteB+KaQ= |  +4DANc5uYLTnsH6Yy7v32g==  | LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSUhYRkd1eWxyTlQ1WUdtd1E0MVBWeTJqVlZrcXhMMTdBN1pSM0lDL1RGakJvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFVHdWSEhrbklmUnUyZ3YwWU50R210akpDSHJzdThhekZ1OWZvUy9raUlPN2Q2aWhTWWRjdgpHbEoyNlF0WmtTTlhWNkJDLy91Z25ycGN3bldTdERsc1lRPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo= |
