@@ -56,6 +56,12 @@ The following repositories are dependencies and are included as submodules at th
 .. _hyperledger-fabric-ca: https://github.com/hyperledger/fabric-ca
 .. _cello: https://github.com/hyperledger/cello
 
+.. _Chaincode Vendoring:
+Run the following two commands:
+      `govendor init`
+      `govendor add +external`
+from the chaincodes folder for any chaincode(go programs) that imports packages, other than from shim or protos folder. 
+
 Caveats and Gotchas
 -------------------
 This framework uses the `signal`_ package, which currently only works well in NIX environments.

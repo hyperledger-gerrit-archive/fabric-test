@@ -56,6 +56,8 @@ def before_all(context):
     if context.config.userdata.get("network", None) is not None:
         context.network = context.config.userdata["network"]
         context.interface = ToolInterface(context)
+    subprocess.call("govendor init", cwd="../fabric/examples/chaincode/go/enccc_example", shell=True)
+    subprocess.call("govendor add +external", cwd="../fabric/examples/chaincode/go/enccc_example", shell=True)
 
 # stop any running peer that could get in the way before starting the tests
 def after_all(context):
