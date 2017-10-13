@@ -47,6 +47,11 @@ Ensure that you have Docker for `Linux`_, `Mac`_ or `Windows`_ 1.12 or higher pr
 
 You can install Behave and additional packages using the ``./scripts/install_behave.sh`` (useful for linux distros that use the apt packaging manager). This script installs additional packages into your OS environment.
 
+::
+
+    $ cd /path/to/fabric-test/feature; ./scripts/install_behave.sh
+
+
 The following repositories are dependencies and are included as submodules at the designated locations
     * `hyperledger-fabric`_: /path/to/fabric-test/fabric
     * `hyperledger-fabric-ca`_: /path/to/fabric-test/fabric-ca
@@ -55,6 +60,13 @@ The following repositories are dependencies and are included as submodules at th
 .. _hyperledger-fabric: https://github.com/hyperledger/fabric
 .. _hyperledger-fabric-ca: https://github.com/hyperledger/fabric-ca
 .. _cello: https://github.com/hyperledger/cello
+
+.. _Chaincode Vendoring:
+The instructions in ``/path/to/fabric-test/fabric/examples/chaincode/go/enccc_example/README.md`` indicate the the following commands must be executed in order to use the chaincode:
+      `govendor init`
+      `govendor add +external`
+from the chaincodes folder for any chaincode(go programs) that imports packages, other than from shim or protos folder. 
+
 
 Caveats and Gotchas
 -------------------
