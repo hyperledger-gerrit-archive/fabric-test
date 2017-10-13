@@ -56,6 +56,19 @@ The following repositories are dependencies and are included as submodules at th
 .. _hyperledger-fabric-ca: https://github.com/hyperledger/fabric-ca
 .. _cello: https://github.com/hyperledger/cello
 
+.. _Chaincode Vendoring:
+Run the following two commands:
+      `govendor init`
+      `govendor add +external`
+from the chaincodes folder for any chaincode(go programs) that imports packages, other than from shim or protos folder. 
+
+The install_behave.sh script will perform the installation prerequisites including the chaincode vendoring directory. Be sure toexecute the script from the `feature` directory
+
+::
+
+    $ cd /path/to/fabric-test/feature; ./scripts/install_behave.sh
+
+
 Caveats and Gotchas
 -------------------
 This framework uses the `signal`_ package, which currently only works well in NIX environments.
