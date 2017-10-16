@@ -1014,6 +1014,7 @@ function eventRegisterBlock() {
                             logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterBlock] unreceived number: %d, tx_id: ', Nid, channelName, org, pid, txidList.getSize());
                             txidList.printList();
                         }
+                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterBlock] pte-execRequest:completed', Nid, channelName, org, pid);
                         evtDisconnect();
                     }
                 }
@@ -1041,7 +1042,6 @@ function eventRegister(tx, cb) {
     eventHubs.forEach((eh) => {
         let txPromise = new Promise((resolve, reject) => {
             let handle = setTimeout(function(){eh.unregisterTxEvent(deployId);
-                //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] txidList size: %d, timeout tx_id: %s ', Nid, channelName, org, pid, txidList.getSize(), deployId.toString());
             evtTimeoutCnt++;
             evtCount = evtRcv + evtTimeoutCnt;
             logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] The invoke transaction (%s) timeout (%d).', Nid, channelName, org, pid, deployId.toString(), evtTimeoutCnt);
@@ -1052,6 +1052,7 @@ function eventRegister(tx, cb) {
                     logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] unreceived number: %d, tx_id: ', Nid, channelName, org, pid, txidList.getSize());
                     txidList.printList();
                 }
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] timeout:pte-execRequest:completed', Nid, channelName, org, pid);
             }
             evtDisconnect();resolve()}, evtTimeout);
 
@@ -1059,7 +1060,6 @@ function eventRegister(tx, cb) {
                 clearTimeout(handle);
                 eh.unregisterTxEvent(deployId);
                 txidList.removeNode(deployId.toString());
-                //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] txidList size: %d, remove tx_id: %s ', Nid, channelName, org, pid, txidList.getSize(), deployId.toString());
                 evtRcv++;
 
                 if (code !== 'VALID') {
@@ -1078,6 +1078,7 @@ function eventRegister(tx, cb) {
                             logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] unreceived number: %d, tx_id: ', Nid, channelName, org, pid, txidList.getSize());
                             txidList.printList()
                         }
+                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] pte-execRequest:completed', Nid, channelName, org, pid);
                         evtDisconnect();
                         resolve();
                     }
@@ -1548,6 +1549,7 @@ function invoke_query_const(freq) {
                     logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_const] query result:', Nid, channelName, org, pid, response_payloads[j].toString('utf8'));
                 }
                 logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_const] completed %d %s(%s) in %d ms, timestamp: start %d end %d', Nid, channelName, org, pid, inv_q, transType, invokeType, tCurr-tLocal, tLocal, tCurr);
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_const] pte-execRequest:completed', Nid, channelName, org, pid);
                 process.exit();
             }
         },
@@ -1928,6 +1930,7 @@ function invoke_query_burst() {
                     logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_burst] query result:', Nid, channelName, org, pid, response_payloads[j].toString('utf8'));
                 }
                 logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_burst] completed %d %s(%s) in %d ms, timestamp: start %d end %d', Nid, channelName, org, pid, inv_q, transType, invokeType, tCurr-tLocal, tLocal, tCurr);
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_burst] pte-execRequest:completed', Nid, channelName, org, pid);
                 //return;
             }
         },
