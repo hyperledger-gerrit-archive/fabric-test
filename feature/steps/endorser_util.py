@@ -76,16 +76,22 @@ class InterfaceBase:
     def get_initial_leader(self, context, org):
         if not hasattr(context, 'initial_leader'):
             context.initial_leader={}
-        if org not in context.initial_leader:
+        num_attempt=0
+        max_num_attempt=4
+        wait_time=10
+        while (org not in context.initial_leader) and (num_attempt<max_num_attempt):
             for container in self.get_peers(context):
                 if ((org in container) and common_util.is_in_log([container], "Becoming a leader")):
                     context.initial_leader[org]=container
                     print("initial leader is "+context.initial_leader[org])
                     return context.initial_leader[org]
-            assert org in context.initial_leader.keys(), "Error: No gossip-leader found by looking at the logs, for "+org
+            ++num_attempt
+            time.sleep(wait_time)
+        assert org in context.initial_leader, "Error: After " + (num_attempt*wait_time) + " seconds, no gossip-leader found by looking at the logs, for "+org
         return context.initial_leader[org]
 
     def get_initial_non_leader(self, context, org):
+        self.get_initial_leader(context, org)
         if not hasattr(context, 'initial_non_leader'):
             context.initial_non_leader={}
         if org not in context.initial_non_leader:
@@ -94,7 +100,7 @@ class InterfaceBase:
                     context.initial_non_leader[org]=container
                     print("initial non-leader is "+context.initial_non_leader[org])
                     return context.initial_non_leader[org]
-            assert org in context.initial_non_leader.keys(), "Error: No gossip-leader found by looking at the logs, for "+org
+        assert org in context.initial_leader, "Error: No gossip-non-leader found by looking at the logs, for "+org
         return context.initial_non_leader[org]
 
     def wait_for_deploy_completion(self, context, chaincode_container, timeout):

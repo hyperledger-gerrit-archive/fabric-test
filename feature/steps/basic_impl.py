@@ -235,7 +235,13 @@ def step_impl(context):
 @then(u'the initial non-leader peer of "{org}" has become the leader')
 def step_impl(context, org):
     assert hasattr(context, 'initial_non_leader'), "Error: initial non-leader was not set previously. This statement works only with pre-set initial non-leader."
-    assert common_util.is_in_log([context.initial_non_leader[org]], "Becoming a leader"), "Error: initial non-leader peer has not become leader."
+    max_waittime=30
+    try:
+        with common_util.Timeout(max_waittime):
+            while not common_util.is_in_log([context.initial_non_leader[org]], "Becoming a leader"):
+                time.sleep(1)
+    finally:
+        assert common_util.is_in_log([context.initial_non_leader[org]], "Becoming a leader"), "The initial non-leader peer has not become leader."
 
 @then(u'the initial non-leader peer of "{org}" has not become the leader')
 def step_impl(context, org):
