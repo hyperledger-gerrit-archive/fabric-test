@@ -314,6 +314,21 @@ def step_impl(context, numInvokes, args):
 def step_impl(context, numInvokes, name, args):
     invokes_impl(context, numInvokes, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com")
 
+@when(u'a user invokes marble {startNum:d} to {endNum:d} with the last {numShare:d} of them with owner "{owner}", color "{color}" and size "{size}"')
+def step_impl(context, startNum, endNum, numShare, owner, color, size):
+    for x in range(startNum, endNum+1-numShare):
+        args="[\"initMarble\",\"marble"+str(x)+"\",\"blue\",\"35\",\"jane\"]"
+        invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, "mycc", args, "peer0.org1.example.com")
+    for x in range(endNum+1-numShare, endNum+1):
+        args="[\"initMarble\",\"marble"+str(x)+"\",\""+color+"\",\""+size+"\",\""+owner+"\"]"
+        invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, "mycc", args, "peer0.org1.example.com")
+
+@when(u'a user invokes {numInvokes:d} times using chaincode named "{name}" with incremental args')
+def step_impl(context, numInvokes, name):
+    for x in range(0, numInvokes):
+        args="[\"initMarble\",\"marble"+str(x+2)+"\",\"blue\",\"35\",\"tom\"]"
+        invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com")
+
 @when(u'a user invokes on the channel "{channel}" using chaincode named "{name}" with args {args} on "{peer}"')
 def step_impl(context, channel, name, args, peer):
     invokes_impl(context, 1, channel, name, args, peer)
