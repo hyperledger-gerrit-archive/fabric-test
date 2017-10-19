@@ -92,6 +92,7 @@
                  "CORE_PEER_PROFILE_ENABLED": "true",
                  "CORE_PEER_GOSSIP_USELEADERELECTION": "true",
                  "CORE_PEER_GOSSIP_ORGLEADER": "false",
+                 "CORE_PEER_ADDRESS": "peer0:7051",
                  "CORE_PEER_ID": "peer",
                  "CORE_PEER_GOSSIP_BOOTSTRAP": "peer0:5005",
                  "CORE_PEER_MSPCONFIGPATH": "/var/hyperledger/msp/peer0/localMspConfig",
