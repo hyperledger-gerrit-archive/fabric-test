@@ -55,10 +55,21 @@ Replace  <LFID> with your Linux Foundaion Account ID.
 ```
 
   cd fabric-test
-  scp -p -P 29418 <LFID>@gerrit.hyperledger.org:hooks/commit-msg fabric/.git/hooks/
+  scp -p -P 29418 <LFID>@gerrit.hyperledger.org:hooks/commit-msg .git/hooks/
 
 ```
 
+Add git hook to set  signed-off-by automatically to all commits.
+Open git/hooks/commit-msg, add the commands below after the line "add_ChangeId": 
+
+
+```
+
+  SOB=$(git var GIT_AUTHOR_IDENT | sed -n 's/^\(.*>\).*$/Signed-off-by: \1/p')
+  grep -qs "^$SOB" "$1" || echo "$SOB" >> "$1"
+
+
+```
 
 #### Install and configure git review
 
