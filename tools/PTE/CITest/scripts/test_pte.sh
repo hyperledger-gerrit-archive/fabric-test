@@ -58,17 +58,19 @@ else
     echo "[$0] ccDir $ccDir"
     tCurr=`date +%m%d%H%M%S`
     for cc in $ccDir; do
-        echo "[$0] cc: $cc"
-        cd $CIDir/$TCase/$cc
-        ptemgr=`ls PTEMgr*txt`
-        cd $PTEDir
-        for pte in $ptemgr; do
-            echo "*************** [$0] executing: ***************"
-            echo "    ./pte_mgr.sh CITest/$TCase/$cc/$pte > $LogsDir/$pte$tCurr.log"
-            echo "    ./pte_mgr.sh CITest/$TCase/$cc/$pte > $LogsDir/$pte$tCurr.log" > $LogsDir/$pte$tCurr.log
-            sleep 20s
-            ./pte_mgr.sh CITest/$TCase/$cc/$pte $TStart >> $LogsDir/$pte$tCurr.log 2>&1
-        done
+        if [ $cc != "test_nl.sh" ] && [ $cc != "preconfig" ]; then
+            echo "[$0] cc: $cc"
+            cd $CIDir/$TCase/$cc
+            ptemgr=`ls PTEMgr*txt`
+            cd $PTEDir
+            for pte in $ptemgr; do
+                echo "*************** [$0] executing: ***************"
+                echo "    ./pte_mgr.sh CITest/$TCase/$cc/$pte > $LogsDir/$pte$tCurr.log"
+                echo "    ./pte_mgr.sh CITest/$TCase/$cc/$pte > $LogsDir/$pte$tCurr.log" > $LogsDir/$pte$tCurr.log
+                sleep 20s
+                ./pte_mgr.sh CITest/$TCase/$cc/$pte $TStart >> $LogsDir/$pte$tCurr.log 2>&1
+            done
+        fi
     done
     cd $PTEDir
 fi
