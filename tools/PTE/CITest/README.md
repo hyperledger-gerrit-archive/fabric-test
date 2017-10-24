@@ -24,6 +24,7 @@ The command is located in `PTE/CITest/scripts`
         ./test_driver.sh [opt] [values]
                 -e: environment setup, default=no
                 -n: create network, default=no
+                -m: directory where test_nl.sh to be used to create network, default=scripts
                 -p: preconfigure creation/join channels, default=no
                 -s: synchup peer ledgers, recommended when network brought up, default=no
                 -c: chaincode to be installed and instantiated [all|chaincode], default=no
@@ -41,6 +42,14 @@ The command is located in `PTE/CITest/scripts`
         marbles-i-TLS: marbles chaincode, 4 processes X 1000 invokes, constant mode, TLS
         marbles-q-TLS: marbles chaincode, 4 processes X 1000 queries, constant mode, TLS
         robust-i-TLS: robustness: 4 processes X invokes, constant mode, 1k payload, TLS
+        FAB-3833-2i: 2 processes X 10000 invokes, TLS, couchDB
+        FAB-3810-2q: 2 processes X 10000 queries, TLS, couchDB
+        FAB-3832-4i: 4 processes X 10000 invokes, TLS, couchDB
+        FAB-3834-4q: 4 processes X 10000 queries, TLS, couchDB
+        FAB-3808-2i: 2 processes X 10000 invokes, TLS
+        FAB-3811-2q: 2 processes X 10000 queries, TLS
+        FAB-3807-4i: 4 processes X 10000 invokes, TLS
+        FAB-3834-4q: 4 processes X 10000 queries, TLS
 
 
 * ### Examples
@@ -61,6 +70,10 @@ The command is located in `PTE/CITest/scripts`
     - The following command will execute test cases: FAB-3989-4i-TLS, FAB-3989-4q-TLS, and robust-i-TLS.
 
             ./test_driver.sh -t FAB-3989-4i-TLS FAB-3989-4q-TLS robust-i-TLS
+
+    - The following command will create a network using FAB-3808-2i/test_nl.sh, create/join channels, install/instantiate samplecc chaincode, and execute test case FAB-3808-2i
+
+            ./test_driver.sh -n -m FAB-3808-2i -p -c samplecc -t FAB-3808-2i
 
 
 * ### Network
