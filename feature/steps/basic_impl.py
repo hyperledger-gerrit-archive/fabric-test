@@ -146,6 +146,10 @@ def step_impl(context):
 def step_impl(context):
     bootstrapped_impl(context, "solo", "leveldb", False)
 
+@when(u'I vendor go packages for chaincode at "{path}"')
+def step_impl(context, path):
+    print(subprocess.check_output(["govendor init && govendor add +external"], cwd=path, shell=True))
+
 @when(u'the initial leader peer of "{org}" is taken down by doing a {takeDownType}')
 def step_impl(context, org, takeDownType):
     bringdown_impl(context, context.interface.get_initial_leader(context, org), takeDownType)
