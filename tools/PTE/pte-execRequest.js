@@ -1014,7 +1014,8 @@ function eventRegisterBlock() {
                             logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterBlock] unreceived number: %d, tx_id: ', Nid, channelName, org, pid, txidList.getSize());
                             txidList.printList();
                         }
-                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterBlock] pte-exec:completed', Nid, channelName, org, pid);
+                        //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterBlock] pte-exec:completed', Nid, channelName, org, pid);
+                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterBlock] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, txid size: %d, Throughput=%d TPS', Nid, channelName, org, pid,  evtRcvB, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, txidList.getSize(),evtRcvB/(tCurr-tLocal)*1000);
                         evtDisconnect();
                     }
                 }
@@ -1052,7 +1053,9 @@ function eventRegister(tx, cb) {
                     logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] unreceived number: %d, tx_id: ', Nid, channelName, org, pid, txidList.getSize());
                     txidList.printList();
                 }
-                logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] pte-exec:completed:timeout', Nid, channelName, org, pid);
+                //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] pte-exec:completed:timeout', Nid, channelName, org, pid);
+                //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] completed                Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d', Nid, channelName, org, pid,  evtRcv, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt);
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d TIMEOUT eventRegister] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, txid size: %d, Throughput=%d TPS', Nid, channelName, org, pid,  evtRcv, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, txidList.getSize(),evtRcv/(tCurr-tLocal)*1000);
             }
             evtDisconnect();resolve()}, evtTimeout);
 
@@ -1078,7 +1081,8 @@ function eventRegister(tx, cb) {
                             logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] unreceived number: %d, tx_id: ', Nid, channelName, org, pid, txidList.getSize());
                             txidList.printList()
                         }
-                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] pte-exec:completed', Nid, channelName, org, pid);
+                        //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] pte-exec:completed', Nid, channelName, org, pid);
+                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d Valid eventRegister] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, txid size: %d, Throughput=%d TPS', Nid, channelName, org, pid,  evtRcv, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, txidList.getSize(),evtRcv/(tCurr-tLocal)*1000);
                         evtDisconnect();
                         resolve();
                     }
@@ -1267,12 +1271,12 @@ function invoke_query_simple(freq) {
                 tCurr = new Date().getTime();
                 if (response_payloads) {
                     for(let j = 0; j < response_payloads.length; j++) {
-                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_simple] query result:', Nid, channelName, org, pid, response_payloads[j].toString('utf8'));
+                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_simple] query result[%d]:', Nid, channelName, org, pid, j,response_payloads[j].toString('utf8'));
                     }
                 } else {
                     logger.debug('response_payloads is null');
                 }
-                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_simple] completed %d %s(%s) in %d ms, timestamp: start %d end %d', Nid, channelName, org, pid, inv_q, transType, invokeType, tCurr-tLocal, tLocal, tCurr);
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_simple] pte-exec:completed %d transcation: %s(%s) in %d ms, timestamp: start %d end %d,Throughput=%d TPS', Nid, channelName, org, pid, inv_q, transType, invokeType, tCurr-tLocal, tLocal, tCurr,inv_q/(tCurr-tLocal)*1000);
                 process.exit();
             }
         },
@@ -1549,7 +1553,7 @@ function invoke_query_const(freq) {
                     logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_const] query result:', Nid, channelName, org, pid, response_payloads[j].toString('utf8'));
                 }
                 logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_const] completed %d %s(%s) in %d ms, timestamp: start %d end %d', Nid, channelName, org, pid, inv_q, transType, invokeType, tCurr-tLocal, tLocal, tCurr);
-                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_const] pte-exec:completed', Nid, channelName, org, pid);
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_const] pte-exec:completed %d transcation %s(%s) in %d ms, timestamp: start %d end %d,Throughput=%d TPS', Nid, channelName, org, pid, inv_q, transType, invokeType, tCurr-tLocal, tLocal, tCurr,inv_q/(tCurr-tLocal)*1000);
                 process.exit();
             }
         },
@@ -1930,7 +1934,8 @@ function invoke_query_burst() {
                     logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_burst] query result:', Nid, channelName, org, pid, response_payloads[j].toString('utf8'));
                 }
                 logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_burst] completed %d %s(%s) in %d ms, timestamp: start %d end %d', Nid, channelName, org, pid, inv_q, transType, invokeType, tCurr-tLocal, tLocal, tCurr);
-                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_burst] pte-exec:completed', Nid, channelName, org, pid);
+                //logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_burst] pte-exec:completed', Nid, channelName, org, pid);
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_burst] pte-exec:completed %d transcation %s(%s) in %d ms, timestamp: start %d end %d,Throughput=%d TPS', Nid, channelName, org, pid, inv_q, transType, invokeType, tCurr-tLocal, tLocal, tCurr,inv_q/(tCurr-tLocal)*1000);
                 //return;
             }
         },
