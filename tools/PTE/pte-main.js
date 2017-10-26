@@ -130,6 +130,8 @@ var eBlock = 0;
 var qOrg ;
 var qPeer ;
 
+var testSummaryArray=[];
+
 function printChainInfo(channel) {
     logger.info('[printChainInfo] channel name: ', channel.getName());
     logger.info('[printChainInfo] orderers: ', channel.getOrderers());
@@ -1202,11 +1204,33 @@ function performance_main() {
 
                 workerProcess.stdout.on('data', function (data) {
                     logger.info('stdout: ' + data);
-                    if (data.indexOf('pte-exec:completed') > -1) {
+                   // if (data.indexOf('pte-exec:completed') > -1) {
+                    if (data.indexOf('completed Rcvd(sent)') > -1) {
+
+                        logger.info('stdout: ' + data);
                         procDone = procDone+1;
                         logger.info('[performance_main] procDone: ', procDone);
+                        testSummaryArray.push(data);
                         if ( procDone === nProcPerOrg*channelOrgName.length ) {
-                            logger.info('[performance_main] pte-main:completed');
+                            logger.info('[performance_main] pte-main:completed:');
+                            var summaryIndex;
+                            var totalTrans=0;
+                            var maxDuration=0;
+                            var totalTimeout=0;
+                            for (summaryIndex in testSummaryArray ) {
+                                var rawText=testSummaryArray[summaryIndex].toString();
+                                logger.info('Test Summary: Proc[%d]: %s',summaryIndex, rawText.substring(rawText.indexOf("exec]:")+6));
+                                var transNum= parseInt(rawText.substring(rawText.indexOf("(sent)=")+7,rawText.indexOf("(",rawText.indexOf("(sent)=")+7)).trim());
+                                totalTrans=totalTrans+transNum;
+                                var tempTimeoutNum=parseInt(rawText.substring(rawText.indexOf("timeout:")+8).trim());
+                                totalTimeout=totalTimeout+tempTimeoutNum;
+                                var tempDur=parseInt(rawText.substring(rawText.indexOf(") in")+4,rawText.indexOf("ms")).trim());
+                                if (tempDur >maxDuration ) {
+                                    maxDuration= tempDur;
+                                }
+                            }
+                            var finalTPS=totalTrans*1000/maxDuration;
+                            logger.info("Test Summary: Totoal %d process run completed, total transaction=%d, timeout transcation=%d, the max duration is %d ms, TPS=%d", procDone,totalTrans,totalTimeout,maxDuration,finalTPS.toFixed(2));
                         }
                     }
                 });
