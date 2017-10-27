@@ -7,7 +7,6 @@
 Feature: Fabric-CA Service
     As a user I want to be able to use the Fabric-CA for generation of certificates
 
-#@doNotDecompose
 @interop
 @daily
 Scenario Outline: FAB-6489: Interoperability Test using <type> based orderer
@@ -19,6 +18,7 @@ Scenario Outline: FAB-6489: Interoperability Test using <type> based orderer
          |   scott   | org2.example.com |  th3r3   | member |   x509   |
          |   adnan   | org1.example.com |  wh@tsup | member |   x509   |
     When an admin sets up a channel
+    #When a user "latitia" sets up a channel
     And an admin deploys chaincode at path "<path>" with args ["init","a","1000","b","2000"] with name "mycc" with language "<language>"
     And I wait "5" seconds
     When a user "adnan" queries on the chaincode with args ["query","a"]
@@ -34,6 +34,6 @@ Scenario Outline: FAB-6489: Interoperability Test using <type> based orderer
     Then a user receives a success response of 980
 Examples:
     | type  | database | interface  |                          path                                     | language |
-    | solo  | leveldb  | NodeJS SDK | github.com/hyperledger/fabric/examples/chaincode/go/example02/cmd |  GOLANG  |
+    | solo  | leveldb  |  Java SDK  | github.com/hyperledger/fabric/examples/chaincode/go/example02/cmd |  GOLANG  |
     | kafka | couchdb  |    CLI     |        ../../fabric-test/chaincodes/example02/node                |   NODE   |
     | solo  | leveldb  | NodeJS SDK |   ../../fabric-samples/chaincode/chaincode_example02/java         |   JAVA   |
