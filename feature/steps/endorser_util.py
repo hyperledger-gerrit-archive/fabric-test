@@ -74,6 +74,9 @@ class InterfaceBase:
         chaincode_container = "{0}-{1}-{2}-0".format(context.projectName, peer, context.chaincode['name'])
         context.interface.wait_for_deploy_completion(context, chaincode_container, timeout)
 
+        self.install_chaincode(context, chaincode, peers, user=user)
+        self.instantiate_chaincode(context, chaincode, containers, user=user)
+
     def channel_block_present(self, context, containers, channelId):
         ret = False
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
@@ -291,7 +294,7 @@ class SDKInterface(InterfaceBase):
         print("Invoke: {}".format(result))
         return {peer: result}
 
-    def query_chaincode(self, context, chaincode, peer, channelId, targs, user="User1"):
+    def query_chaincode(self, context, chaincode, peer, channelId=TEST_CHANNEL_ID, targs="", user="User1"):
         reformatted = self.reformat_chaincode(chaincode, channelId)
         peerParts = peer.split('.')
         org = '.'.join(peerParts[1:])
@@ -526,6 +529,53 @@ class CLIInterface(InterfaceBase):
         print("Query Exec command: {0}".format(" ".join(setup+command)))
         result = self.retry(context, result, peer, setup, command)
         return result
+
+    def registerIdentities(self, context, nodes):
+        for node in nodes:
+            # fabric-ca-client enroll -d -u https://$CA_ADMIN_USER_PASS@$CA_HOST:7054
+            # fabric-ca-client register -d --id.name $ORDERER_NAME --id.secret $ORDERER_PASS
+            url = context.composition.getEnvFromContainer(node, 'ENROLLMENT_URL')
+            output = context.composition.docker_exec(["fabric-ca-client enroll -d -u {}".format(url)], [node])
+            print("Output Enroll: {}".format(output))
+            userpass = context.composition.getEnvFromContainer(node, 'BOOTSTRAP_USER_PASS').split(":")
+            output = context.composition.docker_exec(["fabric-ca-client register -d --id.name {0} --id.secret {1}".format(userpass[0], userpass[1])], [node])
+            print("Output register: {}".format(output))
+
+#    def registerUsers(self, context):
+#        for user in context.users.keys():
+#            #fabric-ca-client register -d --id.name $ADMIN_NAME --id.secret $ADMIN_PASS
+#            org = context.users[user]['organization']
+#            passwd = context.users[user]['password']
+#            role = context.users[user]['role']
+#            fca = 'ca.{}'.format(org)
+#            #peer = 'peer0.{}.example.com'.format(org)
+#            command = "fabric-ca-client register -d --id.name {0} --id.secret {1}".format(user, passwd)
+#            if role.lower() == u'admin':
+#                command += '--id.attrs "hf.admin=true:ecert"'
+#            output = context.composition.docker_exec([command], [fca])
+#            print("user register: {}".format(output))
+
+    def enrollUsersFabricCA(self, context):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        for user in context.users.keys():
+            org = context.users[user]['organization']
+            passwd = context.users[user]['password']
+            role = context.users[user]['role']
+            fca = 'ca.{}'.format(org)
+            peer = 'peer0.{}.example.com'.format(org)
+
+            # Register user first
+            command = "fabric-ca-client register -d --id.name {0} --id.secret {1}".format(user, passwd)
+            if role.lower() == u'admin':
+                command += '--id.attrs "hf.admin=true:ecert"'
+            output = context.composition.docker_exec([command], [fca])
+            print("user register: {}".format(output))
+
+            # Now enroll user
+            command = "fabric-ca-client enroll -d -u $${ENROLLMENT_URL} --enrollment.profile tls --id.name {0} --id.secret {1} --id.affiliation {2} -M {3}/peerOrganizations/{2}/users/{0}@{2}/msp".format(user, passwd, org, configDir)
+            #output = context.composition.docker_exec(["fabric-ca-client enroll -d -u https://{0}:{1}@{2}:7054".format(user, passwd, fca)], [peer])
+            output = context.composition.docker_exec([command], [peer])
+            print("Output: {}".format(output))
 
     def wait_for_deploy_completion(self, context, chaincode_container, timeout):
         containers = subprocess.check_output(["docker ps -a"], shell=True)
