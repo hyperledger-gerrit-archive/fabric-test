@@ -32,6 +32,14 @@ def step_impl(context, channelId):
 def step_impl(context):
     setup_channel_impl(context, context.interface.TEST_CHANNEL_ID, "orderer0.example.com")
 
+@when(u'a user "{user}" sets up a channel')
+def step_impl(context, user):
+    setup_channel_impl(context, context.interface.TEST_CHANNEL_ID, "orderer0.example.com", user=user)
+
+@when(u'a user "{user}" sets up a channel named "{channelId}"')
+def step_impl(context, user, channelId):
+    setup_channel_impl(context, channelId, "orderer0.example.com", user=user)
+
 @when(u'a user deploys chaincode at path "{path}" with args {args} with name "{name}" with language "{language}" to "{peer}" on channel "{channel}" within {timeout:d} seconds')
 def deploy_impl(context, path, args, name, language, peer, channel, timeout=300, username="Admin"):
     context.interface.deploy_chaincode(context, path, args, name, language, peer, username, timeout, channel)
@@ -217,7 +225,7 @@ def step_impl(context):
                 "mycc",
                 "GOLANG",
                 "peer0.org1.example.com")
-    context.interface.install_chaincode(context, [peer], "Admin")
+    context.interface.install_chaincode(context, ["peer0.org1.example.com"], "Admin")
 
 @when(u'a user instantiates the chaincode on "{peer}"')
 def step_impl(context, peer, username="Admin", timeout=120):
@@ -382,9 +390,9 @@ def step_impl(context, name, args, org):
 def step_impl(context, name, args, org):
     invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, context.interface.get_initial_non_leader(context, org))
 
-@when(u'a user invokes on the chaincode named "{name}" with args {args} on {peer}')
-def step_impl(context, name, args, peer):
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, peer)
+#@when(u'a user invokes on the chaincode named "{name}" with args {args} on {peer}')
+#def step_impl(context, name, args, peer):
+#    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, peer)
 
 @when(u'a user invokes on the chaincode named "{name}" with args {args}')
 def step_impl(context, name, args):
