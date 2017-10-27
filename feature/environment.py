@@ -50,6 +50,15 @@ def after_scenario(context, scenario):
         chaincodeContainers = subprocess.check_output(["docker",  "ps", "-f",  "name=-peer", "--format", "{{.Names}}"])
         getLogFiles(chaincodeContainers.splitlines(), fileSuffix)
 
+
+    issuercert = "configs/%s/ordererOrganizations/example.com/IssuerRevocationPublicKey" % context.projectName
+    info = os.stat(issuercert)
+    os.chmod(issuercert, info.st_mode | stat.S_IWRITE)
+    issuercert = "configs/%s/ordererOrganizations/example.com/IssuerPublicKey" % context.projectName
+    info = os.stat(issuercert)
+    os.chmod(issuercert, info.st_mode | stat.S_IWRITE)
+
+
     if 'doNotDecompose' in scenario.tags:
         if 'compose_yaml' in context:
             print("Not going to decompose after scenario {0}, with yaml '{1}'".format(scenario.name,
