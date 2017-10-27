@@ -46,6 +46,7 @@ pip install google
 pip install protobuf
 pip install pyyaml
 pip install pykafka
+pip install pyopenssl
 pip install requests
 pip install pyexecjs
 pip install cython
@@ -57,7 +58,11 @@ pip install psutil
 apt-get install --yes tcl tclx tcllib
 
 # Install NPM for the SDK
-apt-get install --yes npm
+#apt-get install --yes npm
+#curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+curl -sL https://deb.nodesource.com/setup_9.x | bash -
+apt-get install --yes nodejs
+npm install npm@latest -g
 
 # Verify that go is installed
 GO_VERSION=$(go version || /bin/true)
