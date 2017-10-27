@@ -161,8 +161,8 @@ class InterfaceBase:
     def addIdemixIdentities(self, context, user, passwd, role, org):
         return self.cli.addIdemixIdentities(context, user, passwd, role, org)
 
-    def enrollCAadmin(self, context, nodes):
-        return self.cli.enrollCAadmin(context, nodes)
+    def enrollCAadmin(self, context, node):
+        return self.cli.enrollCAadmin(context, node)
 
 
 class ToolInterface(InterfaceBase):
@@ -256,6 +256,8 @@ class SDKInterface(InterfaceBase):
 
         if language.lower() == "nodejs":
             self.initializeNode()
+        elif language.lower() == "java":
+            self.initializeJava()
         else:
             raise "Language {} is not supported in the test framework yet.".format(language)
 
@@ -268,11 +270,22 @@ class SDKInterface(InterfaceBase):
             grpcType = "grpcs"
         networkConfigFile = "{0}/configs/{1}/network-config.json".format(os.path.abspath('.'),
                                                                          context.projectName)
+
+        with open("{1}/configs/{0}/ordererOrganizations/example.com/ca/ca.example.com-cert.pem".format(context.projectName, os.path.abspath('.')), "r") as fd:
+              certs = fd.read().replace("\n", "\\r\\n")
+
+        for org in ["org1.example.com", "org2.example.com"]:
+            with open("{2}/configs/{0}/peerOrganizations/{1}/ca/ca.{1}-cert.pem".format(context.projectName, org, os.path.abspath('.')), "r") as fd:
+                  certs += fd.read().replace("\n", "\\r\\n")
+
+        print("CACerts: {}".format(str(certs)))
+
         with open(networkConfigFile, "w+") as fd:
             structure = {"config": "{0}/configs/{1}".format(os.path.abspath('.'),
                                                             context.projectName),
                          "tls": common_util.convertBoolean(context.tls),
                          "grpcType": grpcType,
+                         "cacerts": certs,
                          "networkId": context.projectName}
             updated = json.loads(networkConfig % (structure))
             fd.write(json.dumps(updated, indent=2))
@@ -292,6 +305,19 @@ class SDKInterface(InterfaceBase):
         shutil.copytree("../../../node_modules", "./node_modules")
         self.__class__ = NodeSDKInterface
 
+    def initializeJava(self):
+        self.__class__ = JavaSDKInterface
+        orgDirs = ["./configs/{0}/ordererOrganizations/example.com/users".format(self.context.projectName),
+                   "./configs/{0}/peerOrganizations/org1.example.com/users".format(self.context.projectName),
+                   "./configs/{0}/peerOrganizations/org2.example.com/users".format(self.context.projectName)]
+        for orgDir in orgDirs:
+            l = os.listdir(orgDir)
+            for d in l:
+                shutil.rmtree("../../peer-javasdk-test-tool/users/{0}".format(d), ignore_errors=True)
+                shutil.copytree("{0}/{1}".format(orgDir, d), "../../peer-javasdk-test-tool/users/{0}".format(d))
+#        shutil.copytree("./configs/{0}/peerOrganizations/org1.example.com/users".format(self.context.projectName), "../../peer-javasdk-test-tool/users/.")
+#        shutil.copytree("./configs/{0}/peerOrganizations/org2.example.com/users".format(self.context.projectName), "../../peer-javasdk-test-tool/users/.")
+
     def reformat_chaincode(self, chaincode, channelId):
         reformatted = yaml.safe_load(chaincode.get('args', '[]'))
         function = reformatted.pop(0)
@@ -307,6 +333,7 @@ class SDKInterface(InterfaceBase):
         result = self.invoke_func(chaincode, channelId, user, org, [peer], orderer)
         print("Invoke: {}".format(result))
         return {peer: result}
+        #return result
 
     def query_chaincode(self, context, chaincode, peer, channelId=TEST_CHANNEL_ID, targs="", user="User1"):
         # targs and user are optional parameters with defaults set if they are not included
@@ -314,7 +341,7 @@ class SDKInterface(InterfaceBase):
         org = '.'.join(peerParts[1:])
         print("Class:", self.__class__)
         result = self.query_func(chaincode, channelId, user, org, [peer])
-        #print("Query Result: {}".format(result))
+        print("Query Result: {}".format(result))
         return {peer: result}
 
     def wait_for_deploy_completion(self, context, chaincode_container, timeout):
@@ -355,6 +382,85 @@ class NodeSDKInterface(SDKInterface):
             query_text = fd.read()
         query_func = execjs.compile(query_text)
         return query_func.call("query", "{0}@{1}".format(user, org), orgName, reformatted, peers, self.networkConfigFile)
+
+
+class JavaSDKInterface(SDKInterface):
+    def invoke_func(self, chaincode, channelId, user, org, peers, orderer):
+        #self.invoke_func = java --illegal-access=deny -jar app/peer-javasdk.jar "$NAME" "${IP:-?}" "${PORT:-?}" ccinvoke "${ORG:-0}" "${ORD:-0}" "$REMOTE" "${CONFIG:-?}" "${CACERT:-?}" "${SRVCERT:-?}" "$CHANNEL" "$CCNAME" "$FUNC" "$ARGS"
+        #invoke_inputs = '"peer0.org1.example.com" "${IP:-?}" "${PORT:-?}" ccinvoke "${ORG:-0}" "${ORD:-0}" "$REMOTE" "${CONFIG:-?}" "${CACERT:-?}" "${SRVCERT:-?}" "$CHANNEL" "$CCNAME" "$FUNC" "$ARGS"'
+        if not os.path.exists("../../peer-javasdk-test-tool/users/{0}@{1}".format(user, org)):
+            shutil.copytree("./configs/{0}/peerOrganizations/{1}/users/{2}@{1}".format(self.context.projectName, org, user), "../../peer-javasdk-test-tool/users/{0}@{1}".format(user, org))
+
+        shutil.rmtree("../../peer-javasdk-test-tool/users/admin.user", ignore_errors=True)
+        with open("../../peer-javasdk-test-tool/users/admin.user", "wb") as fd:
+            appUser = b"AppUser { \n name: {0}, \n  roles: [ \n    admin\n  ], \n  account: {1}, \n  affiliation: {2}, \n  mspId: {3}\n}".format(user, self.context.projectName, org.title().replace(".", ""), org)
+            fd.write(appUser)
+
+        shutil.copyfile("../../peer-javasdk-test-tool/users/{0}@{1}/msp/signcerts/{0}@{1}-cert.pem".format(user, org), "../../peer-javasdk-test-tool/users/admin.pem")
+
+        print("Chaincode", chaincode)
+        result = {}
+        reformatted = self.reformat_chaincode(chaincode, channelId)
+        for peer in peers:
+            inputs = {'peer': peer,
+                      'org': org,
+                      'orgName': org.title().replace('.', ''),
+                      'user': "{0}@{1}".format(user, org),
+                      'orderer': orderer,
+                      #'config': self.networkConfigFile,
+                      'config': "{0}/configs/{1}".format(os.path.abspath('.'), self.context.projectName),
+                      'cacert': "./configs/{0}/peerOrganizations/{1}/ca/ca.{1}-cert.pem".format(self.context.projectName, org),
+                      'srvcert': "./configs/{0}/peerOrganizations/{1}/peers/peer0.{1}/tls/server.crt".format(self.context.projectName, org),
+                      'channel': channelId,
+                      'name': chaincode.get("name", "mycc"),
+                      'func': reformatted["fcn"],
+                      'args': reformatted["args"],
+                      }
+            invoke_inputs = '"{peer}" "127.0.0.1" "7051" ccinvoke "{orgName}" "0" "false" "{config}" "{cacert}" "{srvcert}" "{channel}" "{name}" "{func}" "{args}"'.format(**inputs)
+            #invoke_call = 'java --illegal-access=deny -jar sdk/java/peer-javasdk.jar '+ invoke_inputs
+            invoke_call = 'java -jar sdk/java/peer-javasdk.jar '+ invoke_inputs
+            result[peer] = subprocess.check_output(invoke_call, shell=True)
+        return result
+
+    def query_func(self, chaincode, channelId, user, org, peers):
+        #self.query_func = java --illegal-access=deny -jar app/peer-javasdk.jar "$NAME" "${IP:-?}" "${PORT:-?}" ccquery "${ORG:-0}" "${ORD:-0}" "$REMOTE" "${CONFIG:-?}" "${CACERT:-?}" "${SRVCERT:-?}" "$CHANNEL" "$CCNAME" "$FUNC" "$ARGS"
+        #query_inputs = '"$NAME" "${IP:-?}" "${PORT:-?}" ccquery "${ORG:-0}" "${ORD:-0}" "$REMOTE" "${CONFIG:-?}" "${CACERT:-?}" "${SRVCERT:-?}" "$CHANNEL" "$CCNAME" "$FUNC" "$ARGS"'
+        print("Chaincode", chaincode)
+
+        if not os.path.exists("../../peer-javasdk-test-tool/users/{0}@{1}".format(user, org)):
+            shutil.copytree("./configs/{0}/peerOrganizations/{1}/users/{2}@{1}".format(self.context.projectName, org, user), "../../peer-javasdk-test-tool/users/{0}@{1}".format(user, org))
+
+        shutil.rmtree("../../peer-javasdk-test-tool/users/admin.user", ignore_errors=True)
+        with open("../../peer-javasdk-test-tool/users/admin.user", "wb") as fd:
+            appUser = b"AppUser {\n  name: %s,\n  roles: [\n    admin\n  ],\n  account: %s,\n  affiliation: %s,\n  mspId: %s\n}" % (user, self.context.projectName, org.title().replace(".", ""), org)
+            fd.write(appUser)
+
+        shutil.copyfile("../../peer-javasdk-test-tool/users/{0}@{1}/msp/signcerts/{0}@{1}-cert.pem".format(user, org), "../../peer-javasdk-test-tool/users/admin.pem")
+
+        result = {}
+        reformatted = self.reformat_chaincode(chaincode, channelId)
+        for peer in peers:
+            inputs = {'peer': peer,
+                      'org': org,
+                      'orgName': org.title().replace('.', ''),
+                      'user': "{0}@{1}".format(user, org),
+                      'orderer': "orderer0.example.com",
+                      #'config': self.networkConfigFile,
+                      'config': "{0}/configs/{1}".format(os.path.abspath('.'), self.context.projectName),
+                      'cacert': "{2}/configs/{0}/peerOrganizations/{1}/ca/ca.{1}-cert.pem".format(self.context.projectName, org, os.path.abspath('.')),
+                      'srvcert': "{2}/configs/{0}/peerOrganizations/{1}/peers/peer0.{1}/tls/server.crt".format(self.context.projectName, org, os.path.abspath('.')),
+                      'channel': channelId,
+                      'name': chaincode.get("name", "mycc"),
+                      'func': reformatted["fcn"],
+                      'args': reformatted["args"],
+                      }
+            print("Inputs", inputs)
+            query_inputs = '"{peer}" "127.0.0.1" "7051" ccquery "{orgName}" "0" "false" "{config}" "{cacert}" "{srvcert}" "{channel}" "{name}" "{func}" "{args}"'.format(**inputs)
+            #query_call = 'java --illegal-access=deny -jar sdk/java/peer-javasdk.jar ' + query_inputs
+            #query_call = 'java -jar sdk/java/peer-javasdk.jar ' + query_inputs
+            query_call = 'java -jar app/peer-javasdk.jar ' + query_inputs
+            result[peer] = subprocess.check_output(query_call, cwd="../../peer-javasdk-test-tool", shell=True)
+        return result
 
 
 class CLIInterface(InterfaceBase):
@@ -505,6 +611,7 @@ class CLIInterface(InterfaceBase):
         if not ext:
             ext = "block"
 
+        output = {}
         for peer in peers:
             setup = self.get_env_vars(context, peer, includeAll=False, user=user)
             command = ["peer", "channel", "fetch", "config"]
@@ -528,8 +635,8 @@ class CLIInterface(InterfaceBase):
 
             command.append('"')
 
-            output = context.composition.docker_exec(setup+command, [peer])
-        print("[{0}]: {1}".format(" ".join(setup+command), output))
+            output.update(context.composition.docker_exec(setup+command, [peer]))
+            print("[{0}]: {1}".format(" ".join(setup+command), output))
         return output
 
     def join_channel(self, context, peers, channelId=TEST_CHANNEL_ID, user="Admin"):
@@ -691,32 +798,42 @@ class CLIInterface(InterfaceBase):
         print("Query Result: {0}".format(result))
         return result
 
-    def enrollCAadmin(self, context, nodes):
-        for node in nodes:
-            org = node.split(".", 1)[1]
-            userpass = context.composition.getEnvFromContainer("ca.{}".format(org), 'BOOTSTRAP_USER_PASS')
-            url = "https://{0}@ca.{1}:7054".format(userpass, org)
-            output = context.composition.docker_exec(["fabric-ca-client enroll -d -u {0} -M /var/hyperledger/msp --caname ca.{1} --csr.cn ca.{1} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(url, org)], [node])
-            print("Output Enroll: {}".format(output))
+    def enrollCAadmin(self, context, node, admin="Admin", passwd="adminpw"):
+        org = node.split(".", 1)[1]
+        userpass = context.composition.getEnvFromContainer("ca.{}".format(org), 'BOOTSTRAP_USER_PASS')
+        #url = "https://{0}@ca.{1}:7054".format(userpass, org)
+        url = "https://{0}:{2}@ca.{1}:7054".format(admin, org, passwd)
+        output = context.composition.docker_exec(["fabric-ca-client enroll -d -u {0} -M /var/hyperledger/msp --caname ca.{1} --csr.cn ca.{1} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(url, org)], [node])
+        print("Output Enroll: {}".format(output))
 
-    def registerUser(self, context, user, org, passwd, role, peer):
+    def registerUser(self, context, user, org, passwd, role, component):
         command = "fabric-ca-client register -d --id.name {0} --id.secret {2} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(user, org, passwd)
-        if role.lower() == u'admin':
+        if role.lower() == u'admin' and component.startswith("orderer"):
+            # Register on orderers
+            command += ''' --id.attrs '"admin=true:ecert"' '''
+
+        elif role.lower() == u'admin':
             command += ''' --id.attrs '"hf.Registrar.Roles=peer,client"' --id.attrs hf.Registrar.Attributes=*,hf.Revoker=true,hf.GenCRL=true,admin=true:ecert'''
 
         context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "/var/hyperledger/users/{0}@{1}".format(user, org)
-        output = context.composition.docker_exec([command], [peer])
+        output = context.composition.docker_exec([command], [component])
         print("user register: {}".format(output))
 
-    def enrollUser(self, context, user, org, passwd, enrollType, peer):
+    def enrollUser(self, context, user, org, passwd, enrollType, component, orgType):
         fca = 'ca.{}'.format(org)
         adminUser = context.composition.getEnvFromContainer(fca, "BOOTSTRAP_USER_PASS")
-        command = "fabric-ca-client enroll -d --enrollment.profile tls -u https://{0}:{1}@{3}:7054 -M /var/hyperledger/users/{0}@{2}/tls --csr.hosts {4} --enrollment.type {5} --tls.certfiles /var/hyperledger/configs/{6}/peerOrganizations/{2}/ca/ca.{2}-cert.pem".format(user, passwd, org, fca, peer, enrollType, context.projectName)
-        output = context.composition.docker_exec([command], [peer])
+        if orgType == "peerOrganizations":
+            command = "fabric-ca-client enroll -d --enrollment.profile tls -u https://{0}:{1}@{3}:7054 -M /var/hyperledger/users/{0}@{2}/tls --csr.hosts {4} --enrollment.type {5} --tls.certfiles /var/hyperledger/configs/{6}/{7}/{2}/ca/ca.{2}-cert.pem".format(user, passwd, org, fca, component, enrollType, context.projectName, orgType)
+        else:
+            command = "fabric-ca-client enroll -d --enrollment.profile tls -u https://{0}:{1}@{3}:7054 -M /var/hyperledger/users/{0}@{2}/tls --csr.hosts {4} --enrollment.type {5} --tls.certfiles /var/hyperledger/configs/{6}/{2}/ca/ca.{2}-cert.pem".format(user, passwd, org, fca, component, enrollType, orgType)
+        output = context.composition.docker_exec([command], [component])
         print("Output: {}".format(output))
 
-        command = "fabric-ca-client certificate list -d --id {0} --store /var/hyperledger/users/{0}@{1}/tls/ --caname {3} --csr.cn {3} --tls.certfiles /var/hyperledger/configs/{2}/peerOrganizations/{1}/ca/ca.{1}-cert.pem".format(user, org, context.projectName, fca)
-        output = context.composition.docker_exec([command], [peer])
+        if orgType == "peerOrganizations":
+            command = "fabric-ca-client certificate list -d --id {0} --store /var/hyperledger/users/{0}@{1}/tls/ --caname {3} --csr.cn {3} --tls.certfiles /var/hyperledger/configs/{2}/{4}/{1}/ca/ca.{1}-cert.pem".format(user, org, context.projectName, fca, orgType)
+        else:
+            command = "fabric-ca-client certificate list -d --id {0} --store /var/hyperledger/users/{0}@{1}/tls/ --caname {2} --csr.cn {2} --tls.certfiles /var/hyperledger/configs/{3}/{1}/ca/ca.{1}-cert.pem".format(user, org, fca, orgType)
+        output = context.composition.docker_exec([command], [component])
         print("Cert Output: {}".format(output))
 
     def enrollUsersFabricCA(self, context):
@@ -728,18 +845,29 @@ class CLIInterface(InterfaceBase):
             enrollType = context.users[user].get('certType', "x509")
             peer = 'peer0.{}'.format(org)
 
+            if role.lower() == u'admin':
+                self.enrollCAadmin(context, "orderer0.example.com")
+                self.registerUser(context, user, "example.com", passwd, role, "orderer0.example.com")
+                self.enrollUser(context, user, "example.com", passwd, enrollType, "orderer0.example.com", "ordererOrganizations")
+                self.placeCertsInDirStruct(context, user, "example.com", "orderer0.example.com", "ordererOrganizations")
+
+                self.enrollCAadmin(context, "peer0.org2.example.com")
+                self.registerUser(context, user, "org2.example.com", passwd, role, "peer0.org2.example.com")
+                self.enrollUser(context, user, "org2.example.com", passwd, enrollType, "peer0.org2.example.com", "peerOrganizations")
+                self.placeCertsInDirStruct(context, user, "org2.example.com", "peer0.org2.example.com", "peerOrganizations")
+
             # Enroll (login) admin first
-            self.enrollCAadmin(context, [peer])
+            self.enrollCAadmin(context, peer)
 
             self.registerUser(context, user, org, passwd, role, peer)
-            self.enrollUser(context, user, org, passwd, enrollType, peer)
+            self.enrollUser(context, user, org, passwd, enrollType, peer, "peerOrganizations")
             if enrollType == u'idemix':
                 self.addIdemixIdentities(context, user, passwd, role, org)
 
             # Place the certificates in the set directory structure
-            self.placeCertsInDirStruct(context, user, org, peer)
+            self.placeCertsInDirStruct(context, user, org, peer, "peerOrganizations")
 
-    def placeCertsInDirStruct(self, context, user, org, peer):
+    def placeCertsInDirStruct(self, context, user, org, peer, orgType):
         fca = 'ca.{}'.format(org)
 
         # Ensure that the owner of all of the user directories are the same
@@ -754,23 +882,26 @@ class CLIInterface(InterfaceBase):
             context.printEnvWarning = True
             output = context.composition.docker_exec(['chown -R {2}:{3} /var/hyperledger/users/{0}@{1}'.format(user, org, out[0], out[1])], [peer])
 
-        os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp".format(user, org, context.projectName))
-        os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/signcerts".format(user, org, context.projectName))
-        os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/keystore".format(user, org, context.projectName))
-        os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/admincerts".format(user, org, context.projectName))
+        orgType = "ordererOrganizations"
+        if org.startswith("org"):
+            orgType = "peerOrganizations"
+        os.mkdir("configs/{2}/{3}/{1}/users/{0}@{1}/msp".format(user, org, context.projectName, orgType))
+        os.mkdir("configs/{2}/{3}/{1}/users/{0}@{1}/msp/signcerts".format(user, org, context.projectName, orgType))
+        os.mkdir("configs/{2}/{3}/{1}/users/{0}@{1}/msp/keystore".format(user, org, context.projectName, orgType))
+        os.mkdir("configs/{2}/{3}/{1}/users/{0}@{1}/msp/admincerts".format(user, org, context.projectName, orgType))
 
-        shutil.copy("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/tls/{0}.pem".format(user, org, context.projectName),
-                    "configs/{2}/peerOrganizations/{1}/users/{0}@{1}/tls/client.crt".format(user, org, context.projectName))
-        shutil.copy("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/tls/signcerts/cert.pem".format(user, org, context.projectName),
-                    "configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/signcerts/{0}@{1}-cert.pem".format(user, org, context.projectName))
-        keyfile = os.listdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/tls/keystore/".format(user, org, context.projectName))[0]
-        shutil.copy("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/tls/keystore/{3}".format(user, org, context.projectName, keyfile),
-                    "configs/{2}/peerOrganizations/{1}/users/{0}@{1}/tls/client.key".format(user, org, context.projectName))
-        shutil.copy("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/tls/keystore/{3}".format(user, org, context.projectName, keyfile),
-                    "configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/keystore/{3}".format(user, org, context.projectName, keyfile))
+        shutil.copy("configs/{2}/{3}/{1}/users/{0}@{1}/tls/{0}.pem".format(user, org, context.projectName, orgType),
+                    "configs/{2}/{3}/{1}/users/{0}@{1}/tls/client.crt".format(user, org, context.projectName, orgType))
+        shutil.copy("configs/{2}/{3}/{1}/users/{0}@{1}/tls/signcerts/cert.pem".format(user, org, context.projectName, orgType),
+                    "configs/{2}/{3}/{1}/users/{0}@{1}/msp/signcerts/{0}@{1}-cert.pem".format(user, org, context.projectName, orgType))
+        keyfile = os.listdir("configs/{2}/{3}/{1}/users/{0}@{1}/tls/keystore/".format(user, org, context.projectName, orgType))[0]
+        shutil.copy("configs/{2}/{4}/{1}/users/{0}@{1}/tls/keystore/{3}".format(user, org, context.projectName, keyfile, orgType),
+                    "configs/{2}/{3}/{1}/users/{0}@{1}/tls/client.key".format(user, org, context.projectName, orgType))
+        shutil.copy("configs/{2}/{4}/{1}/users/{0}@{1}/tls/keystore/{3}".format(user, org, context.projectName, keyfile, orgType),
+                    "configs/{2}/{4}/{1}/users/{0}@{1}/msp/keystore/{3}".format(user, org, context.projectName, keyfile, orgType))
 
-        shutil.copy("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/signcerts/{0}@{1}-cert.pem".format(user, org, context.projectName),
-                    "configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/admincerts/{0}@{1}-cert.pem".format(user, org, context.projectName))
+        shutil.copy("configs/{2}/{3}/{1}/users/{0}@{1}/msp/signcerts/{0}@{1}-cert.pem".format(user, org, context.projectName, orgType),
+                    "configs/{2}/{3}/{1}/users/{0}@{1}/msp/admincerts/{0}@{1}-cert.pem".format(user, org, context.projectName, orgType))
 
         command = "fabric-ca-client getcacert -d -u https://{0}:7054 -M /var/hyperledger/users/{1}@{2}/msp --tls.certfiles /var/hyperledger/msp/cacerts/ca.{2}-cert.pem".format(fca, user, org)
         output = context.composition.docker_exec([command], [peer])
@@ -789,6 +920,35 @@ class CLIInterface(InterfaceBase):
 
         output = context.composition.docker_exec(["fabric-ca-client identity list"], [peer])
         print("Ident List: {}".format(output))
+
+
+    def revokeUserAndGenerateCRL(self, context, component, user, admin='Admin', adminpass='adminpw'):
+        org = component.split(".", 1)[1]
+        updated_env = config_util.updateEnviron(context)
+        updated_env['FABRIC_CA_CLIENT_HOME'] = "/var/hyperledger/users/Admin@{}/msp/crls/crl.pem".format(org)
+        self.enrollCAadmin(context, component, admin, adminpass)
+        #export  FABRIC_CA_CLIENT_HOME=$ORG_ADMIN_HOME
+        #logr "Revoking the user '$USER_NAME' of the organization '$ORG' with Fabric CA Client home directory set to $FABRIC_CA_CLIENT_HOME and generating CRL ..."
+        #export FABRIC_CA_CLIENT_TLS_CERTFILES=$CA_CHAINFILE
+        #fabric-ca-client revoke -d --revoke.name $USER_NAME --gencrl
+        command = "fabric-ca-client revoke -d --revoke.name {0} --gencrl --tls.certfiles /var/hyperledger/configs/{3}/{2}/{1}/ca/ca.{1}-cert.pem".format(user, org, "peerOrganizations", context.projectName)
+        output = context.composition.docker_exec([command], [component], env=updated_env)
+        print("Revoke output: {}".format(output))
+
+    def generateCRL(self, context, component, org, admin='Admin', adminpass='adminpw'):
+        updated_env = config_util.updateEnviron(context)
+        updated_env['FABRIC_CA_CLIENT_HOME'] = "/var/hyperledger/users/Admin@{}/msp/crls/crl.pem".format(org)
+        # Generates a CRL that contains serial numbers of all revoked enrollment certificates.
+        # The generated CRL is placed in the crls folder of the admin's MSP
+        self.enrollCAadmin(context, component, admin, adminpass)
+        #export FABRIC_CA_CLIENT_HOME=$ORG_ADMIN_HOME
+        #logr "Generating CRL for the organization '$ORG' with Fabric CA Client home directory set to $FABRIC_CA_CLIENT_HOME ..."
+        #export FABRIC_CA_CLIENT_TLS_CERTFILES=$CA_CHAINFILE
+        #fabric-ca-client gencrl -d
+        command = "fabric-ca-client gencrl -d --tls.certfiles /var/hyperledger/configs/{2}/{1}/{0}/ca/ca.{0}-cert.pem".format(org, "peerOrganizations", context.projectName)
+        output = context.composition.docker_exec([command], [component], env=updated_env)
+        print("CRL output: {}".format(output))
+
 
     def wait_for_deploy_completion(self, context, chaincode_container, timeout):
         containers = subprocess.check_output(["docker ps -a"], shell=True)

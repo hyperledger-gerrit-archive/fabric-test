@@ -142,11 +142,24 @@ def step_impl(context):
 def step_impl(context):
     bootstrap_fca_impl(context, False)
 
-
 @given(u'I have a fabric-ca bootstrapped fabric network of type {ordererType} using state-database {database} with tls')
 def step_impl(context, ordererType, database):
     config_util.setCAConfig(context)
     bootstrapped_impl(context, ordererType, database, True, fca=True)
+
+@given(u'an admin creates an idemix MSP for organization "{org}"')
+def step_impl(context, org):
+    testConfigs, context = config_util.makeProjectConfigDir(context, True)
+    copyfile("configs/configtx.yaml", "{}/configtx.yaml".format(testConfigs))
+    config_new = config_util.buildConfigtx(testConfigs, org.title().replace('.', '') +"Idemix", org, idemix=True)
+    # Remove 'Organization' label
+    config_add = config_new.replace("---\nOrganizations:", "")
+    with open("{}/configtx.yaml".format(testConfigs), "r") as fd:
+        config = fd.read()
+    with open("{}/configtx.yaml".format(testConfigs), "w") as fd:
+        updated = config.replace("\n\n################################################################################\n#\n#   SECTION: Orderer\n", config_add+ "\n\n################################################################################\n#\n#   SECTION: Orderer\n")
+        fd.write(updated)
+    print("updated:", context.projectName)
 
 @given(u'I have a fabric-ca bootstrapped fabric network of type {ordererType} using state-database {database} without tls')
 def step_impl(context, ordererType, database):
