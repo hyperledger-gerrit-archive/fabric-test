@@ -48,7 +48,7 @@ def compose_impl(context, composeYamlFile, projectName=None, startContainers=Tru
     context.compose_containers = context.composition.collectServiceNames()
 
 
-def bootstrapped_impl(context, ordererType, database, tlsEnabled=False, timeout=120):
+def bootstrapped_impl(context, ordererType, database, tlsEnabled=False, timeout=120, fca=False):
     assert ordererType in config_util.ORDERER_TYPES, "Unknown network type '%s'" % ordererType
     curpath = os.path.realpath('.')
 
@@ -57,6 +57,11 @@ def bootstrapped_impl(context, ordererType, database, tlsEnabled=False, timeout=
     if database.lower() != "leveldb":
         context.composeFile.append("%s/docker-compose/docker-compose-%s.yml" % (curpath, database.lower()))
     context.composeFile.append("%s/docker-compose/docker-compose-cli.yml" % (curpath))
+
+    # If using fabric-ca insert the fabric-ca composition file to start first
+    if fca:
+        context.composeFile.insert(0, "%s/docker-compose/docker-compose-fca.yml" % (curpath))
+
     for composeFile in context.composeFile:
         assert os.path.exists(composeFile), "The docker compose file does not exist: {0}".format(composeFile)
 
@@ -71,8 +76,12 @@ def bootstrapped_impl(context, ordererType, database, tlsEnabled=False, timeout=
         context.projectName = context.composition.projectName
     else:
         context.projectName = str(uuid.uuid1()).replace('-','')
-    config_util.generateCrypto(context)
-    config_util.generateConfig(context, channelID, config_util.CHANNEL_PROFILE, context.ordererProfile)
+
+    if not fca:
+        config_util.generateCrypto(context)
+        config_util.generateConfig(context, channelID, config_util.CHANNEL_PROFILE, context.ordererProfile)
+    else:
+        config_util.generateConfigForCA(context, channelID, config_util.CHANNEL_PROFILE, context.ordererProfile)
     compose_impl(context, context.composeFile, projectName=context.projectName)
 
     wait_for_bootstrap_completion(context, timeout)
@@ -99,6 +108,58 @@ def wait_for_bootstrap_completion(context, timeout):
 
     # A 5-second additional delay ensures ready state
     time.sleep(5)
+
+
+
+def bootstrap_fca_impl(context, tlsEnabled=False):
+    # Should TLS be enabled
+    context.tls = tlsEnabled
+    compose_util.enableTls(context, tlsEnabled)
+
+    compose_impl(context, ["docker-compose/docker-compose-preca.yml"])
+    context.composition.stop(['pre-ca.example.com', 'pre-ca.org1', 'pre-ca.org2'])
+
+@given(u'I bootstrap a fabric-ca server without tls')
+def step_impl(context):
+    bootstrap_fca_impl(context, False)
+
+@given(u'I bootstrap a fabric-ca server with tls')
+def step_impl(context):
+    bootstrap_fca_impl(context, True)
+
+@given(u'I bootstrap a fabric-ca server')
+def step_impl(context):
+    bootstrap_fca_impl(context, False)
+
+
+
+@given(u'I have a fabric-ca bootstrapped fabric network of type {ordererType} using state-database {database} with tls')
+def step_impl(context, ordererType, database):
+    bootstrapped_impl(context, ordererType, database, True, fca=True)
+
+@given(u'I have a fabric-ca bootstrapped fabric network of type {ordererType} using state-database {database} without tls')
+def step_impl(context, ordererType, database):
+    bootstrapped_impl(context, ordererType, database, False, fca=True)
+
+@given(u'I have a fabric-ca bootstrapped fabric network of type {ordererType} using state-database {database}')
+def step_impl(context, ordererType, database):
+    bootstrapped_impl(context, ordererType, database, True, fca=True)
+
+@given(u'I have a fabric-ca bootstrapped fabric network using state-database {database} with tls')
+def step_impl(context, database):
+    bootstrapped_impl(context, "solo", database, True, fca=True)
+
+@given(u'I have a fabric-ca bootstrapped fabric network of type {ordererType} with tls')
+def step_impl(context, ordererType):
+    bootstrapped_impl(context, ordererType, "leveldb", True, fca=True)
+
+@given(u'I have a fabric-ca bootstrapped fabric network with tls')
+def step_impl(context):
+    bootstrapped_impl(context, "solo", "leveldb", True, fca=True)
+
+@given(u'I have a fabric-ca bootstrapped fabric network of type {ordererType}')
+def step_impl(context, ordererType):
+    bootstrapped_impl(context, ordererType, "leveldb", True, fca=True)
 
 
 @given(u'I have a bootstrapped fabric network of type {ordererType} using state-database {database} with tls')
