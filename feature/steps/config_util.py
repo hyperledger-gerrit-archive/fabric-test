@@ -363,8 +363,10 @@ def keystoreCheck(path):
     keystorepath = path + "keystore/"
     fileExistWithExtension(keystorepath, "There are missing files in {0}.".format(keystorepath), '')
 
-def buildConfigtx(testConfigs, orgName, mspID):
+def buildConfigtx(testConfigs, orgName, mspID, idemix=False):
     configtx = CFGTX_ORG_STR.format(orgName=orgName, orgMSP=mspID)
+    if idemix:
+        return configtx.replace("ID: {}\n".format(mspID), "ID: IdemixMSP1\n        MSPType: idemix\n")
     with open("{}/configtx.yaml".format(testConfigs), "w") as fd:
         fd.write(configtx)
 
@@ -521,3 +523,51 @@ def configUpdate(context, config, group, channel):
                                         env=updated_env)
 
     return "{0}/update{1}.pb".format(testConfigs, channel)
+
+def createCRLConfigUpdate(context, org, peers, channel):
+    updated_env = updateEnviron(context)
+    testConfigs = "./configs/{0}".format(context.projectName)
+    inputFile = "{0}.block".format(channel)
+    orgName = org.title().replace(".", "")
+
+    copyfile("{}/configtx.yaml".format(testConfigs), "{}/orig_configtx.yaml".format(testConfigs))
+    #buildConfigtx(testConfigs, orgName, mspID)
+
+    # configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
+    configStr = subprocess.check_output(["configtxlator", "proto_decode", "--input", inputFile, "--type", "common.Block"], cwd=testConfigs , env=updated_env)
+    config = json.loads(configStr)
+    print("Orig config: {}".format(config))
+
+    with open("{0}/config.json".format(testConfigs), "w") as fd:
+        fd.write(json.dumps(config["data"]["data"][0]["payload"]["data"]["config"], indent=4))
+
+    # Start the configtxlator
+#    CTLURL=http://127.0.0.1:7059
+#    # Convert the config block protobuf to JSON
+#    curl -X POST --data-binary @$CONFIG_BLOCK_FILE $CTLURL/protolator/decode/common.Block > config_block.json
+#    # Extract the config from the config block
+#    jq .data.data[0].payload.data.config config_block.json > config.json
+
+    # Update crl in the config json
+    #config["data"]["data"][0]["payload"]["data"]["config"]["channel_group"]["groups"][group]["groups"].update(config_update)
+    #config_update = {orgName: {"values": {"MSP":{"value":{"config":{"revocation_list": "{0}/peerOrganizations/{1}/users/Admin@{1}/msp/crls/crl.pem". format(testConfigs, org)}}}}}}
+    config_update = {orgName: {"values": {"MSP":{"value":{"config":{"revocation_list": "{0}/peerOrganizations/{1}/peers/peer0.{1}/msp/crls/crl.pem". format(testConfigs, org)}}}}}}
+    #config["data"]["data"][0]["payload"]["data"]["config"]["channel_group"]["groups"]["Application"]["groups"][org]["values"]["MSP"]["value"]["config"].update(config_update)
+    config["data"]["data"][0]["payload"]["data"]["config"]["channel_group"]["groups"]["Application"]["groups"][orgName]["values"]["MSP"]["value"]["config"]["revocation_list"].append("{0}/peerOrganizations/{1}/users/Admin@{1}/msp/crls/crl.pem". format(testConfigs, org))
+
+    #CRL=$(cat $CORE_PEER_MSPCONFIGPATH/crls/crl*.pem | base64 | tr -d '\n')
+    #cat config.json | jq --arg org "$ORG" --arg crl "$CRL" '.channel_group.groups.Application.groups[$org].values.MSP.value.config.revocation_list = [$crl]' > updated_config.json
+
+    ## Create the config diff protobuf
+    #curl -X POST --data-binary @config.json $CTLURL/protolator/encode/common.Config > config.pb
+    #curl -X POST --data-binary @updated_config.json $CTLURL/protolator/encode/common.Config > updated_config.pb
+    #curl -X POST -F original=@config.pb -F updated=@updated_config.pb $CTLURL/configtxlator/compute/update-from-configs -F channel=$CHANNEL_NAME > config_update.pb
+
+    ## Convert the config diff protobuf to JSON
+    #curl -X POST --data-binary @config_update.pb $CTLURL/protolator/decode/common.ConfigUpdate > config_update.json
+
+    ## Create envelope protobuf container config diff to be used in the "peer channel update" command to update the channel configuration block
+    #echo '{"payload":{"header":{"channel_header":{"channel_id":"'"${CHANNEL_NAME}"'", "type":2}},"data":{"config_update":'$(cat config_update.json)'}}}' > config_update_as_envelope.json
+    #curl -X POST --data-binary @config_update_as_envelope.json $CTLURL/protolator/encode/common.Envelope > $CONFIG_UPDATE_ENVELOPE_FILE
+
+    return config
