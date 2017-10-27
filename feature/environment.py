@@ -5,6 +5,8 @@
 #
 
 import os
+import sys
+import stat
 import subprocess
 import shutil
 import gc
@@ -55,6 +57,20 @@ def after_scenario(context, scenario):
             print("Not going to decompose after scenario {0}, with yaml '{1}'".format(scenario.name,
                                                                                       context.compose_yaml))
     elif 'composition' in context:
+        ###########################
+        try:
+            listing = subprocess.check_output(['ls', '-l', 'configs/{}/ordererOrganizations/example.com/'.format(context.projectName)])
+            print("Files in crypto dirs: {}".format(listing))
+            issuercert = "configs/%s/ordererOrganizations/example.com/IssuerRevocationPublicKey" % context.projectName
+            info = os.stat(issuercert)
+            os.chmod(issuercert, info.st_mode | stat.S_IWRITE)
+            issuercert = "configs/%s/ordererOrganizations/example.com/IssuerPublicKey" % context.projectName
+            info = os.stat(issuercert)
+            os.chmod(issuercert, info.st_mode | stat.S_IWRITE)
+        except:
+            print("No CA files present: {}".format(sys.exc_info()[1]))
+        ###########################
+
         # Remove config data and docker containers
         shutil.rmtree("configs/%s" % context.composition.projectName)
         shutil.rmtree("/tmp/fabric-client-kvs_org1", ignore_errors=True)
@@ -63,7 +79,7 @@ def after_scenario(context, scenario):
             shutil.rmtree("./node_modules", ignore_errors=True)
             shutil.rmtree("../../../node_modules", ignore_errors=True)
             shutil.rmtree("../../../package-lock.json", ignore_errors=True)
-            subprocess.call(["npm cache clear --force"], shell=True)
+            subprocess.call(["npm cache clear --force -q"], shell=True)
             subprocess.call(["npm i -g npm"], shell=True)
         context.composition.decompose()
     elif hasattr(context, 'projectName'):

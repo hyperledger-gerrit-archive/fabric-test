@@ -49,8 +49,10 @@ class Composition:
 
     def __init__(self, context, composeFilesYaml=None, projectName=None,
                  force_recreate=True, components=[], startContainers=True):
-        if not projectName:
+        if not hasattr(context, "projectName") and not projectName:
             projectName = str(uuid.uuid1()).replace('-','')
+        elif hasattr(context, "projectName"):
+            projectName = context.projectName
         self.projectName = projectName
         self.context = context
         self.containerDataList = []

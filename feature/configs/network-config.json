@@ -1,5 +1,8 @@
 {
     "networkID": "%(networkId)s",
+    "client": {
+        "organization": "Org1ExampleCom"
+    },
     "tls": %(tls)s,
     "environment": "dev",
     "headers": {"Content-Type": "application/json"},

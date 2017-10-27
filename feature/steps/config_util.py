@@ -353,8 +353,10 @@ def keystoreCheck(path):
     keystorepath = path + "keystore/"
     fileExistWithExtension(keystorepath, "There are missing files in {0}.".format(keystorepath), '')
 
-def buildConfigtx(testConfigs, orgName, mspID):
+def buildConfigtx(testConfigs, orgName, mspID, idemix=False):
     configtx = CFGTX_ORG_STR.format(orgName=orgName, orgMSP=mspID)
+    if idemix:
+        return configtx.replace("ID: {}\n".format(mspID), "ID: IdemixMSP1\n        MSPType: idemix\n")
     with open("{}/configtx.yaml".format(testConfigs), "w") as fd:
         fd.write(configtx)
 

@@ -256,6 +256,8 @@ class SDKInterface(InterfaceBase):
 
         if language.lower() == "nodejs":
             self.initializeNode()
+        elif language.lower() == "java":
+            self.initializeJava()
         else:
             raise "Language {} is not supported in the test framework yet.".format(language)
 
@@ -292,6 +294,9 @@ class SDKInterface(InterfaceBase):
         shutil.copytree("../../../node_modules", "./node_modules")
         self.__class__ = NodeSDKInterface
 
+    def initializeJava(self):
+        self.__class__ = JavaSDKInterface
+
     def reformat_chaincode(self, chaincode, channelId):
         reformatted = yaml.safe_load(chaincode.get('args', '[]'))
         function = reformatted.pop(0)
@@ -307,6 +312,7 @@ class SDKInterface(InterfaceBase):
         result = self.invoke_func(chaincode, channelId, user, org, [peer], orderer)
         print("Invoke: {}".format(result))
         return {peer: result}
+        #return result
 
     def query_chaincode(self, context, chaincode, peer, channelId=TEST_CHANNEL_ID, targs="", user="User1"):
         # targs and user are optional parameters with defaults set if they are not included
@@ -314,7 +320,7 @@ class SDKInterface(InterfaceBase):
         org = '.'.join(peerParts[1:])
         print("Class:", self.__class__)
         result = self.query_func(chaincode, channelId, user, org, [peer])
-        #print("Query Result: {}".format(result))
+        print("Query Result: {}".format(result))
         return {peer: result}
 
     def wait_for_deploy_completion(self, context, chaincode_container, timeout):
@@ -355,6 +361,64 @@ class NodeSDKInterface(SDKInterface):
             query_text = fd.read()
         query_func = execjs.compile(query_text)
         return query_func.call("query", "{0}@{1}".format(user, org), orgName, reformatted, peers, self.networkConfigFile)
+
+
+class JavaSDKInterface(SDKInterface):
+    def invoke_func(self, chaincode, channelId, user, org, peers, orderer):
+        #self.invoke_func = java --illegal-access=deny -jar app/peer-javasdk.jar "$NAME" "${IP:-?}" "${PORT:-?}" ccinvoke "${ORG:-0}" "${ORD:-0}" "$REMOTE" "${CONFIG:-?}" "${CACERT:-?}" "${SRVCERT:-?}" "$CHANNEL" "$CCNAME" "$FUNC" "$ARGS"
+        #invoke_inputs = '"peer0.org1.example.com" "${IP:-?}" "${PORT:-?}" ccinvoke "${ORG:-0}" "${ORD:-0}" "$REMOTE" "${CONFIG:-?}" "${CACERT:-?}" "${SRVCERT:-?}" "$CHANNEL" "$CCNAME" "$FUNC" "$ARGS"'
+        print("Chaincode", chaincode)
+        result = {}
+        reformatted = self.reformat_chaincode(chaincode, channelId)
+        for peer in peers:
+            inputs = {'peer': peer,
+                      'org': org,
+                      'user': "{0}@{1}".format(user, org),
+                      'orderer': orderer,
+                      'config': self.networkConfigFile,
+                      'cacert': "./configs/{0}/peerOrganizations/{1}/ca/ca.{1}-cert.pem".format(self.context.projectName, org),
+                      'srvcert': "./configs/{0}/peerOrganizations/{1}/peers/peer0.org1.example.com/tls/server.crt".format(self.context.projectName, org),
+                      'channel': channelId,
+                      'name': chaincode.get("name", "mycc"),
+                      'func': reformatted["fcn"],
+                      'args': reformatted["args"],
+                      }
+            invoke_inputs = '"{user}" "{peer}" "7054" ccinvoke "{org}" "{orderer}" "{config}" "{cacert}" "{srvcert}" "{channel}" "{name}" "{func}" "{args}"'.format(**inputs)
+            #invoke_call = 'java --illegal-access=deny -jar sdk/java/peer-javasdk.jar '+ invoke_inputs
+            invoke_call = 'java -jar sdk/java/peer-javasdk.jar '+ invoke_inputs
+            result[peer] = subprocess.check_output(invoke_call, shell=True)
+        return result
+
+    def query_func(self, chaincode, channelId, user, org, peers):
+        #self.query_func = java --illegal-access=deny -jar app/peer-javasdk.jar "$NAME" "${IP:-?}" "${PORT:-?}" ccquery "${ORG:-0}" "${ORD:-0}" "$REMOTE" "${CONFIG:-?}" "${CACERT:-?}" "${SRVCERT:-?}" "$CHANNEL" "$CCNAME" "$FUNC" "$ARGS"
+        #query_inputs = '"$NAME" "${IP:-?}" "${PORT:-?}" ccquery "${ORG:-0}" "${ORD:-0}" "$REMOTE" "${CONFIG:-?}" "${CACERT:-?}" "${SRVCERT:-?}" "$CHANNEL" "$CCNAME" "$FUNC" "$ARGS"'
+        print("Chaincode", chaincode)
+        result = {}
+        reformatted = self.reformat_chaincode(chaincode, channelId)
+        for peer in peers:
+            inputs = {'peer': peer,
+                      'org': org,
+                      'orgName': org.title().replace('.', ''),
+                      'user': "{0}@{1}".format(user, org),
+                      'orderer': "orderer0.example.com",
+                      #'config': self.networkConfigFile,
+                      'config': "{0}/configs/{1}".format(os.path.abspath('.'), self.context.projectName),
+                      'cacert': "{2}/configs/{0}/peerOrganizations/{1}/ca/ca.{1}-cert.pem".format(self.context.projectName, org, os.path.abspath('.')),
+                      'srvcert': "{2}/configs/{0}/peerOrganizations/{1}/peers/peer0.{1}/tls/server.crt".format(self.context.projectName, org, os.path.abspath('.')),
+                      'channel': channelId,
+                      'name': chaincode.get("name", "mycc"),
+                      'func': reformatted["fcn"],
+                      'args': reformatted["args"],
+                      }
+            print("Inputs", inputs)
+            #query_inputs = '"{user}" "{peer}" "7054" ccquery "{org}" "{orderer}" "{config}" "{cacert}" "{srvcert}" "{channel}" "{name}" "{func}" "{args}"'.format(**inputs)
+            query_inputs = '"{peer}" "127.0.0.1" "7054" ccquery "{orgName}" "0" "false" "{config}" "{cacert}" "{srvcert}" "{channel}" "{name}" "{func}" "{args}"'.format(**inputs)
+            #query_inputs = '"{peer}" ccquery "{org}" "{orderer}" "{config}" "{cacert}" "{srvcert}" "{channel}" "{name}" "{func}" "{args}"'.format(**inputs)
+            #query_call = 'java --illegal-access=deny -jar sdk/java/peer-javasdk.jar ' + query_inputs
+            #query_call = 'java -jar sdk/java/peer-javasdk.jar ' + query_inputs
+            query_call = 'java -jar app/peer-javasdk.jar ' + query_inputs
+            result[peer] = subprocess.check_output(query_call, cwd="../../peer-javasdk-test-tool", shell=True)
+        return result
 
 
 class CLIInterface(InterfaceBase):
@@ -703,6 +767,7 @@ class CLIInterface(InterfaceBase):
         command = "fabric-ca-client register -d --id.name {0} --id.secret {2} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(user, org, passwd)
         if role.lower() == u'admin':
             command += ''' --id.attrs '"hf.Registrar.Roles=peer,client"' --id.attrs hf.Registrar.Attributes=*,hf.Revoker=true,hf.GenCRL=true,admin=true:ecert'''
+            #command += ''' --id.attrs '"hf.Registrar.Roles=peer,client,user,app"' --id.attrs hf.Registrar.Attributes=*,hf.Revoker=true,hf.GenCRL=true,admin=true:ecert'''
 
         context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "/var/hyperledger/users/{0}@{1}".format(user, org)
         output = context.composition.docker_exec([command], [peer])
