@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+
+OUTPUT_DIR_ROOT=".."
 export useCouchDB="yes"
 DataDir="/tmp/fabric/test/tools/LTE/data"
 NumChains=10
