@@ -55,6 +55,15 @@ def after_scenario(context, scenario):
             print("Not going to decompose after scenario {0}, with yaml '{1}'".format(scenario.name,
                                                                                       context.compose_yaml))
     elif 'composition' in context:
+        ###########################
+        issuercert = "configs/%s/ordererOrganizations/example.com/IssuerRevocationPublicKey" % context.projectName
+        info = os.stat(issuercert)
+        os.chmod(issuercert, info.st_mode | stat.S_IWRITE)
+        issuercert = "configs/%s/ordererOrganizations/example.com/IssuerPublicKey" % context.projectName
+        info = os.stat(issuercert)
+        os.chmod(issuercert, info.st_mode | stat.S_IWRITE)
+        ###########################
+
         # Remove config data and docker containers
         shutil.rmtree("configs/%s" % context.composition.projectName)
         shutil.rmtree("/tmp/fabric-client-kvs_org1", ignore_errors=True)
