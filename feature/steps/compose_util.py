@@ -18,6 +18,7 @@ def enableTls(context, tlsEnabled, projectName=None):
         context.composition = Composition(context, projectName=projectName, startContainers=False)
     context.composition.environ["ORDERER_GENERAL_TLS_ENABLED"] = convertBoolean(tlsEnabled)
     context.composition.environ["CORE_PEER_TLS_ENABLED"] = convertBoolean(tlsEnabled)
+    context.composition.environ["FABRIC_CA_SERVER_TLS_ENABLED"] = convertBoolean(tlsEnabled)
 
 
 class ContainerData:
@@ -66,6 +67,10 @@ class Composition:
         if force_recreate:
             command += ["--force-recreate"]
         self.issueCommand(command + components)
+        cas = [c.containerName for c in self.containerDataList if c.containerName.startswith('pre-ca')]
+        print("CAs: {}".format(cas))
+        for ca in cas:
+            self.setFabricCaEnv(ca)
 
     def scale(self, serviceName, count=1):
         command = ["scale", "%s=%d" %(serviceName, count)]
@@ -118,6 +123,30 @@ class Composition:
                 value = container.getEnv(key)
                 break
         return value
+
+    def setFabricCaEnv(self, ca):
+        name = ca.split('.', 1)
+        fileLoc = './configs/{0}/{1}/msp/keystore/'.format(self.projectName, name[1])
+        try:
+            with Timeout(30):
+                while not os.path.exists(fileLoc):
+                    time.sleep(1)
+        finally:
+            assert os.path.exists(fileLoc),'File "{0}" does not exist'.format(fileLoc)
+        filename = self.lookForKeyFile(fileLoc)
+        keyVals = []
+        self.environ['FABRIC_CA_SERVER_{}_TLS_KEYFILE'.format(name[1].upper())] = '/var/hyperledger/fabric-ca-server/msp/keystore/{}'.format(filename)
+        self.environ['FABRIC_CA_SERVER_{}_CA_KEYFILE'.format(name[1].upper())] = '/var/hyperledger/fabric-ca-server/msp/keystore/{}'.format(filename)
+        if name[1] == 'example.com':
+            self.environ['ORDERER_GENERAL_TLS_PRIVATEKEY'] = '/var/hyperledger/msp/keystore/{}'.format(filename)
+
+    def lookForKeyFile(self, fileLoc):
+        filename = ""
+        files = os.listdir(fileLoc)
+        for fn in files:
+            if fn.endswith('sk'):
+                filename = fn
+        return filename
 
     def getEnvAdditions(self):
         myEnv = {}
@@ -203,6 +232,27 @@ class Composition:
         if command[0] !="ps" and command[0] !="config":
             self.rebuildContainerData()
         return str(output)
+
+    def updateContainerEnviron(self, container_name, keyValList):
+        for containerID in self.refreshContainerIDs():
+            # get container metadata
+            cmd = ["docker", "inspect", containerID]
+            try:
+                output = subprocess.check_output(cmd)
+            except:
+                err = "Error occurred {0}: {1}".format(cmd, sys.exc_info()[1])
+                continue
+            container = json.loads(str(output))[0]
+            # container name
+            if container_name == container['Name'][1:]:
+                config_loc = "/var/lib/docker/containers/{}/config.v2.json".format(container['Id'])
+                container['Config']['Env'] += keyValList
+                self.stop([container_name])
+                with open(config_loc, "w") as fd:
+                    fd.write(json.dumps([container]))
+                self.start([container_name])
+            else:
+                continue
 
     def rebuildContainerData(self):
         self.containerDataList = []
