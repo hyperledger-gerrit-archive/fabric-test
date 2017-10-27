@@ -28,11 +28,7 @@ def getOrdererList(context):
 
 def getKafkaBrokerList(context, orderer):
     # Get the kafka broker list from the orderer environment var
-    kafkaBrokers = ""
-    for container in context.composition.containerDataList:
-        if orderer in container.containerName:
-            kafkaBrokers = container.getEnv('CONFIGTX_ORDERER_KAFKA_BROKERS')
-            break
+    kafkaBrokers = context.composition.getEnvFromContainer(orderer, 'CONFIGTX_ORDERER_KAFKA_BROKERS')
 
     # Be sure that kafka broker list returned is not an empty string
     assert kafkaBrokers != "", "There are no kafka brokers set in the orderer environment"

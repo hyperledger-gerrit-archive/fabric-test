@@ -26,6 +26,19 @@ services:
         ports:
             - 9092
 
+    ca:
+        image: hyperledger/fabric-ca
+        environment:
+            - FABRIC_CA_HOME=/var/hyperledger/fabric-ca-server
+            - FABRIC_CA_SERVER_HOME=/var/hyperledger/fabric-ca-server
+            - FABRIC_CA_SERVER_TLS_ENABLED=${FABRIC_CA_SERVER_TLS_ENABLED}
+              #- FABRIC_CA_SERVER_CA_CERTFILE=/var/hyperledger/fabric-ca-server-config/ca.example.com-cert.pem
+            - FABRIC_CA_SERVER_DEBUG=true
+        ports:
+            - 7054
+        volumes:
+            - ../configs/${CORE_PEER_NETWORKID}:/var/hyperledger/fabric-ca-server-config
+
     orderer:
         image: hyperledger/fabric-orderer
         environment:
@@ -48,13 +61,20 @@ services:
             - ORDERER_GENERAL_TLS_PRIVATEKEY=${ORDERER_GENERAL_TLS_PRIVATEKEY}
             - ORDERER_GENERAL_TLS_CERTIFICATE=${ORDERER_GENERAL_TLS_CERTIFICATE}
             - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/tls/ca.crt]
-            - ORDERER_TLS_CLIENTAUTHREQUIRED=${ORDERER_TLS_CLIENTAUTHREQUIRED}
-            - ORDERER_TLS_CLIENTROOTCAS_FILES=/var/hyperledger/users/Admin@example.com/tls/ca.crt
-            - ORDERER_TLS_CLIENTCERT_FILE=/var/hyperledger/users/Admin@example.com/tls/client.crt
-            - ORDERER_TLS_CLIENTKEY_FILE=/var/hyperledger/users/Admin@example.com/tls/client.key
+            - ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED=${ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED}
+            - ORDERER_GENERAL_TLS_CLIENTROOTCAS=[/var/hyperledger/tls/ca.crt, /var/hyperledger/ca/ca.example.com-cert.pem]
+              #- ORDERER_GENERAL_TLS_CLIENTROOTCAS=/var/hyperledger/users/Admin@example.com/tls/ca.crt
+              #- ORDERER_TLS_CLIENTCERT_FILE=/var/hyperledger/users/Admin@example.com/tls/client.crt
+              #- ORDERER_TLS_ROOTCERT_FILE=/var/hyperledger/users/Admin@example.com/tls/ca.crt
+            - ORDERER_GENERAL_TLS_CLIENTKEY_FILE=/var/hyperledger/users/Admin@example.com/tls/client.key
+            #- ORDERER_TLS_ROOTCERT_FILE=/var/hyperledger/users/Admin@example.com/tls/client.crt
+            - ORDERER_TLS_ROOTCERT_FILE=/var/hyperledger/tls/ca.crt
+            #            - ORDERER_TLS_CLIENTCERT_FILE=/var/hyperledger/tls/server.crt
+            #            - ORDERER_GENERAL_TLS_CLIENTKEY_FILE=/var/hyperledger/server.key
         volumes:
             - ../configs/${CORE_PEER_NETWORKID}:/var/hyperledger/configs
             - ../configs/${CORE_PEER_NETWORKID}/ordererOrganizations/example.com/users:/var/hyperledger/users
+            - ../configs/${CORE_PEER_NETWORKID}/ordererOrganizations/example.com/ca:/var/hyperledger/ca
         working_dir: /opt/gopath/src/github.com/hyperledger/fabric/orderer
         command: orderer
         ports:
