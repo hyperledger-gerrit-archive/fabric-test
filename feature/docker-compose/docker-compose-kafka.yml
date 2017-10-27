@@ -233,13 +233,19 @@ services:
             - CORE_PEER_GOSSIP_ORGLEADER=${CORE_PEER_GOSSIP_ORGLEADER_PEER0_ORG1}
             - CORE_PEER_GOSSIP_USELEADERELECTION=${CORE_PEER_GOSSIP_USELEADERELECTION_PEER0_ORG1}
             - CORE_PEER_LOCALMSPID=org1.example.com
-            - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/var/hyperledger/users/Admin@org1.example.com/tls/ca.crt
-            - CORE_PEER_TLS_CLIENTCERT_FILE=/var/hyperledger/users/Admin@org1.example.com/tls/client.crt
-            - CORE_PEER_TLS_CLIENTKEY_FILE=/var/hyperledger/users/Admin@org1.example.com/tls/client.key
+              #            - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/var/hyperledger/users/Admin@org1.example.com/tls/ca.crt
+              #            - CORE_PEER_TLS_CLIENTCERT_FILE=/var/hyperledger/users/Admin@org1.example.com/tls/client.crt
+              #            - CORE_PEER_TLS_CLIENTKEY_FILE=/var/hyperledger/users/Admin@org1.example.com/tls/client.key
+              #- CORE_PEER_TLS_CLIENTCERT_FILE=/var/hyperledger/users/Admin@org1.example.com/tls/client.crt
+              #- CORE_PEER_TLS_CLIENTKEY_FILE=/var/hyperledger/users/Admin@org1.example.com/tls/client.key
+            - CORE_PEER_TLS_CLIENTROOTCAS_FILES=[/var/hyperledger/tls/ca.crt, /var/hyperledger/ca/ca.org1.example.com-cert.pem]
+            - CORE_PEER_TLS_CLIENTCERT_FILE=/var/hyperledger/tls/server.crt
+            - CORE_PEER_TLS_CLIENTKEY_FILE=/var/hyperledger/tls/server.key
         volumes:
             - ../configs/${CORE_PEER_NETWORKID}/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/msp:/var/hyperledger/msp
             - ../configs/${CORE_PEER_NETWORKID}/peerOrganizations/org1.example.com/peers/peer0.org1.example.com/tls:/var/hyperledger/tls
             - ../configs/${CORE_PEER_NETWORKID}/peerOrganizations/org1.example.com/users:/var/hyperledger/users
+            - ../configs/${CORE_PEER_NETWORKID}/peerOrganizations/org1.example.com/ca:/var/hyperledger/ca
         depends_on:
             - orderer0.example.com
             - orderer1.example.com
@@ -267,6 +273,7 @@ services:
             - CORE_PEER_GOSSIP_USELEADERELECTION=${CORE_PEER_GOSSIP_USELEADERELECTION_PEER0_ORG2}
             - CORE_PEER_LOCALMSPID=org2.example.com
             - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/var/hyperledger/users/Admin@org2.example.com/tls/ca.crt
+            - CORE_PEER_TLS_CLIENTROOTCAS_FILES=[/var/hyperledger/tls/ca.crt /var/hyperledger/ca/ca.org1.example.com-cert.pem]
             - CORE_PEER_TLS_CLIENTCERT_FILE=/var/hyperledger/users/Admin@org2.example.com/tls/client.crt
             - CORE_PEER_TLS_CLIENTKEY_FILE=/var/hyperledger/users/Admin@org2.example.com/tls/client.key
         volumes:

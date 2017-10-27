@@ -1,4 +1,130 @@
 {
+  'urls': {
+    'ccStatusURL': 'https://9.47.152.111:44444/api/network/6bc74ae45a994a0bbefc11bf4c609a24/peer/{peer}/chaincodes',
+    'deleteChaincodeURL': 'https://9.47.152.111:44444/api/network/6bc74ae45a994a0bbefc11bf4c609a24/node/{nodeID}/chaincode/{ccID}/version/{ccVersion}',
+    'getLogsURL': 'https://9.47.152.111:44444/api/network/6bc74ae45a994a0bbefc11bf4c609a24/node/{nodeID}/log',
+    'deleteNetworkURL': 'https://9.47.152.111:44444/api/network/6bc74ae45a994a0bbefc11bf4c609a24',
+    'statusURL': 'https://9.47.152.111:44444/api/network/6bc74ae45a994a0bbefc11bf4c609a24/nodes',
+    'getCCLogsURL': 'https://9.47.152.111:44444/api/network/6bc74ae45a994a0bbefc11bf4c609a24/node/{nodeID}/chaincode/{ccID}/version/{ccVersion}/log',
+    'stopURL': 'https://9.47.152.111:44444/api/network/6bc74ae45a994a0bbefc11bf4c609a24/node/{nodeID}/stop',
+    'restartURL': 'https://9.47.152.111:44444/api/network/6bc74ae45a994a0bbefc11bf4c609a24/node/{nodeID}/restart',
+    'startURL': 'https://9.47.152.111:44444/api/network/6bc74ae45a994a0bbefc11bf4c609a24/node/{nodeID}/start'
+  },
+  'orgs': {
+    'PeerOrg2': {
+      'user_clients': [
+        {
+          'enrollId': 'admin',
+          'enrollSecret': '0ACB77FFBF'
+        }
+      ]
+    },
+    'OrdererOrg': {
+      'user_clients': [
+        {
+          'enrollId': 'admin',
+          'enrollSecret': 'FACB357503'
+        }
+      ]
+    },
+    'PeerOrg1': {
+      'user_clients': [
+        {
+          'enrollId': 'admin',
+          'enrollSecret': 'CC34C3492D'
+        }
+      ]
+    }
+  },
+  'nodes': {
+    'ca0.example.com': {
+      'url': 'https://yrk-cmdevc.zone.blockchain.ibm.com:26867',
+      'nodeID': '45e0c3c3ae0e3b630882930a274c556062c12cc94ace0a1c8bf36b8b429cd04e',
+      'mspID': 'PeerOrg1',
+      'nodeName': 'fabric-ca-peerorg1-26867c'
+    },
+    'orderer2.example.com': {
+      'url': 'grpcs://yrk-cmdeve.zone.blockchain.ibm.com:17011',
+      'nodeID': 'bb74d1da052e7f32d4520f2447553a35aa89354b72e2205be04621bf4b991e2f',
+      'mspID': 'OrdererOrg',
+      'nodeName': 'fabric-orderer-17011e'
+    },
+    'peer1.org2.example.com': {
+      'url': 'grpcs://yrk-cmdeva.zone.blockchain.ibm.com:25704',
+      'eventsUrl': 'grpcs://yrk-cmdeva.zone.blockchain.ibm.com:18048',
+      'nodeName': 'fabric-peer-org2-25704a',
+      'mspID': 'PeerOrg2',
+      'nodeID': '93b3a196c56c9257d717fc986afbf90383f526d5e7e5df0bcb2c936e3c0f6e54'
+    },
+    'ca2.example.com': {
+      'url': 'https://yrk-cmdevb.zone.blockchain.ibm.com:11673',
+      'nodeID': 'caeb27a152d3e8435244dc4a17b76a668fd4a0e155a59e3e52013a2fce7c8226',
+      'mspID': 'PeerOrg2',
+      'nodeName': 'fabric-ca-peerorg2-11673b'
+    },
+    'orderer1.example.com': {
+      'url': 'grpcs://yrk-cmdevd.zone.blockchain.ibm.com:17011',
+      'nodeID': '9dc26dc572bf8e01eca8da78419a3a20ffee4d6fbcea916d08c482f20ccba27e',
+      'mspID': 'OrdererOrg',
+      'nodeName': 'fabric-orderer-17011d'
+    },
+    'kafka0': {
+      'url': None,
+      'nodeID': 'c0345559040ebf2376538586342a7b6d7b31ac45ac64a41b8f3ff5484002707d',
+      'mspID': '',
+      'nodeName': 'kafka-10476e'
+    },
+    'kafka1': {
+      'url': None,
+      'nodeID': '4d1d347bdcfefd49754649cca3f04d2caaa830464c84371b33f9fb150dd27630',
+      'mspID': '',
+      'nodeName': 'kafka-10476b'
+    },
+    'kafka2': {
+      'url': None,
+      'nodeID': '7e2a4ecd32617a613c1b935cc0812f0bccf8b3a0c0425f048d2963140b3a6039',
+      'mspID': '',
+      'nodeName': 'kafka-10476c'
+    },
+    'kafka3': {
+      'url': None,
+      'nodeID': '4bf3432640073d34590dc5d1fc76e21947b0297edd69af6e1284f4656f43aa71',
+      'mspID': '',
+      'nodeName': 'kafka-10476a'
+    },
+    'peer0.org2.example.com': {
+      'url': 'grpcs://yrk-cmdevc.zone.blockchain.ibm.com:30350',
+      'eventsUrl': 'grpcs://yrk-cmdevc.zone.blockchain.ibm.com:24252',
+      'nodeName': 'fabric-peer-org1-30350c',
+      'mspID': 'PeerOrg1',
+      'nodeID': '81bc1bd4b4e000536aaad67a00a2b70c69d164442018bc75557961160a0c1244'
+    },
+    'peer0.org1.example.com': {
+      'url': 'grpcs://yrk-cmdeva.zone.blockchain.ibm.com:30350',
+      'eventsUrl': 'grpcs://yrk-cmdeva.zone.blockchain.ibm.com:24252',
+      'nodeName': 'fabric-peer-org1-30350a',
+      'mspID': 'PeerOrg1',
+      'nodeID': '6c6463ae7353e70efe8917fbd251d068231178ce1dc236361cad42d1d4dfa82a'
+    },
+    'peer1.org1.example.com': {
+      'url': 'grpcs://yrk-cmdevc.zone.blockchain.ibm.com:25704',
+      'eventsUrl': 'grpcs://yrk-cmdevc.zone.blockchain.ibm.com:18048',
+      'nodeName': 'fabric-peer-org2-25704c',
+      'mspID': 'PeerOrg2',
+      'nodeID': '5dcc109dfa05d1062c81cf252568002347661c1fb401f614998d34fd6592c85c'
+    },
+    'ca1.example.com': {
+      'url': 'https://yrk-cmdeva.zone.blockchain.ibm.com:26045',
+      'nodeID': 'a585fa8a15619903ed164ed90c5071789ebeae942a4db710fe96375a34b51d3f',
+      'mspID': 'OrdererOrg',
+      'nodeName': 'fabric-ca-ordererorg-26045a'
+    },
+    'orderer0.example.com': {
+      'url': 'grpcs://yrk-cmdevb.zone.blockchain.ibm.com:17011',
+      'nodeID': 'c66c08e56c2ad815b65932a124a84d5a55735a107a5d4d65d8dc6843f233da5c',
+      'mspID': 'OrdererOrg',
+      'nodeName': 'fabric-orderer-17011b'
+    },
     "networkID": "%(networkId)s",
     "tls": %(tls)s,
     "environment": "dev",
