@@ -104,8 +104,10 @@ function newOrderer(client, network_config, orderer, tls) {
 
 
 var getRegisteredUsers = function(client, username, org, networkID, mspID) {
+    //var keyPath = util.format('../../configs/%s/peerOrganizations/%s/users/%s/msp/keystore/', networkID, org, username);
     var keyPath = util.format('./configs/%s/peerOrganizations/%s/users/%s/msp/keystore/', networkID, org, username);
     var keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
+    //var certPath = util.format('../../configs/%s/peerOrganizations/%s/users/%s/msp/signcerts/', networkID, org, username);
     var certPath = util.format('./configs/%s/peerOrganizations/%s/users/%s/msp/signcerts/', networkID, org, username);
     var certPEM = readAllFiles(certPath)[0].toString();
 
