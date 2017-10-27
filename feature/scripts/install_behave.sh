@@ -46,16 +46,22 @@ pip install google
 pip install protobuf
 pip install pyyaml
 pip install pykafka
+pip install pyopenssl
 pip install requests
 pip install pyexecjs
 pip install cython
-pip install pyjnius
+# This will be used when including JavaSDK calls. Not needed for now
+#pip install pyjnius
 
 # Install Tcl prerequisites for busywork
 apt-get install --yes tcl tclx tcllib
 
 # Install NPM for the SDK
-apt-get install --yes npm
+#apt-get install --yes npm
+#curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+curl -sL https://deb.nodesource.com/setup_9.x | bash -
+apt-get install --yes nodejs
+npm install npm@latest -g
 
 # Install Govendor
 go get -u github.com/kardianos/govendor
