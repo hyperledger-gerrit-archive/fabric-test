@@ -2,6 +2,9 @@
     "name": "%(networkId)s",
     "version": "1.x",
     "networkID": "%(networkId)s",
+    "client": {
+        "organization": "Org1ExampleCom"
+    },
     "tls": %(tls)s,
     "environment": "dev",
     "headers": {"Content-Type": "application/json"},
@@ -186,6 +189,7 @@
             "name": "Org1ExampleCom",
             "mspid": "org1.example.com",
             "ca": "%(proto)s://localhost:8054",
+            #"ca": "%(proto)s://ca.org1.example.com:7054",
             "peers": {
                 "peer0.org1.example.com": {
                     "requests": "%(grpcType)s://localhost:7051",
@@ -213,6 +217,7 @@
             "name": "Org2ExampleCom",
             "mspid": "org2.example.com",
             "ca": "%(proto)s://localhost:9054",
+            #"ca": "%(proto)s://ca.org2.example.com:7054",
             "peers": {
                 "peer0.org2.example.com": {
                     "requests": "%(grpcType)s://localhost:9051",

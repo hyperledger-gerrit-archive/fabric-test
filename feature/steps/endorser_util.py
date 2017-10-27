@@ -160,9 +160,11 @@ class InterfaceBase:
     def addIdemixIdentities(self, context, user, passwd, role, org):
         return self.cli.addIdemixIdentities(context, user, passwd, role, org)
 
-    def enrollCAadmin(self, context, nodes):
-        return self.cli.enrollCAadmin(context, nodes)
+    def enrollCAadmin(self, context, node):
+        return self.cli.enrollCAadmin(context, node)
 
+    def revokeUserAndGenerateCRL(self, context, component, user, admin='Admin', adminpass='adminpw'):
+        return self.cli.revokeUserAndGenerateCRL(context, component, user, admin=admin, adminpass=adminpass)
 
 class ToolInterface(InterfaceBase):
     def __init__(self, context):
@@ -279,6 +281,8 @@ class SDKInterface(InterfaceBase):
             with open("{2}/configs/{0}/peerOrganizations/{1}/ca/ca.{1}-cert.pem".format(context.projectName, org, os.path.abspath('.')), "r") as fd:
                   certs += fd.read().replace("\n", "\\r\\n")
 
+        print("CACerts: {}".format(str(certs)))
+
         with open(networkConfigFile, "w+") as fd:
             structure = {"config": "{0}/configs/{1}".format(os.path.abspath('.'),
                                                             context.projectName),
@@ -325,6 +329,7 @@ class SDKInterface(InterfaceBase):
         result = self.invoke_func(chaincode, channelId, user, org, [peer], orderer, opts)
         print("Invoke: {}".format(result))
         return {peer: result}
+        #return result
 
     def query_chaincode(self, context, chaincode, peer, channelId=TEST_CHANNEL_ID, targs="", user="User1", opts={}):
         # targs and user are optional parameters with defaults set if they are not included
@@ -607,6 +612,7 @@ class CLIInterface(InterfaceBase):
         if not ext:
             ext = "block"
 
+        output = {}
         for peer in peers:
             setup = self.get_env_vars(context, peer, includeAll=False, user=user)
             command = ["peer", "channel", "fetch", "config"]
@@ -630,8 +636,8 @@ class CLIInterface(InterfaceBase):
 
             command.append('"')
 
-            output = context.composition.docker_exec(setup+command, [peer])
-        print("[{0}]: {1}".format(" ".join(setup+command), output))
+            output.update(context.composition.docker_exec(setup+command, [peer]))
+            print("[{0}]: {1}".format(" ".join(setup+command), output))
         return output
 
     def join_channel(self, context, peers, channelId=TEST_CHANNEL_ID, user="Admin"):
@@ -805,16 +811,20 @@ class CLIInterface(InterfaceBase):
             output = context.composition.docker_exec(["fabric-ca-client enroll -d -u {0} -M /var/hyperledger/msp --caname ca.{1} --csr.cn ca.{1} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(url, org)], [node])
             print("Output Enroll: {}".format(output))
 
-    def registerUser(self, context, user, org, passwd, role, peer):
+    def registerUser(self, context, user, org, passwd, role, component):
         command = "fabric-ca-client register -d --id.name {0} --id.secret {2} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(user, org, passwd)
-        if role.lower() == u'admin':
+        if role.lower() == u'admin' and component.startswith("orderer"):
+            # Register on orderers
+            command += ''' --id.attrs '"admin=true:ecert"' '''
+
+        elif role.lower() == u'admin':
             command += ''' --id.attrs '"hf.Registrar.Roles=peer,client"' --id.attrs hf.Registrar.Attributes=*,hf.Revoker=true,hf.GenCRL=true,admin=true:ecert'''
 
         context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "/var/hyperledger/users/{0}@{1}".format(user, org)
-        output = context.composition.docker_exec([command], [peer])
+        output = context.composition.docker_exec([command], [component])
         print("user register: {}".format(output))
 
-    def enrollUser(self, context, user, org, passwd, enrollType, peer):
+    def enrollUser(self, context, user, org, passwd, enrollType, component, orgType):
         fca = 'ca.{}'.format(org)
         proto = "http"
         if context.tls:
@@ -825,8 +835,13 @@ class CLIInterface(InterfaceBase):
         output = context.composition.docker_exec([command], [peer])
         print("Output: {}".format(output))
 
-        command = "fabric-ca-client certificate list -d --id {0} --store /var/hyperledger/users/{0}@{1}/tls/ --caname {3} --csr.cn {3} --tls.certfiles /var/hyperledger/configs/{2}/peerOrganizations/{1}/ca/ca.{1}-cert.pem".format(user, org, context.projectName, fca)
-        output = context.composition.docker_exec([command], [peer])
+        if orgType == "peerOrganizations":
+            command = "fabric-ca-client certificate list -d --id {0} --store /var/hyperledger/users/{0}@{1}/tls/ --caname {3} --csr.hosts localhost,{3} --csr.cn {3} --tls.certfiles /var/hyperledger/configs/{2}/{4}/{1}/ca/ca.{1}-cert.pem".format(user, org, context.projectName, fca, orgType)
+            #command = "fabric-ca-client certificate list -d --id {0} --store /var/hyperledger/users/{0}@{1}/tls/ --caname {3} --csr.cn {3} --tls.certfiles /var/hyperledger/configs/{2}/{4}/{1}/ca/ca.{1}-cert.pem".format(user, org, context.projectName, fca, orgType)
+        else:
+            command = "fabric-ca-client certificate list -d --id {0} --store /var/hyperledger/users/{0}@{1}/tls/ --caname {2} --csr.hosts localhost,{2} --csr.cn {2} --tls.certfiles /var/hyperledger/configs/{3}/{1}/ca/ca.{1}-cert.pem".format(user, org, fca, orgType)
+            #command = "fabric-ca-client certificate list -d --id {0} --store /var/hyperledger/users/{0}@{1}/tls/ --caname {2} --csr.cn {2} --tls.certfiles /var/hyperledger/configs/{3}/{1}/ca/ca.{1}-cert.pem".format(user, org, fca, orgType)
+        output = context.composition.docker_exec([command], [component])
         print("Cert Output: {}".format(output))
 
     def enrollUsersFabricCA(self, context):
@@ -838,18 +853,29 @@ class CLIInterface(InterfaceBase):
             enrollType = context.users[user].get('certType', "x509")
             peer = 'peer0.{}'.format(org)
 
+            if role.lower() == u'admin':
+                self.enrollCAadmin(context, "orderer0.example.com")
+                self.registerUser(context, user, "example.com", passwd, role, "orderer0.example.com")
+                self.enrollUser(context, user, "example.com", passwd, enrollType, "orderer0.example.com", "ordererOrganizations")
+                self.placeCertsInDirStruct(context, user, "example.com", "orderer0.example.com", "ordererOrganizations")
+
+                self.enrollCAadmin(context, "peer0.org2.example.com")
+                self.registerUser(context, user, "org2.example.com", passwd, role, "peer0.org2.example.com")
+                self.enrollUser(context, user, "org2.example.com", passwd, enrollType, "peer0.org2.example.com", "peerOrganizations")
+                self.placeCertsInDirStruct(context, user, "org2.example.com", "peer0.org2.example.com", "peerOrganizations")
+
             # Enroll (login) admin first
-            self.enrollCAadmin(context, [peer])
+            self.enrollCAadmin(context, peer)
 
             self.registerUser(context, user, org, passwd, role, peer)
-            self.enrollUser(context, user, org, passwd, enrollType, peer)
+            self.enrollUser(context, user, org, passwd, enrollType, peer, "peerOrganizations")
             if enrollType == u'idemix':
                 self.addIdemixIdentities(context, user, passwd, role, org)
 
             # Place the certificates in the set directory structure
-            self.placeCertsInDirStruct(context, user, org, peer)
+            self.placeCertsInDirStruct(context, user, org, peer, "peerOrganizations")
 
-    def placeCertsInDirStruct(self, context, user, org, peer):
+    def placeCertsInDirStruct(self, context, user, org, peer, orgType):
         fca = 'ca.{}'.format(org)
         proto = "http"
         if context.tls:
@@ -902,6 +928,35 @@ class CLIInterface(InterfaceBase):
 
         output = context.composition.docker_exec(["fabric-ca-client identity list"], [peer])
         print("Ident List: {}".format(output))
+
+
+    def revokeUserAndGenerateCRL(self, context, component, user, admin='Admin', adminpass='adminpw'):
+        org = component.split(".", 1)[1]
+        updated_env = config_util.updateEnviron(context)
+        updated_env['FABRIC_CA_CLIENT_HOME'] = "/var/hyperledger/users/Admin@{}/msp/crls/crl.pem".format(org)
+        self.enrollCAadmin(context, component, admin, adminpass)
+        #export  FABRIC_CA_CLIENT_HOME=$ORG_ADMIN_HOME
+        #logr "Revoking the user '$USER_NAME' of the organization '$ORG' with Fabric CA Client home directory set to $FABRIC_CA_CLIENT_HOME and generating CRL ..."
+        #export FABRIC_CA_CLIENT_TLS_CERTFILES=$CA_CHAINFILE
+        #fabric-ca-client revoke -d --revoke.name $USER_NAME --gencrl
+        command = "fabric-ca-client revoke -d --revoke.name {0} --gencrl --tls.certfiles /var/hyperledger/configs/{3}/{2}/{1}/ca/ca.{1}-cert.pem".format(user, org, "peerOrganizations", context.projectName)
+        output = context.composition.docker_exec([command], [component], env=updated_env)
+        print("Revoke output: {}".format(output))
+
+    def generateCRL(self, context, component, org, admin='Admin', adminpass='adminpw'):
+        updated_env = config_util.updateEnviron(context)
+        updated_env['FABRIC_CA_CLIENT_HOME'] = "/var/hyperledger/users/Admin@{}/msp/crls/crl.pem".format(org)
+        # Generates a CRL that contains serial numbers of all revoked enrollment certificates.
+        # The generated CRL is placed in the crls folder of the admin's MSP
+        self.enrollCAadmin(context, component, admin, adminpass)
+        #export FABRIC_CA_CLIENT_HOME=$ORG_ADMIN_HOME
+        #logr "Generating CRL for the organization '$ORG' with Fabric CA Client home directory set to $FABRIC_CA_CLIENT_HOME ..."
+        #export FABRIC_CA_CLIENT_TLS_CERTFILES=$CA_CHAINFILE
+        #fabric-ca-client gencrl -d
+        command = "fabric-ca-client gencrl -d --tls.certfiles /var/hyperledger/configs/{2}/{1}/{0}/ca/ca.{0}-cert.pem".format(org, "peerOrganizations", context.projectName)
+        output = context.composition.docker_exec([command], [component], env=updated_env)
+        print("CRL output: {}".format(output))
+
 
     def wait_for_deploy_completion(self, context, chaincode_container, timeout):
         containers = subprocess.check_output(["docker ps -a"], shell=True)
