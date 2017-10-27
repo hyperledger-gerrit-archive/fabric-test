@@ -61,6 +61,26 @@ def step_impl(context, channelId):
 def step_impl(context):
     config_util.generateCrypto(context, "./configs/{0}/crypto.yaml".format(context.projectName))
 
+@when(u'an admin revokes the user "{user}" from org "{org}"')
+def step_impl(context, user, org):
+    context.interface.revokeUserAndGenerateCRL(context, "peer0.{}".format(org), user)
+    context.interface.generateCRL(context, "peer0.{}".format(org), org)
+    context.users.pop(user)
+
+    # Fetch config block
+    peers = []
+    allpeers = context.interface.get_peers(context)
+    for peer in allpeers:
+        if peer.endswith(org):
+            peers.append(peer)
+    output = context.interface.fetch_channel(context, peers, 'orderer0.example.com', context.interface.TEST_CHANNEL_ID)
+    print("fetch output: {}".format(output))
+
+    # Create config update envelope with CRL and update the config block of the channel
+    args = config_util.createCRLConfigUpdate(context, org, peers, context.interface.TEST_CHANNEL_ID)
+    context.block_filename = config_util.configUpdate(context, args, "Application", context.interface.TEST_CHANNEL_ID)
+    print("config update output: {}".format(context.block_filename))
+
 @then(u'crypto directories are generated containing certificates for {numOrgs} orgs, {numPeers} peers, {numOrderers} orderers, and {numUsers} users')
 def step_impl(context, numOrgs, numPeers, numOrderers, numUsers):
     config_util.generateCryptoDir(context, numOrgs, numPeers, numOrderers, numUsers, tlsExist=False)
