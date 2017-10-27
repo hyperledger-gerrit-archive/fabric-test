@@ -49,8 +49,10 @@ class Composition:
 
     def __init__(self, context, composeFilesYaml=None, projectName=None,
                  force_recreate=True, components=[], startContainers=True):
-        if not projectName:
+        if not hasattr(context, "projectName") and not projectName:
             projectName = str(uuid.uuid1()).replace('-','')
+        elif hasattr(context, "projectName"):
+            projectName = context.projectName
         self.projectName = projectName
         self.context = context
         self.containerDataList = []
@@ -100,12 +102,12 @@ class Composition:
         command = ["network", "connect", str(self.projectName)+"_behave"]
         self.issueCommand(command, components)
 
-    def docker_exec(self, command, components=[]):
+    def docker_exec(self, command, components=[], env={}):
         results = {}
         updatedCommand = " ".join(command)
         for component in components:
             execCommand = ["exec", component, updatedCommand]
-            results[component] = self.issueCommand(execCommand, [])
+            results[component] = self.issueCommand(execCommand, [], env=env)
         return results
 
     def parseComposeFilesArg(self, composeFileArgs):
@@ -205,7 +207,7 @@ class Composition:
                 break
         return container
 
-    def issueCommand(self, command, components=[]):
+    def issueCommand(self, command, components=[], env={}):
         componentList = []
         useCompose = True
         # Some commands need to be run using "docker" and not "docker-compose"
@@ -244,7 +246,10 @@ class Composition:
                 if "Error: " in _error or "CRIT " in _error:
                     raise Exception(_error)
             else:
-                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.getEnv())
+                container_env = self.getEnv()
+                if env != {}:
+                    container_env.update(env)
+                process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=container_env)
                 output, _error = process.communicate()
                 if _error:
                     raise Exception(_error)
