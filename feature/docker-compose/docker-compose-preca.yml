@@ -1,0 +1,80 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+networks:
+    behave:
+
+services:
+    pre-ca.example.com:
+        image: hyperledger/fabric-ca
+        container_name: pre-ca.example.com
+        environment:
+            - FABRIC_CA_HOME=/var/hyperledger/fabric-ca-server
+            - FABRIC_CA_SERVER_CA_NAME=ca.example.com
+            - FABRIC_CA_SERVER_TLS_ENABLED=${FABRIC_CA_SERVER_TLS_ENABLED}
+            - FABRIC_CA_SERVER_TLS_CERTFILE=/var/hyperledger/fabric-ca-server-config/ca.example.com-cert.pem
+            - FABRIC_CA_SERVER_CA_CERTFILE=/var/hyperledger/fabric-ca-server-config/ca.example.com-cert.pem
+            - FABRIC_CA_SERVER_DEBUG=true
+            - BOOTSTRAP_USER_PASS=example.com-admin:example.com-adminpw
+            - FABRIC_CA_SERVER_CSR_CN=ca.example.com
+            - FABRIC_CA_SERVER_CSR_HOSTS=ca.example.com
+        ports:
+            - "7054:7054"
+        command: /bin/bash -c 'fabric-ca-server init -b $${BOOTSTRAP_USER_PASS} --ca.certfile $${FABRIC_CA_SERVER_TLS_CERTFILE}'
+        volumes:
+            - ../configs/${CORE_PEER_NETWORKID}/example.com:/var/hyperledger/fabric-ca-server
+            - ../configs/${CORE_PEER_NETWORKID}:/var/hyperledger/fabric-ca-server-config
+        networks:
+          behave:
+             aliases:
+               - ${CORE_PEER_NETWORKID}
+
+    pre-ca.org1.example.com:
+        image: hyperledger/fabric-ca
+        container_name: pre-ca.org1.example.com
+        environment:
+            - FABRIC_CA_HOME=/var/hyperledger/fabric-ca-server
+            - FABRIC_CA_SERVER_CA_NAME=ca.org1.example.com
+            - FABRIC_CA_SERVER_TLS_ENABLED=${FABRIC_CA_SERVER_TLS_ENABLED}
+            - FABRIC_CA_SERVER_TLS_CERTFILE=/var/hyperledger/fabric-ca-server-config/ca.org1.example.com-cert.pem
+            - FABRIC_CA_SERVER_DEBUG=true
+            - BOOTSTRAP_USER_PASS=org1.example.com-admin:org1.example.com-adminpw
+            - FABRIC_CA_SERVER_CSR_CN=ca.org1.example.com
+            - FABRIC_CA_SERVER_CSR_HOSTS=ca.org1.example.com
+        ports:
+            - "8054:7054"
+        command: /bin/bash -c 'fabric-ca-server init -b $${BOOTSTRAP_USER_PASS} --ca.certfile $${FABRIC_CA_SERVER_TLS_CERTFILE}'
+        volumes:
+            - ../configs/${CORE_PEER_NETWORKID}/org1.example.com:/var/hyperledger/fabric-ca-server
+            - ../configs/${CORE_PEER_NETWORKID}:/var/hyperledger/fabric-ca-server-config
+        networks:
+          behave:
+             aliases:
+               - ${CORE_PEER_NETWORKID}
+
+    pre-ca.org2.example.com:
+        image: hyperledger/fabric-ca
+        container_name: pre-ca.org2.example.com
+        environment:
+            - FABRIC_CA_HOME=/var/hyperledger/fabric-ca-server
+            - FABRIC_CA_SERVER_CA_NAME=ca.org2.example.com
+            - FABRIC_CA_SERVER_TLS_ENABLED=${FABRIC_CA_SERVER_TLS_ENABLED}
+            - FABRIC_CA_SERVER_TLS_CERTFILE=/var/hyperledger/fabric-ca-server-config/ca.org2.example.com-cert.pem
+            - FABRIC_CA_SERVER_DEBUG=true
+            - BOOTSTRAP_USER_PASS=org2.example.com-admin:org2.example.com-adminpw
+            - FABRIC_CA_SERVER_CSR_CN=ca.org2.example.com
+            - FABRIC_CA_SERVER_CSR_HOSTS=ca.org2.example.com
+        ports:
+            - "9054:7054"
+        command: /bin/bash -c 'fabric-ca-server init -b $${BOOTSTRAP_USER_PASS} --ca.certfile $${FABRIC_CA_SERVER_TLS_CERTFILE}'
+        volumes:
+            - ../configs/${CORE_PEER_NETWORKID}/org2.example.com:/var/hyperledger/fabric-ca-server
+            - ../configs/${CORE_PEER_NETWORKID}:/var/hyperledger/fabric-ca-server-config
+        networks:
+          behave:
+             aliases:
+               - ${CORE_PEER_NETWORKID}

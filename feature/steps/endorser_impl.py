@@ -32,6 +32,14 @@ def step_impl(context, channelId):
 def step_impl(context):
     setup_channel_impl(context, context.interface.TEST_CHANNEL_ID, "orderer0.example.com")
 
+@when(u'a user "{user}" sets up a channel')
+def step_impl(context, user):
+    setup_channel_impl(context, context.interface.TEST_CHANNEL_ID, "orderer0.example.com", user=user)
+
+@when(u'a user "{user}" sets up a channel named "{channelId}"')
+def step_impl(context, user, channelId):
+    setup_channel_impl(context, channelId, "orderer0.example.com", user=user)
+
 @when(u'a user deploys chaincode at path "{path}" with args {args} with name "{name}" with language "{language}" to "{peer}" on channel "{channel}" within {timeout:d} seconds')
 def deploy_impl(context, path, args, name, language, peer, channel, timeout=120, username="Admin"):
     # Be sure there is a transaction block for this channel
@@ -211,6 +219,17 @@ def step_impl(context, timeout):
 
 @when(u'a user deploys chaincode')
 def step_impl(context):
+    deploy_impl(context,
+                "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02",
+                '["init", "a", "100" , "b", "200"]',
+                "mycc",
+                "GOLANG",
+                "peer0.org1.example.com",
+                context.interface.TEST_CHANNEL_ID)
+
+
+@when(u'a user "{user}" deploys chaincode')
+def step_impl(context, user):
     deploy_impl(context,
                 "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02",
                 '["init", "a", "100" , "b", "200"]',
