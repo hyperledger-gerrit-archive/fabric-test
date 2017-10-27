@@ -26,6 +26,19 @@ services:
         ports:
             - 9092
 
+    ca:
+        image: hyperledger/fabric-ca
+        environment:
+            - FABRIC_CA_HOME=/var/hyperledger/fabric-ca-server
+            - FABRIC_CA_SERVER_HOME=/var/hyperledger/fabric-ca-server
+            - FABRIC_CA_SERVER_TLS_ENABLED=${FABRIC_CA_SERVER_TLS_ENABLED}
+            - FABRIC_CA_SERVER_CA_CERTFILE=/var/hyperledger/fabric-ca-server-config/ca.example.com-cert.pem
+            - FABRIC_CA_SERVER_DEBUG=true
+        ports:
+            - 7054
+        volumes:
+            - ../configs/${CORE_PEER_NETWORKID}:/var/hyperledger/fabric-ca-server-config
+
     orderer:
         image: hyperledger/fabric-orderer
         environment:
