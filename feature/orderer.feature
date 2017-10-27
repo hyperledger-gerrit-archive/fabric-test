@@ -101,6 +101,7 @@ Examples:
     | kafka | NodeJS SDK |
 
 
+@doNotDecompose
 @daily
 Scenario Outline: FAB-3851: Message Payloads of size <size>, for <type> orderer
     Given I have a bootstrapped fabric network of type <type> using state-database couchdb
@@ -116,11 +117,11 @@ Scenario Outline: FAB-3851: Message Payloads of size <size>, for <type> orderer
 Examples:
     | type  |  size   |
     | solo  | 1048576 |
-    | solo  | 2097152 |
-    | solo  | 4194304 |
-    | kafka | 1048576 |
-    | kafka | 2097152 |
-    | kafka | 4194304 |
+    #    | solo  | 2097152 |
+    #    | solo  | 4194304 |
+    #    | kafka | 1048576 |
+    #    | kafka | 2097152 |
+    #    | kafka | 4194304 |
 
 
 @daily

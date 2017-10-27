@@ -165,10 +165,11 @@ Scenario: FAB-6333: A peer with chaincode container disconnects, comes back up, 
   Then a user receives a success response of 900 from "peer1.org1.example.com"
 
 
+@doNotDecompose
 @daily
 Scenario Outline: FAB-7150/FAB-7153/FAB-7759: Test Mutual TLS/ClientAuth <security> with <type> based-orderer using <interface> interface
   Given the CORE_PEER_TLS_CLIENTAUTHREQUIRED environment variable is "true"
-  And the ORDERER_TLS_CLIENTAUTHREQUIRED environment variable is "true"
+  And the ORDERER_GENERAL_TLS_CLIENTAUTHREQUIRED environment variable is true
   And I have a bootstrapped fabric network of type <type> <security>
   And I use the <interface> interface
   When an admin sets up a channel
@@ -195,12 +196,12 @@ Scenario Outline: FAB-7150/FAB-7153/FAB-7759: Test Mutual TLS/ClientAuth <securi
   Then an admin receives a response containing CERTIFICATE
 Examples:
     | type  |   security  |  interface |
-    | kafka |   with tls  | NodeJS SDK |
-    | solo  |   with tls  | NodeJS SDK |
+    #    | kafka |   with tls  | NodeJS SDK |
+    #    | solo  |   with tls  | NodeJS SDK |
     | kafka |   with tls  |     CLI    |
-    | solo  |   with tls  |     CLI    |
-    | kafka | without tls |     CLI    |
-    | solo  | without tls | NodeJS SDK |
+    #    | solo  |   with tls  |     CLI    |
+    #    | kafka | without tls |     CLI    |
+    #    | solo  | without tls | NodeJS SDK |
 
 @daily
 Scenario: FAB-3855: Empty Payload Messages

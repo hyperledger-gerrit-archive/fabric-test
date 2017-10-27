@@ -72,7 +72,10 @@ class InterfaceBase:
             context.chaincode['policy'] = policy
 
     def post_deploy_chaincode(self, context, peer, timeout):
-        chaincode_container = "{0}-{1}-{2}-{3}".format(context.projectName, peer, context.chaincode['name'], context.chaincode.get('version', 0))
+        chaincode_container = "{0}-{1}-{2}-{3}".format(context.projectName,
+                                                       peer,
+                                                       context.chaincode['name'],
+                                                       context.chaincode.get("version", 0))
         context.interface.wait_for_deploy_completion(context, chaincode_container, timeout)
 
     def channel_block_present(self, context, containers, channelId):
@@ -261,16 +264,16 @@ class SDKInterface(InterfaceBase):
         return networkConfigFile
 
     def initializeNode(self):
-        shutil.rmtree("./node_modules", ignore_errors=True)
+        #shutil.rmtree("./node_modules", ignore_errors=True)
         shutil.copyfile("package.json", "../../package.json")
         node = execjs.get(execjs.runtime_names.Node)
         print("node info: {}".format(node.name))
-        npminstall =  subprocess.check_output(["npm install --silent"],
-                                            env=os.environ,
-                                            cwd="../..",
-                                            shell=True)
-        print("npm install: {}".format(npminstall))
-        shutil.copytree("../../node_modules", "./node_modules")
+        #npminstall =  subprocess.check_output(["npm install --silent"],
+        #                                    env=os.environ,
+        #                                    cwd="../..",
+        #                                    shell=True)
+        #print("npm install: {}".format(npminstall))
+        #shutil.copytree("../../node_modules", "./node_modules")
 
         with open("./sdk/node/invoke.js", "r") as fd:
             invoke_text = fd.read()
@@ -297,7 +300,7 @@ class SDKInterface(InterfaceBase):
         print("Invoke: {}".format(result))
         return {peer: result}
 
-    def query_chaincode(self, context, chaincode, peer, channelId, targs="", user="User1"):
+    def query_chaincode(self, context, chaincode, peer, channelId=TEST_CHANNEL_ID, targs="", user="User1"):
         # targs and user are optional parameters with defaults set if they are not included
         reformatted = self.reformat_chaincode(chaincode, channelId)
         peerParts = peer.split('.')
@@ -305,6 +308,7 @@ class SDKInterface(InterfaceBase):
         orgName = org.title().replace('.', '')
         print("Query Info: {0}@{1}, {2}, {3}, {4}".format(user, org, orgName, reformatted, peer))
         result = self.query_func.call("query", "{0}@{1}".format(user, org), orgName, reformatted, [peer], self.networkConfigFile)
+        print("Query Result: {}".format(result))
         return {peer: result}
 
     def wait_for_deploy_completion(self, context, chaincode_container, timeout):
@@ -372,6 +376,16 @@ class CLIInterface(InterfaceBase):
                        "--lang", context.chaincode['language'],
                        "--version", str(context.chaincode.get('version', 0)),
                        "--path", context.chaincode['path']]
+            if context.tls:
+                command = command + ["--tls",
+                                     "--cafile",
+                                     '{0}/ordererOrganizations/example.com/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir)]
+            if hasattr(context, "mutual_tls") and context.mutual_tls:
+                command = command + ["--clientauth",
+                                     "--certfile",
+                                     '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.crt'.format(configDir, org, user),
+                                     "--keyfile",
+                                     '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.key'.format(configDir, org, user)]
             if "orderers" in context.chaincode:
                 command = command + ["--orderer", 'orderer0.example.com:7050']
             if "user" in context.chaincode:
@@ -397,9 +411,15 @@ class CLIInterface(InterfaceBase):
                    "--ctor", r"""'{\"Args\": %s}'""" % (args)]
         if context.tls:
             command = command + ["--tls",
-                                 common_util.convertBoolean(context.tls),
                                  "--cafile",
+                                 #'{0}/peerOrganizations/org1.example.com/users/{1}@org1.example.com/tls/client.crt'.format(configDir, user)]
                                  '{0}/ordererOrganizations/example.com/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir)]
+        if hasattr(context, "mutual_tls") and context.mutual_tls:
+            command = command + ["--clientauth",
+                                 "--certfile",
+                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.crt'.format(configDir, org, user),
+                                 "--keyfile",
+                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.key'.format(configDir, org, user)]
         if "orderers" in context.chaincode:
             command = command + ["--orderer", 'orderer0.example.com:7050']
         if "user" in context.chaincode:
@@ -414,6 +434,7 @@ class CLIInterface(InterfaceBase):
 
     def create_channel(self, context, orderer, channelId=TEST_CHANNEL_ID, user="Admin"):
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        org = "org1.example.com"
         setup = self.get_env_vars(context, "peer0.org1.example.com", user=user)
         # Ideally this would NOT be a 5 minute timeout, but more like a 2 minute timeout.
         timeout = 300 + common_util.convertToSeconds(context.composition.environ.get('CONFIGTX_ORDERER_BATCHTIMEOUT', '0s'))
@@ -424,9 +445,16 @@ class CLIInterface(InterfaceBase):
                    "--orderer", '{0}:7050'.format(orderer)]
         if context.tls:
             command = command + ["--tls",
-                                 common_util.convertBoolean(context.tls),
+                                 #common_util.convertBoolean(context.tls),
                                  "--cafile",
+                                 #'{0}/peerOrganizations/org1.example.com/users/{1}@org1.example.com/tls/client.crt'.format(configDir, user)]
                                  '{0}/ordererOrganizations/example.com/orderers/{1}/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir, orderer)]
+        if hasattr(context, "mutual_tls") and context.mutual_tls:
+            command = command + ["--clientauth",
+                                 "--certfile",
+                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.crt'.format(configDir, org, user),
+                                 "--keyfile",
+                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.key'.format(configDir, org, user)]
 
         command.append('"')
 
@@ -461,7 +489,14 @@ class CLIInterface(InterfaceBase):
             if context.tls:
                 command = command + ["--tls",
                                      "--cafile",
+                                     #'{0}/peerOrganizations/org1.example.com/users/{1}@org1.example.com/tls/client.crt'.format(configDir, user)]
                                      '{0}/ordererOrganizations/example.com/orderers/{1}/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir, orderer)]
+            if hasattr(context, "mutual_tls") and context.mutual_tls:
+                command = command + ["--clientauth",
+                                     "--certfile",
+                                     '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.crt'.format(configDir, org, user),
+                                     "--keyfile",
+                                     '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.key'.format(configDir, org, user)]
 
             command.append('"')
 
@@ -477,6 +512,7 @@ class CLIInterface(InterfaceBase):
             org = '.'.join(peerParts[1:])
             setup = self.get_env_vars(context, peer, user=user)
             command = ["peer", "channel", "join",
+                       #"--blockpath", '/var/hyperledger/configs/{0}/{1}.tx"'.format(context.composition.projectName, channelId)]
                        "--blockpath", '/var/hyperledger/configs/{0}/{1}.block"'.format(context.composition.projectName, channelId)]
             count = 0
             output = "Error"
@@ -488,6 +524,23 @@ class CLIInterface(InterfaceBase):
                 count = count + 1
                 output = output[peer]
 
+        print("[{0}]: {1}".format(" ".join(setup+command), output))
+        if "Error: genesis block file not found open " in output:
+            assert "Error: genesis block file not found open " not in output, "Unable to find the genesis block file {0}.block".format(channelId)
+
+        return output
+
+    def sign_channel(self, context, peers, block_filename="update.pb", user="Admin"):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+
+        # peer channel signconfigtx -f org3_update_in_envelope.pb
+        for peer in peers:
+            peerParts = peer.split('.')
+            org = '.'.join(peerParts[1:])
+            setup = self.get_env_vars(context, peer, user=user)
+            command = ["peer", "channel", "signconfigtx",
+                       "--file", '/var/hyperledger/configs/{0}/{1}"'.format(context.composition.projectName, block_filename)]
+            output = context.composition.docker_exec(setup+command, [peer])
         print("[{0}]: {1}".format(" ".join(setup+command), output))
         return output
 
@@ -506,7 +559,14 @@ class CLIInterface(InterfaceBase):
             if context.tls:
                 command = command + ["--tls",
                                      "--cafile",
+                                     #'{0}/peerOrganizations/org1.example.com/users/{1}@org1.example.com/tls/client.crt'.format(configDir, user)]
                                      '{0}/ordererOrganizations/example.com/orderers/{1}/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir, orderer)]
+            if hasattr(context, "mutual_tls") and context.mutual_tls:
+                command = command + ["--clientauth",
+                                     "--certfile",
+                                     '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.crt'.format(configDir, org, user),
+                                     "--keyfile",
+                                     '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.key'.format(configDir, org, user)]
 
             command.append('"')
             output = context.composition.docker_exec(setup+command, [peer])
@@ -527,6 +587,8 @@ class CLIInterface(InterfaceBase):
 
     def upgrade_chaincode(self, context, orderer, peer, channelId=TEST_CHANNEL_ID, user="Admin"):
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        peerParts = peer.split('.')
+        org = '.'.join(peerParts[1:])
         setup = self.get_env_vars(context, peer, user=user)
         command = ["peer", "chaincode", "upgrade",
                    "--name", context.chaincode['name'],
@@ -536,9 +598,16 @@ class CLIInterface(InterfaceBase):
             command = command + ["--ctor", r"""'{\"Args\": %s}'""" % (str(context.chaincode["args"].replace('"', r'\"')))]
         if context.tls:
             command = command + ["--tls",
-                                 common_util.convertBoolean(context.tls),
+                                 #common_util.convertBoolean(context.tls),
                                  "--cafile",
+                                 #'{0}/peerOrganizations/org1.example.com/users/{1}@org1.example.com/tls/client.crt'.format(configDir, user)]
                                  '{0}/ordererOrganizations/example.com/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir)]
+        if hasattr(context, "mutual_tls") and context.mutual_tls:
+            command = command + ["--clientauth",
+                                 "--certfile",
+                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.crt'.format(configDir, org, user),
+                                 "--keyfile",
+                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.key'.format(configDir, org, user)]
         if "orderers" in context.chaincode:
             command = command + ["--orderer", '{}:7050'.format(orderer)]
         if "user" in context.chaincode:
@@ -564,9 +633,16 @@ class CLIInterface(InterfaceBase):
                    "--channelID", channelId]
         if context.tls:
             command = command + ["--tls",
-                                 common_util.convertBoolean(context.tls),
+                                 #common_util.convertBoolean(context.tls),
                                  "--cafile",
+                                 #'{0}/peerOrganizations/org1.example.com/users/{1}@org1.example.com/tls/client.crt'.format(configDir, user)]
                                  '{0}/ordererOrganizations/example.com/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir)]
+        if hasattr(context, "mutual_tls") and context.mutual_tls:
+            command = command + ["--clientauth",
+                                 "--certfile",
+                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.crt'.format(configDir, org, user),
+                                 "--keyfile",
+                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.key'.format(configDir, org, user)]
         if targs:
             #to escape " so that targs are compatible with cli command
             targs = targs.replace('"', r'\"')
@@ -599,6 +675,53 @@ class CLIInterface(InterfaceBase):
         print("Query Exec command: {0}".format(" ".join(setup+command)))
         result = self.retry(context, result, peer, setup, command)
         return result
+
+    def registerIdentities(self, context, nodes):
+        for node in nodes:
+            # fabric-ca-client enroll -d -u https://$CA_ADMIN_USER_PASS@$CA_HOST:7054
+            # fabric-ca-client register -d --id.name $ORDERER_NAME --id.secret $ORDERER_PASS
+            url = context.composition.getEnvFromContainer(node, 'ENROLLMENT_URL')
+            output = context.composition.docker_exec(["fabric-ca-client enroll -d -u {}".format(url)], [node])
+            print("Output Enroll: {}".format(output))
+            userpass = context.composition.getEnvFromContainer(node, 'BOOTSTRAP_USER_PASS').split(":")
+            output = context.composition.docker_exec(["fabric-ca-client register -d --id.name {0} --id.secret {1}".format(userpass[0], userpass[1])], [node])
+            print("Output register: {}".format(output))
+
+#    def registerUsers(self, context):
+#        for user in context.users.keys():
+#            #fabric-ca-client register -d --id.name $ADMIN_NAME --id.secret $ADMIN_PASS
+#            org = context.users[user]['organization']
+#            passwd = context.users[user]['password']
+#            role = context.users[user]['role']
+#            fca = 'ca.{}'.format(org)
+#            #peer = 'peer0.{}.example.com'.format(org)
+#            command = "fabric-ca-client register -d --id.name {0} --id.secret {1}".format(user, passwd)
+#            if role.lower() == u'admin':
+#                command += '--id.attrs "hf.admin=true:ecert"'
+#            output = context.composition.docker_exec([command], [fca])
+#            print("user register: {}".format(output))
+
+    def enrollUsersFabricCA(self, context):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        for user in context.users.keys():
+            org = context.users[user]['organization']
+            passwd = context.users[user]['password']
+            role = context.users[user]['role']
+            fca = 'ca.{}'.format(org)
+            peer = 'peer0.{}.example.com'.format(org)
+
+            # Register user first
+            command = "fabric-ca-client register -d --id.name {0} --id.secret {1}".format(user, passwd)
+            if role.lower() == u'admin':
+                command += '--id.attrs "hf.admin=true:ecert"'
+            output = context.composition.docker_exec([command], [fca])
+            print("user register: {}".format(output))
+
+            # Now enroll user
+            command = "fabric-ca-client enroll -d -u $${ENROLLMENT_URL} --enrollment.profile tls --id.name {0} --id.secret {1} --id.affiliation {2} -M {3}/peerOrganizations/{2}/users/{0}@{2}/msp".format(user, passwd, org, configDir)
+            #output = context.composition.docker_exec(["fabric-ca-client enroll -d -u https://{0}:{1}@{2}:7054".format(user, passwd, fca)], [peer])
+            output = context.composition.docker_exec([command], [peer])
+            print("Output: {}".format(output))
 
     def wait_for_deploy_completion(self, context, chaincode_container, timeout):
         containers = subprocess.check_output(["docker ps -a"], shell=True)
