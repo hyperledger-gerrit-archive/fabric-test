@@ -22,6 +22,29 @@ def step_impl(context):
 def step_impl(context, numOrgs, numPeers, numOrderers, numUsers):
     config_util.buildCryptoFile(context, numOrgs, numPeers, numOrderers, numUsers)
 
+@given(u'I register the orderers using fabric-ca')
+def step_impl(context):
+    orderers = context.interface.get_orderers(context)
+    #config_util.registerIdentities(context, orderers)
+    context.interface.registerIdentities(context, orderers)
+
+@given(u'I register the peers using fabric-ca')
+def step_impl(context):
+    peers = context.interface.get_peers(context)
+    #config_util.registerIdentities(context, peers)
+    context.interface.registerIdentities(context, peers)
+
+@given(u'I enroll the following users using fabric-ca')
+def step_impl(context):
+    assert 'table' in context, "Expected table with user, organization, password, and role"
+    context.users = {}
+    for row in context.table.rows:
+        context.users[row['username']] = {'organization': row['organization'],
+                                          'password': row['password'],
+                                          'role': row['role']}
+    #config_util.enrollUsersFabricCA(context)
+    context.interface.enrollUsersFabricCA(context)
+
 @when(u'the network is bootstrapped for an orderer of type {ordererType}')
 def ordererBootstrap_impl(context, ordererType):
     context.ordererProfile = config_util.PROFILE_TYPES.get(ordererType, "SampleInsecureSolo")
