@@ -60,6 +60,7 @@ Scenario: FAB-1306: Multiple organizations in a cluster - remove all, reinstate 
 
 
 @smoke
+@doNotDecompose
 Scenario Outline: FAB-3852: Message Payloads Less than 1MB, for <type> orderer using the <interface> interface
     Given I have a bootstrapped fabric network of type <type>
     And I use the <interface> interface
@@ -95,9 +96,9 @@ Scenario Outline: FAB-3852: Message Payloads Less than 1MB, for <type> orderer u
     And a user receives a response with the random value
 Examples:
     | type  |  interface |
-    | solo  |     CLI    |
-    | kafka |     CLI    |
-    | solo  | NodeJS SDK |
+    #| solo  |     CLI    |
+    #| kafka |     CLI    |
+    #| solo  | NodeJS SDK |
     | kafka | NodeJS SDK |
 
 
