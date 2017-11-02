@@ -28,8 +28,17 @@ CA_DIR = $(HYPERLEDGER_DIR)/fabric-ca
 DOCKER_ORG = hyperledger
 PRE_SETUP = $(GOPATH)/src/github.com/hyperledger/fabric-test/pre_setup.sh
 
+.PHONY: ci-setup
+ci-setup: git-update fabric ca pre-setup build
+
 .PHONY: ci-smoke
-ci-smoke: git-update fabric ca pre-setup docker-images smoke-tests clean-all
+ci-smoke: ci-setup smoke-tests clean-all
+
+.PHONY: ci-daily
+ci-daily: ci-setup daily-tests clean-all
+
+.PHONY: build
+build: docker-images binaries
 
 .PHONY: git-update
 git-update:
@@ -39,9 +48,6 @@ git-update:
 pre-setup:
 	@bash $(PRE_SETUP)
 #	@bash $(INSTALL_BEHAVE_DEPS)
-
-.PHONY: ci-daily
-ci-daily: git-update fabric ca pre-setup docker-images daily-tests clean-all
 
 .PHONY: fabric
 fabric:
@@ -57,6 +63,11 @@ docker-images:
 	@make docker -C $(FABRIC_DIR)
 	@make native -C $(FABRIC_DIR)
 	@make docker -C $(CA_DIR)
+
+.PHONY: binaries
+binaries:
+	@make cryptogen -C $(FABRIC_DIR)
+	@make configtxgen -C $(FABRIC_DIR)
 
 .PHONY: ca
 ca:
