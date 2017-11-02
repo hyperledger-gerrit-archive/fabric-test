@@ -1,0 +1,165 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+version: '2'
+
+networks:
+    behave:
+
+services:
+    ca.org0:
+        image: hyperledger/fabric-ca
+        container_name: ca.org0
+        environment:
+            - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+            - FABRIC_CA_SERVER_CA_NAME=ca.org0
+            - FABRIC_CA_SERVER_TLS_ENABLED=${FABRIC_CA_SERVER_TLS_ENABLED}
+            - FABRIC_CA_SERVER_TLS_CERTFILE=/var/hyperledger/fabric-ca-server-config/ca.org0-cert.pem
+            - FABRIC_CA_SERVER_DEBUG=true
+            - BOOTSTRAP_USER_PASS=org0-admin:org0-adminpw
+            - FABRIC_CA_SERVER_CSR_CN=ca.org0
+            - FABRIC_CA_SERVER_CSR_HOSTS=ca.org0
+        ports:
+            - "7054:7054"
+        command: /bin/bash -c 'echo $${BOOTSTRAP_USER_PASS}; fabric-ca-server init -b $${BOOTSTRAP_USER_PASS}; cp $${FABRIC_CA_HOME}/ca-cert.pem $${FABRIC_CA_SERVER_TLS_CERTFILE}; fabric-ca-server start'
+        volumes:
+            - ../configs/${CORE_PEER_NETWORKID}:/var/hyperledger/fabric-ca-server-config
+        networks:
+          behave:
+             aliases:
+               - ${CORE_PEER_NETWORKID}
+
+    ca.org1:
+        image: hyperledger/fabric-ca
+        container_name: ca.org1
+        environment:
+            - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+            - FABRIC_CA_SERVER_CA_NAME=ca.org1
+            - FABRIC_CA_SERVER_TLS_ENABLED=${FABRIC_CA_SERVER_TLS_ENABLED}
+            - FABRIC_CA_SERVER_TLS_CERTFILE=/var/hyperledger/fabric-ca-server-config/ca.org1-cert.pem
+            - FABRIC_CA_SERVER_DEBUG=true
+            - BOOTSTRAP_USER_PASS=org1-admin:org1-adminpw
+            - FABRIC_CA_SERVER_CSR_CN=ca.org1
+            - FABRIC_CA_SERVER_CSR_HOSTS=ca.org1
+        ports:
+            - "8054:7054"
+        command: /bin/bash -c 'echo $${BOOTSTRAP_USER_PASS}; fabric-ca-server init -b $${BOOTSTRAP_USER_PASS}; cp $${FABRIC_CA_HOME}/ca-cert.pem $${FABRIC_CA_SERVER_TLS_CERTFILE}; fabric-ca-server start'
+        volumes:
+            - ../configs/${CORE_PEER_NETWORKID}:/var/hyperledger/fabric-ca-server-config
+        networks:
+          behave:
+             aliases:
+               - ${CORE_PEER_NETWORKID}
+
+    ca.org2:
+        image: hyperledger/fabric-ca
+        container_name: ca.org2
+        environment:
+            - FABRIC_CA_HOME=/etc/hyperledger/fabric-ca-server
+            - FABRIC_CA_SERVER_CA_NAME=ca.org2
+            - FABRIC_CA_SERVER_TLS_ENABLED=${FABRIC_CA_SERVER_TLS_ENABLED}
+            - FABRIC_CA_SERVER_TLS_CERTFILE=/var/hyperledger/fabric-ca-server-config/ca.org2-cert.pem
+            - FABRIC_CA_SERVER_DEBUG=true
+            - BOOTSTRAP_USER_PASS=org1-admin:org2-adminpw
+            - FABRIC_CA_SERVER_CSR_CN=ca.org2
+            - FABRIC_CA_SERVER_CSR_HOSTS=ca.org2
+        ports:
+            - "9054:7054"
+        command: /bin/bash -c 'fabric-ca-server init -b $${BOOTSTRAP_USER_PASS}; cp $${FABRIC_CA_HOME}/ca-cert.pem $${FABRIC_CA_SERVER_TLS_CERTFILE}; fabric-ca-server start'
+        volumes:
+            - ../configs/${CORE_PEER_NETWORKID}:/var/hyperledger/fabric-ca-server-config
+        networks:
+          behave:
+             aliases:
+               - ${CORE_PEER_NETWORKID}
+
+    setup:
+        container_name: setup
+        image: hyperledger/fabric-ca-tools
+        command: /bin/bash -c '/scripts/setup-fabric.sh 2>&1 | tee /data/logs/setup.log; sleep 99999'
+        volumes:
+            - ./data:/data
+        networks:
+          behave:
+             aliases:
+               - ${CORE_PEER_NETWORKID}
+        depends_on:
+            - ca.org0
+            - ca.org1
+            - ca.org2
+
+
+    orderer0.example.com:
+        image: hyperledger/fabric-ca-orderer
+        environment:
+            - ENROLLMENT_URL=https://orderer0:orderer0pw@ca.org0:7054
+            - BOOTSTRAP_USER_PASS=orderer0:orderer0pw
+        command: /bin/bash -c 'sleep 10; fabric-ca-client enroll -d --enrollment.profile tls -u $${ENROLLMENT_URL} -M /var/hyperledger/tls --csr.hosts $${ORDERER_HOST}; mv /var/hyperledger/tls/server.crt /var/hyperledger/tls/signcerts/.; mv /var/hyperledger/tls/server.key /var/hyperledger/tls/keystore/.; fabric-ca-client enroll -d -u $${ENROLLMENT_URL} -M $${ORDERER_GENERAL_LOCALMSPDIR}; orderer'
+        depends_on:
+            - setup
+            - ca.org0
+            - ca.org1
+            - ca.org2
+
+    orderer1.example.com:
+        image: hyperledger/fabric-ca-orderer
+        environment:
+            - ENROLLMENT_URL=https://orderer1:orderer1pw@ca.org0:7054
+            - BOOTSTRAP_USER_PASS=orderer1:orderer1pw
+        command: /bin/bash -c 'sleep 10; fabric-ca-client enroll -d --enrollment.profile tls -u $${ENROLLMENT_URL} -M /var/hyperledger/tls --csr.hosts $${ORDERER_HOST}; mv /var/hyperledger/tls/server.crt /var/hyperledger/tls/signcerts/.; mv /var/hyperledger/tls/server.key /var/hyperledger/tls/keystore/.; fabric-ca-client enroll -d -u $${ENROLLMENT_URL} -M $${ORDERER_GENERAL_LOCALMSPDIR}; orderer'
+        depends_on:
+            - ca.org0
+            - ca.org1
+            - ca.org2
+
+    orderer2.example.com:
+        image: hyperledger/fabric-ca-orderer
+        environment:
+            - ENROLLMENT_URL=https://orderer2:orderer2pw@ca.org0:7054
+            - BOOTSTRAP_USER_PASS=orderer2:orderer2pw
+        command: /bin/bash -c 'sleep 10; fabric-ca-client enroll -d --enrollment.profile tls -u $${ENROLLMENT_URL} -M /var/hyperledger/tls --csr.hosts $${ORDERER_HOST}; mv /var/hyperledger/tls/server.crt /var/hyperledger/tls/signcerts/.; mv /var/hyperledger/tls/server.key /var/hyperledger/tls/keystore/.; fabric-ca-client enroll -d -u $${ENROLLMENT_URL} -M $${ORDERER_GENERAL_LOCALMSPDIR}; orderer'
+        depends_on:
+            - ca.org0
+            - ca.org1
+            - ca.org2
+
+
+    peer0.org1.example.com:
+        image: hyperledger/fabric-ca-peer
+        environment:
+            - ENROLLMENT_URL=https://peer0org1:peer0org1pw@ca.org1:7054
+            - BOOTSTRAP_USER_PASS=peer0org1:peer0org1pw
+        command: /bin/bash -c 'sleep 10; fabric-ca-client enroll -d --enrollment.profile tls -u $${ENROLLMENT_URL} -M /var/hyperledger/tls --csr.hosts $${CORE_PEER_ID}; fabric-ca-client enroll -d -u $${ENROLLMENT_URL} -M $${CORE_PEER_MSPCONFIGPATH}; peer node start'
+        depends_on:
+            - orderer0.example.com
+
+    peer1.org1.example.com:
+        image: hyperledger/fabric-ca-peer
+        environment:
+            - ENROLLMENT_URL=https://peer1org1:peer1org1pw@ca.org1:7054
+            - BOOTSTRAP_USER_PASS=peer1org1:peer1org1pw
+        command: /bin/bash -c 'sleep 10; fabric-ca-client enroll -d --enrollment.profile tls -u $${ENROLLMENT_URL} -M /var/hyperledger/tls --csr.hosts $${CORE_PEER_ID}; fabric-ca-client enroll -d -u $${ENROLLMENT_URL} -M $${CORE_PEER_MSPCONFIGPATH}; peer node start'
+        depends_on:
+            - orderer0.example.com
+            - peer0.org1.example.com
+
+    peer0.org2.example.com:
+        image: hyperledger/fabric-ca-peer
+        environment:
+            - ENROLLMENT_URL=https://peer0org2:peer0org2pw@ca.org2:7054
+            - BOOTSTRAP_USER_PASS=peer0org2:peer0org2pw
+        command: /bin/bash -c 'sleep 10; fabric-ca-client enroll -d --enrollment.profile tls -u $${ENROLLMENT_URL} -M /var/hyperledger/tls --csr.hosts $${CORE_PEER_ID}; fabric-ca-client enroll -d -u $${ENROLLMENT_URL} -M $${CORE_PEER_MSPCONFIGPATH}; peer node start'
+        depends_on:
+            - orderer0.example.com
+
+    peer1.org2.example.com:
+        image: hyperledger/fabric-ca-peer
+        environment:
+            - ENROLLMENT_URL=https://peer1org2:peer1org2pw@ca.org2:7054
+            - BOOTSTRAP_USER_PASS=peer1org2:peer1org2pw
+        command: /bin/bash -c 'sleep 10; fabric-ca-client enroll -d --enrollment.profile tls -u $${ENROLLMENT_URL} -M /var/hyperledger/tls --csr.hosts $${CORE_PEER_ID}; fabric-ca-client enroll -d -u $${ENROLLMENT_URL} -M $${CORE_PEER_MSPCONFIGPATH}; peer node start'
+        depends_on:
+            - orderer0.example.com
+            - peer0.org2.example.com
