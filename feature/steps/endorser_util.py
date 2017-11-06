@@ -87,13 +87,13 @@ class InterfaceBase:
             with common_util.Timeout(max_waittime):
                 while  org not in context.initial_leader:
                     for container in self.get_peers(context):
-                        if ((org in container) and common_util.get_leadership_status(container)):
+                        if ((org in container) and common_util.get_leadership_status(context, container)):
                             context.initial_leader[org]=container
                             print("initial leader is "+context.initial_leader[org])
                             break
                     time.sleep(waittime)
         finally:
-            assert org in context.initial_leader, "Error: After polling for" + str(max_waittime) + " seconds, no gossip-leader found by looking at the logs, for "+org
+            assert org in context.initial_leader, "Error: After polling for " + str(max_waittime) + " seconds, no gossip-leader found by looking at the logs, for "+org
         return context.initial_leader[org]
 
     def get_initial_non_leader(self, context, org):
@@ -103,11 +103,11 @@ class InterfaceBase:
             return context.initial_non_leader[org]
         if org not in context.initial_non_leader:
             for container in self.get_peers(context):
-                if (org in container and  (not common_util.get_leadership_status(container))):
+                if (org in container and  (not common_util.get_leadership_status(context, container))):
                     context.initial_non_leader[org]=container
                     print("initial non-leader is "+context.initial_non_leader[org])
                     return context.initial_non_leader[org]
-        assert org in context.initial_non_leader, "Error: After polling for" + str(max_waittime) + " seconds, no gossip-non-leader found by looking at the logs, for "+org
+        assert org in context.initial_non_leader, "Error: After polling for " + str(max_waittime) + " seconds, no gossip-non-leader found by looking at the logs, for "+org
         return context.initial_non_leader[org]
 
     def wait_for_deploy_completion(self, context, chaincode_container, timeout):
