@@ -48,11 +48,63 @@ def convertToSeconds(envValue):
         raise "'{0}' is not in the expected format".format(envValue)
     return value
 
-def get_leadership_status(container):
+def get_leadership_status(context, container):
     #Checks the last occurence of "IsLeader" and its result
-    rc = subprocess.call(
-            "docker logs " + container + " 2>&1 | grep \"IsLeader\" | tail -1 | grep \"Returning true\"",
-            shell=True)
+    print("inside get_leadership_status")
+    #cmd= "docker logs " + container+ " 2>&1"
+    #print("cmd1 is: "+cmd)
+    #process = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=context.composition.getEnv())
+    #print("after popen")
+    #output, _error = process.communicate()
+    #rc = process.returncode
+    #print("in get_leadership_status, output1 is "+output)
+    #print("in get_leadership_status, error1 is "+_error)
+    #print("in get_leadership_status, rc1 is "+str(rc))
+    cmd= "docker logs " + container + " 2>&1 | grep \"IsLeader\""
+    print("cmd2 is: "+cmd)
+    process = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=context.composition.getEnv())
+    print("after popen")
+    output, _error = process.communicate()
+    rc = process.returncode
+    print("in get_leadership_status, output2 is "+output)
+    print("in get_leadership_status, error2 is "+_error)
+    print("in get_leadership_status, rc2 is "+str(rc))
+    cmd= "docker logs " + container + " 2>&1 | grep \"IsLeader\" | tail -1"
+    print("cmd3 is: "+cmd)
+    process = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=context.composition.getEnv())
+    print("after popen")
+    output, _error = process.communicate()
+    rc = process.returncode
+    print("in get_leadership_status, output3 is "+output)
+    print("in get_leadership_status, error3 is "+_error)
+    print("in get_leadership_status, rc3 is "+str(rc))
+    cmd= "docker logs " + container + " 2>&1 | grep \"IsLeader\" | tail -n 1"
+    print("cmd4 is: "+cmd)
+    process = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=context.composition.getEnv())
+    print("after popen")
+    output, _error = process.communicate()
+    rc = process.returncode
+    print("in get_leadership_status, output4 is "+output)
+    print("in get_leadership_status, error4 is "+_error)
+    print("in get_leadership_status, rc4 is "+str(rc))
+    cmd= "docker logs " + container + " 2>&1 | grep -a \"IsLeader\" | tail -n 1"
+    print("cmd5 is: "+cmd)
+    process = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=context.composition.getEnv())
+    print("after popen")
+    output, _error = process.communicate()
+    rc = process.returncode
+    print("in get_leadership_status, output5 is "+output)
+    print("in get_leadership_status, error5 is "+_error)
+    print("in get_leadership_status, rc5 is "+str(rc))
+    cmd= "docker logs " + container + " 2>&1 | grep \"IsLeader\" | tail -1 | grep \"Returning true\""
+    print("cmd is: "+cmd)
+    process = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=context.composition.getEnv())
+    print("after popen")
+    output, _error = process.communicate()
+    rc = process.returncode
+    print("in get_leadership_status, output is "+output)
+    print("in get_leadership_status, error is "+_error)
+    print("in get_leadership_status, rc is "+str(rc))
     if rc != 0:
         return False
     return True

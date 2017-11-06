@@ -78,20 +78,28 @@ class InterfaceBase:
 
     def get_initial_leader(self, context, org):
         if not hasattr(context, 'initial_leader'):
+            print("creating the attribute leader")
             context.initial_leader={}
         if org in context.initial_leader:
+            print("returning existing leader")
             return context.initial_leader[org]
         max_waittime=15
         waittime=5
         try:
             with common_util.Timeout(max_waittime):
+                print("inside try and with-timer, org is"+org)
                 while  org not in context.initial_leader:
                     for container in self.get_peers(context):
-                        if ((org in container) and common_util.get_leadership_status(container)):
+                        print("inside for loop, container is "+container)
+                        if ((org in container) and common_util.get_leadership_status(context, container)):
+                            print("inside if, found leader ")
                             context.initial_leader[org]=container
                             print("initial leader is "+context.initial_leader[org])
                             break
+                        print("this container is not leader")
                     time.sleep(waittime)
+        except:
+                print("Unexpected error:", sys.exc_info())
         finally:
             assert org in context.initial_leader, "Error: After polling for" + str(max_waittime) + " seconds, no gossip-leader found by looking at the logs, for "+org
         return context.initial_leader[org]
@@ -103,7 +111,7 @@ class InterfaceBase:
             return context.initial_non_leader[org]
         if org not in context.initial_non_leader:
             for container in self.get_peers(context):
-                if (org in container and  (not common_util.get_leadership_status(container))):
+                if (org in container and  (not common_util.get_leadership_status(context, container))):
                     context.initial_non_leader[org]=container
                     print("initial non-leader is "+context.initial_non_leader[org])
                     return context.initial_non_leader[org]
