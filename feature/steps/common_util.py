@@ -48,11 +48,18 @@ def convertToSeconds(envValue):
         raise "'{0}' is not in the expected format".format(envValue)
     return value
 
-def get_leadership_status(container):
+def get_leadership_status(context, container):
     #Checks the last occurence of "IsLeader" and its result
-    rc = subprocess.call(
-            "docker logs " + container + " 2>&1 | grep \"IsLeader\" | tail -1 | grep \"Returning true\"",
-            shell=True)
+    print("inside get_leadership_status")
+    cmd= "docker logs " + container + " 2>&1 | grep \"IsLeader\" | tail -1 | grep \"Returning true\""
+    print("cmd is: "+cmd)
+    process = subprocess.Popen([cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=context.composition.getEnv())
+    print("after popen")
+    output, _error = process.communicate()
+    rc = process.returncode
+    print("in get_leadership_status, output is "+output)
+    print("in get_leadership_status, error is "+_error)
+    print("in get_leadership_status, rc is "+str(rc))
     if rc != 0:
         return False
     return True
