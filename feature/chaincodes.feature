@@ -326,7 +326,6 @@ Scenario Outline: FAB-5791: Chaincode to test shim interface API, for <type> ord
     | kafka |
 
 
-@smoke
 Scenario Outline: FAB-6211: Test example02 chaincode written using <language> <security>
     Given I have a bootstrapped fabric network of type solo <security>
     When a user sets up a channel
