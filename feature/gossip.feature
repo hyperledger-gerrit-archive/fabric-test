@@ -107,6 +107,7 @@ Scenario Outline: [FAB-4667] [FAB-4671] [FAB-4672] A leader peer goes down by <t
     | disconnect   | connect     |
 
 @daily
+@smoke
 Scenario Outline: [FAB-4673] [FAB-4674] [FAB-4675] A leader peer goes down by <takeDownType>, comes back up *before* another leader is elected, catches up. Disconnect test may fail due to FAB-6333.
   Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
   And I have a bootstrapped fabric network of type kafka
@@ -127,10 +128,11 @@ Scenario Outline: [FAB-4673] [FAB-4674] [FAB-4675] A leader peer goes down by <t
 
   ## take down leader, invoke in non-leader, wait 5 seconds and bring back up the initial leader
   When the initial leader peer of "org1" is taken down by doing a <takeDownType>
-  And I wait "1" seconds
+  And I wait "0.5" seconds
   And a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"] on the initial non-leader peer of "org1"
-  And I wait " 5" seconds
+  And I wait "3" seconds
   Then the initial non-leader peer of "org1" has not become the leader
+  And I wait "2" seconds
   When the initial leader peer of "org1" comes back up by doing a <bringUpType>
   And I wait "20" seconds
 
