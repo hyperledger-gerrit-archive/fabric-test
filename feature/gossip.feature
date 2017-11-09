@@ -7,19 +7,21 @@ Feature: Gossip Service
     As a user I expect the gossip component work correctly
 
 @daily
-Scenario Outline: [FAB-4663] [FAB-4664] [FAB-4665] A non-leader peer goes down by <takeDownType>, comes back up and catches up eventually. Disconnect test may fail due to FAB-6333.
+@smoke
+Scenario Outline: [FAB-4663] [FAB-4664] [FAB-4665] A non-leader peer goes down by <takeDownType>, comes back up and catches up eventually.
   Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
   And I have a bootstrapped fabric network of type kafka
   When a user sets up a channel
-  And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "mycc"
   # the following wait is for Gossip leadership states to be stabilized
   And I wait "30" seconds
-  When a user queries on the chaincode named "mycc" with args ["query","a"]
-  Then a user receives a success response of 1000
-  When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
+  And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "mycc" on the initial leader peer of "org1"
   And I wait "5" seconds
-  When a user queries on the chaincode named "mycc" with args ["query","a"]
-  Then a user receives a success response of 990
+  When a user queries on the chaincode named "mycc" with args ["query","a"] on the initial leader peer of "org1"
+  Then a user receives a success response of 1000 from the initial leader peer of "org1"
+  When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"] on the initial leader peer of "org1"
+  And I wait "5" seconds
+  When a user queries on the chaincode named "mycc" with args ["query","a"] on the initial leader peer of "org1"
+  Then a user receives a success response of 990 from the initial leader peer of "org1"
 
   When the initial non-leader peer of "org1" is taken down by doing a <takeDownType>
   And I wait "5" seconds
@@ -49,28 +51,26 @@ Scenario Outline: [FAB-4663] [FAB-4664] [FAB-4665] A non-leader peer goes down b
 
   Examples:
     | takeDownType | bringUpType |
-    |  stop        | start       |
-    |  pause       | unpause     |
+#    |  stop        | start       |
+#    |  pause       | unpause     |
     | disconnect   | connect     |
 
 @daily
+@smoke
 Scenario Outline: [FAB-4667] [FAB-4671] [FAB-4672] A leader peer goes down by <takeDownType>, comes back up *after* another leader is elected, catches up. Disconnect test may fail due to FAB-6333.
   Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
   And I have a bootstrapped fabric network of type kafka
   When a user sets up a channel
-  And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "mycc"
   # the following wait is for Gossip leadership states to be stabilized
   And I wait "30" seconds
-
-  When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"] on the initial leader peer of "org1"
+  And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "mycc" on the initial non-leader peer of "org1"
   And I wait "5" seconds
-  And a user queries on the chaincode named "mycc" with args ["query","a"] on the initial leader peer of "org1"
-  Then a user receives a success response of 990 from the initial leader peer of "org1"
-
+  When a user queries on the chaincode named "mycc" with args ["query","a"] on the initial non-leader peer of "org1"
+  Then a user receives a success response of 1000 from the initial non-leader peer of "org1"
   When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"] on the initial non-leader peer of "org1"
   And I wait "5" seconds
   And a user queries on the chaincode named "mycc" with args ["query","a"] on the initial non-leader peer of "org1"
-  Then a user receives a success response of 980 from the initial non-leader peer of "org1"
+  Then a user receives a success response of 990 from the initial non-leader peer of "org1"
 
   When the initial leader peer of "org1" is taken down by doing a <takeDownType>
   # Give time to leader change to happen
@@ -80,30 +80,30 @@ Scenario Outline: [FAB-4667] [FAB-4671] [FAB-4672] A leader peer goes down by <t
   When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"] on the initial non-leader peer of "org1"
   And I wait "5" seconds
   And a user queries on the chaincode named "mycc" with args ["query","a"] on the initial non-leader peer of "org1"
-  Then a user receives a success response of 970 from the initial non-leader peer of "org1"
+  Then a user receives a success response of 980 from the initial non-leader peer of "org1"
   When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","20"] on the initial non-leader peer of "org1"
   And I wait "5" seconds
   When a user queries on the chaincode named "mycc" with args ["query","a"] on the initial non-leader peer of "org1"
-  Then a user receives a success response of 950 from the initial non-leader peer of "org1"
+  Then a user receives a success response of 960 from the initial non-leader peer of "org1"
   When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","30"] on the initial non-leader peer of "org1"
   And I wait "5" seconds
   When a user queries on the chaincode named "mycc" with args ["query","a"] on the initial non-leader peer of "org1"
-  Then a user receives a success response of 920 from the initial non-leader peer of "org1"
+  Then a user receives a success response of 930 from the initial non-leader peer of "org1"
 
   When the initial leader peer of "org1" comes back up by doing a <bringUpType>
   And I wait "20" seconds
 
   When a user queries on the chaincode named "mycc" with args ["query","a"] on the initial leader peer of "org1"
-  Then a user receives a success response of 920 from the initial leader peer of "org1"
+  Then a user receives a success response of 930 from the initial leader peer of "org1"
   When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","40"] on the initial leader peer of "org1"
   And I wait "5" seconds
   And a user queries on the chaincode named "mycc" with args ["query","a"] on the initial leader peer of "org1"
-  Then a user receives a success response of 880 from the initial leader peer of "org1"
+  Then a user receives a success response of 890 from the initial leader peer of "org1"
 
   Examples:
     | takeDownType | bringUpType |
-    |  stop        | start       |
-    |  pause       | unpause     |
+ #   |  stop        | start       |
+  #  |  pause       | unpause     |
     | disconnect   | connect     |
 
 @daily
