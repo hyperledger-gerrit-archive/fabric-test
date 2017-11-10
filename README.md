@@ -7,10 +7,6 @@ You are in the right place if you are interested in testing the Hyperledger Fabr
 
 ## Getting Started
 Here are some recommended setup steps.
-
-#### Clone the repositories
-The `fabric-test` repository contains submodules of other Hyperledger Fabric projects that are used in testing.
-
 The following repositories will need to be cloned separately with their corresponding images built.
 * fabric
     * fabric-orderer
@@ -21,43 +17,25 @@ The following repositories will need to be cloned separately with their correspo
     * fabric-couchdb
     * fabric-testenv
 * fabric-ca
-    * fabric-ca
-* fabric-sdk-node
-    * fabric-sdk-node
+* fabric-test
 
-#### Update git submodules
-The git submodules need to be initialized when the repository is first cloned. Use the following command.
+### Setup the Submodules
+After you have cloned the `fabric`, `fabric-ca` and `fabric-test` repositories into $GOPATH/src/github.com/hyperledger/,
+you need to initialize and populate the submodules. Execute the following:
 ```
-  cd fabric-test
+  cd $GOPATH/src/github.com/hyperledger/fabric-test
   git submodule update --init --recursive
 ```
-**When making changes for committing to a submodule, make the change in the actual repository and not in the submodule. This makes managing changes much easier when working with submodules.**
 
-When updating the git submodules with a more recent commit sha from the repository master, use the following command:
-```
-git submodule foreach git pull origin master
-```
-
-#### Get and build the latest code
-
-```
-  cd ../fabric-ca
-  make docker
-
-  cd ../fabric
-  make docker configtxgen cryptogen
-```
 #### Install git hooks
 After cloning the fabric-test dir, setup the git hooks.
 Replace  <LFID> with your Linux Foundation Account ID.
 
 ```
-
   cd fabric-test
   scp -p -P 29418 <LFID>@gerrit.hyperledger.org:hooks/commit-msg fabric-test/.git/hooks/
 
 ```
-
 
 #### Install and configure git review
 
@@ -67,15 +45,57 @@ Replace  <LFID> with your Linux Foundation Account ID.
 
 ```
 
-To configure git review add the following section to .git/config, and replace <LFID> with your gerrit id.
+To configure git review, add the following section to .git/config, and replace <LFID> with your gerrit id.
 
 ```
-
   [remote "gerrit"]
     url = ssh://<LFID>@gerrit.hyperledger.org:29418/fabric-test.git
     fetch = +refs/heads/*:refs/remotes/gerrit/*
 
 ```
+### Update git submodules (Optional)
+The fabric-test repository contains submodules of other Hyperledger Fabric projects that are used in testing.
+Tests may be run with the submodule commit levels saved with the commit-level of fabric-test.
+Or, the git submodules may be updated to run tests with the bleeding edge of development master branches.
+If you would like to update the git submodules, use the following command:
+```
+  git submodule foreach git pull origin master
+```
+**Note: When making changes for committing to a submodule (for example, fabric code), then make the change in the actual repository and not here in the submodules. This makes managing changes much easier when working with submodules.**
+
+### Build the images and binaries
+
+Ensure you are in your $GOPATH/src/github.com/hyperledger/fabric-test directory. These steps will help prepare the environment.
+
+To install dependencies (one time only):
+```
+  make pre-setup
+```
+
+To build all images and binaries in fabric, fabric-ca, as required by tests (execute each time you update the repositories commit levels, after each `make git-update`)
+```
+  cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric
+```  
+``` make docker ```        >----------> Installs all fabric images.
+``` make native ```        >----------> Installs all binaries.
+
+  cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric-ca
+  make docker        >----------> Installs all fabric-ca images.
+
+
+Then, choose a tool and a test to run by following the instructions. For example, to run a Behave test, execute the following:
+```
+cd ../feature
+./scripts/install_behave.sh
+behave -t smoke -k
+```
+
+### Easy Method to build all images and run tests with a single make target
+
+You can run the automated test suites with a makefile target given below. This handles all the steps for you as the procedure installs all the prerequisites that include cloning fabric, fabric-ca repositories, building images and binaries and executing the daily tests or smoke tests in the fabric-test repository. Simply run one of the following commands,
+
+  ```make ci-daily```      >----------> Installs all the prerequisites required and runs the daily test suite.
+  ```make ci-smoke```      >----------> Installs all the prerequisites required and runs the smoke test suite.
 
 
 ## Tools Used to Execute Tests
