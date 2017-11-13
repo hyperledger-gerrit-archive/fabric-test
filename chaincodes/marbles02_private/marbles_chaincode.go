@@ -98,6 +98,12 @@ type marble struct {
 	Owner      string `json:"owner"`
 }
 
+type marblePrivateDetails struct {
+	ObjectType string `json:"docType"` //docType is used to distinguish the various types of objects in state database
+	Name       string `json:"name"`    //the fieldtags are needed to keep case from bouncing around
+	Price      int    `json:"price"`
+}
+
 // ===================================================================================
 // Main
 // ===================================================================================
@@ -125,6 +131,8 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 		return t.initMarble(stub, args)
 	} else if function == "readMarble" { //read a marble
 		return t.readMarble(stub, args)
+	} else if function == "readMarblePrivateDetails" { //read a marble private details
+		return t.readMarblePrivateDetails(stub, args)
 	} else if function == "transferMarble" { //change owner of a specific marble
 		return t.transferMarble(stub, args)
 	} else if function == "transferMarblesBasedOnColor" { //transfer all marbles of a certain color
@@ -151,10 +159,10 @@ func (t *SimpleChaincode) Invoke(stub shim.ChaincodeStubInterface) pb.Response {
 func (t *SimpleChaincode) initMarble(stub shim.ChaincodeStubInterface, args []string) pb.Response {
 	var err error
 
-	//   0       1       2     3
-	// "asdf", "blue", "35", "bob"
-	if len(args) != 4 {
-		return shim.Error("Incorrect number of arguments. Expecting 4")
+	//  0-name  1-color  2-size  3-owner  4-price
+	// "asdf",  "blue",  "35",   "bob",   "99"
+	if len(args) != 5 {
+		return shim.Error("Incorrect number of arguments. Expecting 5")
 	}
 
 	// ==== Input sanitation ====
@@ -171,16 +179,20 @@ func (t *SimpleChaincode) initMarble(stub shim.ChaincodeStubInterface, args []st
 	if len(args[3]) <= 0 {
 		return shim.Error("4th argument must be a non-empty string")
 	}
+	if len(args[4]) <= 0 {
+		return shim.Error("4th argument must be a non-empty string")
+	}
 	marbleName := args[0]
 	color := strings.ToLower(args[1])
 	owner := strings.ToLower(args[3])
 	size, err := strconv.Atoi(args[2])
+	price, err := strconv.Atoi(args[4])
 	if err != nil {
 		return shim.Error("3rd argument must be a numeric string")
 	}
 
 	// ==== Check if marble already exists ====
-	marbleAsBytes, err := stub.GetPrivateData("collection1", marbleName)
+	marbleAsBytes, err := stub.GetPrivateData("collectionMarbles", marbleName)
 	if err != nil {
 		return shim.Error("Failed to get marble: " + err.Error())
 	} else if marbleAsBytes != nil {
@@ -200,27 +212,38 @@ func (t *SimpleChaincode) initMarble(stub shim.ChaincodeStubInterface, args []st
 	//marbleJSONasBytes := []byte(str)
 
 	// === Save marble to state ===
-	err = stub.PutPrivateData("collection1", marbleName, marbleJSONasBytes)
+	err = stub.PutPrivateData("collectionMarbles", marbleName, marbleJSONasBytes)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
 
-	/*
-		//  ==== Index the marble to enable color-based range queries, e.g. return all blue marbles ====
-		//  An 'index' is a normal key/value entry in state.
-		//  The key is a composite key, with the elements that you want to range query on listed first.
-		//  In our case, the composite key is based on indexName~color~name.
-		//  This will enable very efficient state range queries based on composite keys matching indexName~color~*
-		indexName := "color~name"
-		colorNameIndexKey, err := stub.CreateCompositeKey(indexName, []string{marble.Color, marble.Name})
-		if err != nil {
-			return shim.Error(err.Error())
-		}
-		//  Save index entry to state. Only the key name is needed, no need to store a duplicate copy of the marble.
-		//  Note - passing a 'nil' value will effectively delete the key from state, therefore we pass null character as value
-		value := []byte{0x00}
-		stub.PutPrivateData("collection1", colorNameIndexKey, value)
-	*/
+	// ==== Save marble private details ====
+	objectType = "marblePrivateDetails"
+	marblePrivateDetails := &marblePrivateDetails{objectType, marbleName, price}
+	marblePrivateDetailsBytes, err := json.Marshal(marblePrivateDetails)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	err = stub.PutPrivateData("collectionMarblePrivateDetails", marbleName, marblePrivateDetailsBytes)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
+	//  ==== Index the marble to enable color-based range queries, e.g. return all blue marbles ====
+	//  An 'index' is a normal key/value entry in state.
+	//  The key is a composite key, with the elements that you want to range query on listed first.
+	//  In our case, the composite key is based on indexName~color~name.
+	//  This will enable very efficient state range queries based on composite keys matching indexName~color~*
+	indexName := "color~name"
+	colorNameIndexKey, err := stub.CreateCompositeKey(indexName, []string{marble.Color, marble.Name})
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+	//  Save index entry to state. Only the key name is needed, no need to store a duplicate copy of the marble.
+	//  Note - passing a 'nil' value will effectively delete the key from state, therefore we pass null character as value
+	value := []byte{0x00}
+	stub.PutPrivateData("collectionMarbles", colorNameIndexKey, value)
+
 	// ==== Marble saved and indexed. Return success ====
 	fmt.Println("- end init marble")
 	return shim.Success(nil)
@@ -238,12 +261,36 @@ func (t *SimpleChaincode) readMarble(stub shim.ChaincodeStubInterface, args []st
 	}
 
 	name = args[0]
-	valAsbytes, err := stub.GetPrivateData("collection1", name) //get the marble from chaincode state
+	valAsbytes, err := stub.GetPrivateData("collectionMarbles", name) //get the marble from chaincode state
 	if err != nil {
 		jsonResp = "{\"Error\":\"Failed to get state for " + name + "\"}"
 		return shim.Error(jsonResp)
 	} else if valAsbytes == nil {
 		jsonResp = "{\"Error\":\"Marble does not exist: " + name + "\"}"
+		return shim.Error(jsonResp)
+	}
+
+	return shim.Success(valAsbytes)
+}
+
+// ===============================================
+// readMarblereadMarblePrivateDetails - read a marble private details from chaincode state
+// ===============================================
+func (t *SimpleChaincode) readMarblePrivateDetails(stub shim.ChaincodeStubInterface, args []string) pb.Response {
+	var name, jsonResp string
+	var err error
+
+	if len(args) != 1 {
+		return shim.Error("Incorrect number of arguments. Expecting name of the marble to query")
+	}
+
+	name = args[0]
+	valAsbytes, err := stub.GetPrivateData("collectionMarblePrivateDetails", name) //get the marble private details from chaincode state
+	if err != nil {
+		jsonResp = "{\"Error\":\"Failed to get private details for " + name + ": " + err.Error() + "\"}"
+		return shim.Error(jsonResp)
+	} else if valAsbytes == nil {
+		jsonResp = "{\"Error\":\"Marble private details does not exist: " + name + "\"}"
 		return shim.Error(jsonResp)
 	}
 
@@ -262,7 +309,7 @@ func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string
 	marbleName := args[0]
 
 	// to maintain the color~name index, we need to read the marble first and get its color
-	valAsbytes, err := stub.GetPrivateData("collection1", marbleName) //get the marble from chaincode state
+	valAsbytes, err := stub.GetPrivateData("collectionMarbles", marbleName) //get the marble from chaincode state
 	if err != nil {
 		jsonResp = "{\"Error\":\"Failed to get state for " + marbleName + "\"}"
 		return shim.Error(jsonResp)
@@ -277,7 +324,7 @@ func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string
 		return shim.Error(jsonResp)
 	}
 
-	err = stub.DelPrivateData("collection1", marbleName) //remove the marble from chaincode state
+	err = stub.DelPrivateData("collectionMarbles", marbleName) //remove the marble from chaincode state
 	if err != nil {
 		return shim.Error("Failed to delete state:" + err.Error())
 	}
@@ -290,10 +337,17 @@ func (t *SimpleChaincode) delete(stub shim.ChaincodeStubInterface, args []string
 	}
 
 	//  Delete index entry to state.
-	err = stub.DelPrivateData("collection1", colorNameIndexKey)
+	err = stub.DelPrivateData("collectionMarbles", colorNameIndexKey)
 	if err != nil {
 		return shim.Error("Failed to delete state:" + err.Error())
 	}
+
+	//  Delete private details of marble
+	err = stub.DelPrivateData("collectionMarblePrivateDetails", marbleName)
+	if err != nil {
+		return shim.Error(err.Error())
+	}
+
 	return shim.Success(nil)
 }
 
@@ -312,7 +366,7 @@ func (t *SimpleChaincode) transferMarble(stub shim.ChaincodeStubInterface, args 
 	newOwner := strings.ToLower(args[1])
 	fmt.Println("- start transferMarble ", marbleName, newOwner)
 
-	marbleAsBytes, err := stub.GetPrivateData("collection1", marbleName)
+	marbleAsBytes, err := stub.GetPrivateData("collectionMarbles", marbleName)
 	if err != nil {
 		return shim.Error("Failed to get marble:" + err.Error())
 	} else if marbleAsBytes == nil {
@@ -327,7 +381,7 @@ func (t *SimpleChaincode) transferMarble(stub shim.ChaincodeStubInterface, args 
 	marbleToTransfer.Owner = newOwner //change the owner
 
 	marbleJSONasBytes, _ := json.Marshal(marbleToTransfer)
-	err = stub.PutPrivateData("collection1", marbleName, marbleJSONasBytes) //rewrite the marble
+	err = stub.PutPrivateData("collectionMarbles", marbleName, marbleJSONasBytes) //rewrite the marble
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -356,7 +410,7 @@ func (t *SimpleChaincode) getMarblesByRange(stub shim.ChaincodeStubInterface, ar
 	startKey := args[0]
 	endKey := args[1]
 
-	resultsIterator, err := stub.GetPrivateDataByRange("collection1", startKey, endKey)
+	resultsIterator, err := stub.GetPrivateDataByRange("collectionMarbles", startKey, endKey)
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -416,7 +470,7 @@ func (t *SimpleChaincode) transferMarblesBasedOnColor(stub shim.ChaincodeStubInt
 
 	// Query the color~name index by color
 	// This will execute a key range query on all keys starting with 'color'
-	coloredMarbleResultsIterator, err := stub.GetPrivateDataByPartialCompositeKey("collection1", "color~name", []string{color})
+	coloredMarbleResultsIterator, err := stub.GetPrivateDataByPartialCompositeKey("collectionMarbles", "color~name", []string{color})
 	if err != nil {
 		return shim.Error(err.Error())
 	}
@@ -524,7 +578,7 @@ func getQueryResultForQueryString(stub shim.ChaincodeStubInterface, queryString 
 
 	fmt.Printf("- getQueryResultForQueryString queryString:\n%s\n", queryString)
 
-	resultsIterator, err := stub.GetPrivateDataQueryResult("collection1", queryString)
+	resultsIterator, err := stub.GetPrivateDataQueryResult("collectionMarbles", queryString)
 	if err != nil {
 		return nil, err
 	}
@@ -626,3 +680,4 @@ func (t *SimpleChaincode) getHistoryForMarble(stub shim.ChaincodeStubInterface, 
 
 	return shim.Success(buffer.Bytes())
 }
+
