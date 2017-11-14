@@ -15,14 +15,14 @@ import config_util
 
 
 @when(u'a user sets up a channel named "{channelId}" using orderer "{orderer}"')
-def setup_channel_impl(context, channelId, orderer):
+def setup_channel_impl(context, channelId, orderer, user="Admin"):
     # Be sure there is a transaction block for this channel
     config_util.generateChannelConfig(channelId, config_util.CHANNEL_PROFILE, context)
     peers = context.interface.get_peers(context)
 
-    context.interface.create_channel(context, orderer, channelId)
-    context.interface.fetch_channel(context, peers, orderer, channelId)
-    context.interface.join_channel(context, peers, channelId)
+    context.interface.create_channel(context, orderer, channelId, user=user)
+    context.interface.fetch_channel(context, peers, orderer, channelId, user=user)
+    context.interface.join_channel(context, peers, channelId, user=user)
 
 @when(u'a user sets up a channel named "{channelId}"')
 def step_impl(context, channelId):
