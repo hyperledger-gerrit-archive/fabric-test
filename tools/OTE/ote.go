@@ -1264,7 +1264,7 @@ func ote( testname string, txs int64, chans int, orderers int, ordType string, k
 
         computeTotals(&txSent, &totalNumTxSent, &txSentFailures, &totalNumTxSentFailures, &txRecv, &totalTxRecv, &totalTxRecvMismatch, &blockRecv, &totalBlockRecv, &totalBlockRecvMismatch)
 
-        idleTime := 0
+        idleCount := 0
         waitSecs := 0
         for !sendEqualRecv(numTxToSend, &totalTxRecv, totalTxRecvMismatch, totalBlockRecvMismatch) {
                 waitSecs += 1
