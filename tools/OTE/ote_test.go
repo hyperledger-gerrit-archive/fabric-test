@@ -315,3 +315,39 @@ func Test_FAB6996_30000TX_1ch_1ord_solo(t *testing.T) {
         passResult, finalResultSummaryString := ote("FAB-6996", 30000, 1, 1, "solo", 0, spyOff, 1 )
         if !passResult { t.Error(finalResultSummaryString) }
 }
+
+//FAB-7024 - send 30000 txns to solo orderer with higher batchsize and default payload
+func Test_FAB7024_30000TX_1ch_1ord_solo_500batchsize(t *testing.T) {
+        passResult, finalResultSummaryString := ote("FAB-7024", 30000, 1, 1, "solo", 0, spyOff, 1 )
+        if !passResult { t.Error(finalResultSummaryString) }
+}
+
+//FAB-7026 - send 30000 txns to solo orderer on 3 channels with default batchsize and default payload
+func Test_FAB7026_30000TX_3ch_1ord_solo(t *testing.T) {
+        passResult, finalResultSummaryString := ote("FAB-7026", 30000, 3, 1, "solo", 0, spyOff, 1 )
+        if !passResult { t.Error(finalResultSummaryString) }
+}
+
+//FAB-7036 - send 30000 txns to 3 orderers, 5 kafka brokers, 3 zookeepers with default batchsize and default payload
+func Test_FAB7036_30000TX_1ch_3ord_5kb(t *testing.T) {
+        passResult, finalResultSummaryString := ote("FAB-7036", 30000, 1, 3, "kafka", 5, spyOff, 1 )
+        if !passResult { t.Error(finalResultSummaryString) }
+}
+
+//FAB-7037 - send 30000 txns to 3 orderers 5 kafka brokers, 3 zookeepers with higher batchsize and default payload
+func Test_FAB7037_30000TX_1ch_3ord_5kb(t *testing.T) {
+        passResult, finalResultSummaryString := ote("FAB-7037", 30000, 1, 3, "kafka", 5, spyOff, 1 )
+        if !passResult { t.Error(finalResultSummaryString) }
+}
+
+//FAB-7038 - send 30000 txns to 12 orderers, 5 kafka brokers, 3 zookeepers with default batchsize and default payload
+func Test_FAB7038_30000TX_1ch_12ord_5kb(t *testing.T) {
+        passResult, finalResultSummaryString := ote("FAB-7038", 30000, 1, 12, "kafka", 5, spyOff, 1 )
+        if !passResult { t.Error(finalResultSummaryString) }
+}
+
+//FAB-7039 - send 30000 txns to 12 orderers, 5 kafka brokers, 3 zookeepers with higher batchsize and default payload
+func Test_FAB7039_30000TX_1ch_12ord_5kb(t *testing.T) {
+        passResult, finalResultSummaryString := ote("FAB-7039", 30000, 1, 12, "kafka", 5, spyOff, 1 )
+        if !passResult { t.Error(finalResultSummaryString) }
+}
