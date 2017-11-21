@@ -6,11 +6,11 @@
 
 SMOKEDIR="$GOPATH/src/github.com/hyperledger/fabric-test/regression/smoke"
 
-echo "========== Behave feature and system tests..."
-cd ../../feature
-behave --junit --junit-directory ../regression/smoke/. --tags=-skip --tags=smoke -k -D logs=y
-cd -
 
-echo "========== System Test Performance Stress tests driven by PTE tool..."
-py.test -v --junitxml results_systest_pte.xml systest_pte.py
+cd ../daily
 
+echo "========== Ledger component performance tests..."
+py.test -v --junitxml results_ledger_lte.xml ledger_lte.py::perf_goleveldb::test_FAB_3790_VaryNumParallelTxPerChain
+
+
+py.test -v --junitxml results_ledger_lte.xml ledger_lte.py::perf_couchdb::test_FAB_3870_VaryNumParallelTxPerChain
