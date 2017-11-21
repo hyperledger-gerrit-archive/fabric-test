@@ -4,7 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-OUTPUT_DIR_ROOT=".."
+OUTPUT_DIR_ROOT="../TestResults"
 DataDir="/tmp/fabric/test/tools/LTE/data"
 NumChains=10
 NumParallelTxPerChain=10
