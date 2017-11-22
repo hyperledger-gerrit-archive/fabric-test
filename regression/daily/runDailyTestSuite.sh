@@ -7,10 +7,19 @@
 
 DAILYDIR="$GOPATH/src/github.com/hyperledger/fabric-test/regression/daily"
 
+echo "========== Install gulp and run 'gulp ca' in fabric-sdk-node"
+npm install -g gulp
+cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric-sdk-node
+# Ignore any errors regarding the path and ENOENT concerning fabric-sdk-node/node_modules/grpc
+npm install && gulp ca
+
 #echo "========== Sample Tests..."
 #py.test -v --junitxml results_sample.xml Example.py
 
 echo "========== System Test Performance Stress tests driven by PTE tool..."
+cd $GOPATH/src/github.com/hyperledger/fabric-test/tools
+cp -r PTE $GOPATH/src/github.com/hyperledger/fabric-test/fabric-sdk-node/test
+cd $DAILYDIR
 py.test -v --junitxml results_systest_pte.xml systest_pte.py
 
 echo "========== Behave feature and system tests..."
