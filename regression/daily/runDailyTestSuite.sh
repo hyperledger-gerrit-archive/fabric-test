@@ -7,6 +7,18 @@
 
 DAILYDIR="$GOPATH/src/github.com/hyperledger/fabric-test/regression/daily"
 
+echo "1.========= Installing gulp ============"
+npm install -g gulp
+echo "2.========= Updating Submodules ======="
+git submodule foreach git pull origin master
+
+cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric-sdk-node
+npm install && gulp ca
+echo "<=============PTE============>"
+cd $GOPATH/src/github.com/hyperledger/fabric-test/tools
+cp -r PTE $GOPATH/src/github.com/hyperledger/fabric-test/fabric-sdk-node/test
+cd $DAILYDIR
+echo "====================================================================="
 #echo "========== Sample Tests..."
 #py.test -v --junitxml results_sample.xml Example.py
 
