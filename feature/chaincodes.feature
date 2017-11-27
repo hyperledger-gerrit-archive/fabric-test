@@ -78,7 +78,7 @@ Scenario: FAB-4720: FAB-5663, Test chaincode calling chaincode -ve test case pas
   When a user queries on the chaincode named "myex02_b" with args ["query","a"]
   Then a user receives a success response of 1000
   When a user queries on the chaincode named "myex05" with args ["query","myex02_b", "sum", "channel3"]
-  Then a user receives an error response of status: 400
+  Then a user receives an error response of status:404
 
 
 # FAB-6677 : skip 4720,4721,4722 until FAB-6387 gets fixed so that we receive an error status code in addition to the error message
@@ -93,7 +93,7 @@ Scenario: FAB-4721: FAB-5663, Test chaincode calling chaincode -ve testcase pass
   When a user queries on the channel "channel2" using chaincode named "myex02_b" with args ["query","a"]
   Then a user receives a success response of 1000
   When a user queries on the chaincode named "myex05" with args ["query","myex02_b", "sum", "channel3"]
-  Then a user receives a success response of status: 400
+  Then a user receives an error response of status:404
 
 
 # FAB-6677 : skip 4720,4721,4722 until FAB-6387 gets fixed so that we receive an error status code in addition to the error message
@@ -108,7 +108,7 @@ Scenario: FAB-4722: FAB-5663, Test chaincode calling chaincode -ve testcase pass
   When a user queries on the channel "channel2" using chaincode named "myex02_b" with args ["query","a"]
   Then a user receives a success response of 1000
   When a user queries on the chaincode named "myex05" with args ["query","myex02_b", "sum", ""]
-  Then a user receives a success response of status: 400
+  Then a user receives an error response of status:404
 
 @daily
 Scenario: FAB-5384: FAB-5663, Test chaincode calling chaincode with two args cc_ex02 and cc_ex05 installed on same channels
