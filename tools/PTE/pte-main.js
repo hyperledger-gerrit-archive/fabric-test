@@ -625,7 +625,7 @@ function buildChaincodeProposal(client, the_user, upgrade, transientMap) {
                 fcn: uiContent.deploy.fcn,
                 args: testDeployArgs,
                 chainId: channelName,
-
+                'endorsement-policy': uiContent.deploy.endorsement,
                 txId: tx_id
 
                 // use this to demonstrate the following policy:
