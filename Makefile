@@ -41,7 +41,7 @@ pre-setup:
 #	@bash $(INSTALL_BEHAVE_DEPS)
 
 .PHONY: ci-daily
-ci-daily: clean git-update fabric ca pre-setup docker-images daily-tests
+ci-daily: git-update fabric ca clean pre-setup docker-images daily-tests
 
 .PHONY: fabric
 fabric:
