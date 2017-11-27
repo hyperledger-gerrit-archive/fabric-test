@@ -310,3 +310,55 @@ Scenario Outline: [FAB-4683] [FAB-4684] [FAB-4685] In leader-selection setup, le
     |  stop        | start         |    90        |
     |  pause       | unpause       |    90        |
     | disconnect   | connect       |    90        |
+
+
+@daily
+  Scenario Outline: [FAB-4666] A non-leader peer, that joins an already-active channel-----is expected to have all the blocks eventually.
+
+  Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
+  And I have a bootstrapped fabric network of type kafka
+  When a user creates a channel
+
+  #Join only three peers
+  When a user fetches genesis information from peer "peer0.org1.example.com"
+  And a user fetches genesis information from peer "peer0.org2.example.com"
+  And a user fetches genesis information from peer "peer1.org1.example.com"
+  And a user makes peer "peer0.org1.example.com" join the channel
+  And a user makes peer "peer0.org2.example.com" join the channel
+  And a user makes peer "peer1.org1.example.com" join the channel
+  
+  # the following wait is for Gossip leadership states to be stabilized
+  And I wait "30" seconds
+  And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02" with args ["init","a","1000","b","2000"] with name "mycc"
+  And I wait "5" seconds
+  ## Now do 3 invoke-queries in leader peer
+  When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
+  And I wait "5" seconds
+  And a user queries on the chaincode named "mycc" with args ["query","a"]
+  Then a user receives a success response of 980
+  When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","20"]
+  And I wait "5" seconds
+  When a user queries on the chaincode named "mycc" with args ["query","a"]
+  Then a user receives a success response of 960
+  When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","30"]
+  And I wait "5" seconds
+  When a user queries on the chaincode named "mycc" with args ["query","a"]
+  Then a user receives a success response of 930
+
+  #Join the rest of the peers
+  When a user fetches genesis information from peer "peer1.org2.example.com"
+  And a user makes peer "peer1.org2.example.com" join the channel
+
+  When a user queries on the chaincode named "mycc" with args ["query","a"] on "peer1.org2.example.com"
+  Then a user receives a success response of 930 from "peer1.org2.example.com"
+  When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","40"] on "peer1.org2.example.com"
+  And I wait "5" seconds
+  And a user queries on the chaincode named "mycc" with args ["query","a"] on "peer1.org2.example.com"
+  Then a user receives a success response of 890 from "peer1.org2.example.com"
+
+  Examples:
+    | takeDownType | bringUpType |
+    |  stop        | start       |
+    |  pause       | unpause     |
+    | disconnect   | connect     |
+
