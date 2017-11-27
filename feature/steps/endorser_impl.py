@@ -34,22 +34,11 @@ def step_impl(context):
 
 @when(u'a user deploys chaincode at path "{path}" with args {args} with name "{name}" with language "{language}" to "{peer}" on channel "{channel}" within {timeout:d} seconds')
 def deploy_impl(context, path, args, name, language, peer, channel, timeout=120, username="Admin"):
-    # Be sure there is a transaction block for this channel
-    config_util.generateChannelConfig(channel, config_util.CHANNEL_PROFILE, context)
-
-    chaincode = {
-        "path": path,
-        "language": language,
-        "name": name,
-        "channelID": channel,
-        "args": args,
-    }
-    context.results = context.interface.deploy_chaincode(context, chaincode, [peer], channel, user=username)
-    # Save chaincode name and path and args
-    context.chaincode = chaincode
-
-    chaincode_container = "{0}-{1}-{2}-0".format(context.projectName, peer, chaincode['name'])
-    context.interface.wait_for_deploy_completion(context, chaincode_container, timeout)
+    context.interface.pre_deploy_chaincode(context, path, args, name, language, peer, channel)
+    all_peers = context.interface.get_peers(context)
+    context.interface.install_chaincode(context, all_peers, username)
+    context.interface.instantiate_chaincode(context, [peer], username)
+    context.interface.post_deploy_chaincode(context, peer, timeout)
 
 @when(u'a user deploys chaincode at path "{path}" with args {args} with name "{name}" with language "{language}" to "{peer}" on channel "{channel}"')
 def step_impl(context, path, args, name, language, peer, channel):
@@ -218,6 +207,16 @@ def step_impl(context):
                 "GOLANG",
                 "peer0.org1.example.com",
                 context.interface.TEST_CHANNEL_ID)
+
+@when(u'a user installs chaincode at path "{path}" with args {args} with name "{name}" to "{peer}"')
+def step_impl(context, path, args, name, peer, username="Admin"):
+    context.interface.pre_deploy_chaincode(context, path, args, name, "GOLANG", peer)
+    context.interface.install_chaincode(context, [peer], "Admin")
+
+@when(u'a user instantiates the chaincode on "{peer}"')
+def step_impl(context, peer, username="Admin", timeout=120):
+    context.interface.instantiate_chaincode(context, [peer], username)
+    context.interface.post_deploy_chaincode(context, peer, timeout)
 
 @when(u'a user queries on the channel "{channel}" using chaincode named "{name}" for the random key with args {args} on "{peer}"')
 def step_impl(context, channel, name, args, peer):
@@ -448,9 +447,13 @@ def step_impl(context):
 def step_impl(context, channelId, peer):
     context.interface.join_channel(context, [peer], channelId)
 
+@when(u'a user makes peer "{peer}" join the channel')
+def step_impl(context, peer):
+    context.interface.join_channel(context, [peer], context.interface.TEST_CHANNEL_ID)
+
 @when(u'a user fetches genesis information for a channel "{channelID}" from peer "{peer}" using orderer "{orderer}"')
 def fetch_impl(context, channelID, peer, orderer):
-    context.interface.fetch_channel(context, [peer], orderer, channelID, location=".")
+    context.interface.fetch_channel(context, [peer], orderer, channelID)
 
 @when(u'a user fetches genesis information for a channel "{channelID}" from peer "{peer}"')
 def step_impl(context, channelID, peer):
@@ -459,6 +462,10 @@ def step_impl(context, channelID, peer):
 @when(u'a user fetches genesis information from peer "{peer}" using "{orderer}"')
 def step_impl(context, peer, orderer):
     fetch_impl(context, context.interface.TEST_CHANNEL_ID, peer, orderer)
+
+@when(u'a user fetches genesis information from peer "{peer}"')
+def step_impl(context, peer):
+    fetch_impl(context, context.interface.TEST_CHANNEL_ID, peer, "orderer0.example.com")
 
 @then(u'a user receives {status} response of {response} from the initial leader peer of "{org}"')
 def step_impl(context, response, org, status):
