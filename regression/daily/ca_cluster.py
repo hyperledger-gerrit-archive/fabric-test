@@ -12,7 +12,7 @@ class CaClusterTest(unittest.TestCase):
 
     def test_FAB6863_BasicCAClustering(self):
         createLog = 'mkdir -p /tmp/logs; chmod 777 /tmp/logs'
-        startContainer = 'docker run -v /tmp/logs:/tmp -v $PWD/../../fabric-ca:/opt/gopath/src/github.com/hyperledger/fabric-ca hyperledger/fabric-ca-fvt ./scripts/fvt/cluster_test.sh 4 4 8 128'
+        startContainer = 'docker run -v /tmp/logs:/tmp -v $PWD/../../../fabric-ca:/opt/gopath/src/github.com/hyperledger/fabric-ca hyperledger/fabric-ca-fvt ./scripts/fvt/cluster_test.sh 4 4 8 128'
         command = createLog + ';' + startContainer
         output = check_output([command], shell=True)
         print output
