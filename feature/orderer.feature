@@ -129,7 +129,7 @@ Scenario Outline: FAB-3851: Message Payloads More than 1MB, for <type> orderer
 
 #    # 4MB Fails: Error: Received message larger than max (4195324 vs. 4194304)
 #    When a user invokes on the chaincode named "mycc" with random args ["put","j","{random_value}"] of length 4194304
-#    And I wait "7" seconds
+#    And I wait "7"  seconds
 #    And a user queries on the chaincode named "mycc" with args ["get","j"]
 #    Then a user receives a response containing a value of length 4194304
 Examples:
