@@ -10,6 +10,8 @@ import datetime
 from pykafka import KafkaClient
 import endorser_util
 
+
+
 try:
     pbFilePath = "../fabric/bddtests"
     sys.path.insert(0, pbFilePath)
@@ -18,6 +20,14 @@ except:
     print("ERROR! Unable to import the protobuf libraries from the ../fabric/bddtests directory: {0}".format(sys.exc_info()[0]))
     sys.exit(1)
 
+
+def getOrdererList(context):
+    # Get the Orderers list from the orderer environment var
+    orderers = list()
+    for container in context.composition.containerDataList:
+        if 'orderer' in container.containerName:
+             orderers.append(container.containerName)
+    return orderers
 
 def getKafkaBrokerList(context, orderer):
     # Get the kafka broker list from the orderer environment var
@@ -39,6 +49,7 @@ def getKafkaIPs(context, kafkaList):
         container = context.composition.getContainerFromName(containerName, context.composition.containerDataList)
         kafkas.append("{0}:9092".format(container.ipAddress))
     return kafkas
+
 
 def getKafkaTopic(kafkaBrokers=["0.0.0.0:9092"], channel=endorser_util.SYS_CHANNEL_ID):
     kafkas = ",".join(kafkaBrokers)

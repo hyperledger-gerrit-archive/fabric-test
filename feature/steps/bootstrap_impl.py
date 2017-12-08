@@ -7,6 +7,8 @@
 from behave import *
 import os
 import config_util
+import orderer_util
+import common_util
 
 TEST_CHANNEL_ID = "syschannel"
 
@@ -59,3 +61,10 @@ def step_impl(context, fileName, value):
 def step_impl(context, fileName, value):
     blockInfo = config_util.inspectChannelConfig(context, fileName)
     assert str(value) in str(blockInfo)
+
+@then('orderer node of type "{ordererType}" logs receiving genesis block')
+def step_impl(context,ordererType):
+     orderers = orderer_util.getOrdererList(context)
+     for orderer in orderers:
+       assert common_util.is_in_log([orderer], "with genesis block hash"), "The genesis block is not recieved"
+

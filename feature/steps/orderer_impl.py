@@ -193,3 +193,12 @@ def step_impl(context, key, value, node):
     changedString = common_util.changeFormat(value)
     containerValue = context.composition.getEnvFromContainer(node, key)
     assert containerValue == changedString, "The environment variable on the container was set to '{0}' (expected value: '{1}')".format(containerValue, changedString)
+
+
+@then('orderer node of type "{ordererType}" logs recieving genesis block')
+def step_impl(context,ordererType):
+     orderers = orderer_util.getOrdererList(context)
+     for orderer in orderers:
+       assert common_util.is_in_log([orderer], "with genesis block hash"), "The genesis block is not recieved"
+
+

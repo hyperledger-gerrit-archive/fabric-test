@@ -269,3 +269,4 @@ Examples:
     | kafka | 2 seconds  |    990     |   990     |
     | solo  | 10 seconds |    1000    |   990     |
     | kafka | 10 seconds |    1000    |   990     |
+
