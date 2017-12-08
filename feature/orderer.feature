@@ -269,3 +269,13 @@ Examples:
     | kafka | 2 seconds  |    990     |   990     |
     | solo  | 10 seconds |    1000    |   990     |
     | kafka | 10 seconds |    1000    |   990     |
+
+@daily
+Scenario Outline: FAB-4777: genesis block recieved, for <type> orderer
+    Given I have a bootstrapped fabric network of type <type>
+    When I wait "1" seconds
+    Then  orderer node of type "<type>" logs recieving genesis block
+Examples:
+    | type  |
+    | solo  |
+    | kafka |
