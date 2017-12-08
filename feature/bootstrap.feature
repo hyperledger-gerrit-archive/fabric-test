@@ -93,10 +93,13 @@ Scenario Outline: FAB-4776/FAB-4777: Bring up a kafka based network and check pe
     Given I have a bootstrapped fabric network of type kafka using state-database <database>
     When a user sets up a channel
     And a user deploys chaincode
+    And the orderer node logs receiving the orderer bloc
     And a user queries on the chaincode with args ["query","a"]
     Then a user receives a success response of 100
     When a user fetches genesis information from peer "peer1.org1.example.com" using "orderer0.example.com" to location "."
     Then the block file is fetched from peer "peer1.org1.example.com" at location "."
+    When a user queries on the chaincode with args ["query","a"] from "peer1.org1.example.com"
+    Then a user receives a success response of 100 from "peer1.org1.example.com"
     When a user queries on the chaincode with args ["query","a"] from "peer1.org1.example.com"
     Then a user receives a success response of 100 from "peer1.org1.example.com"
     When a user fetches genesis information from peer "peer1.org2.example.com" using "orderer1.example.com" to location "."
