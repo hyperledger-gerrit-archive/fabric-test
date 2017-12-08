@@ -103,7 +103,7 @@ def step_impl(context):
 
 @when(u'I {bringUpType} a former kafka topic partition leader for {orderer}')
 def start_leader_impl(context, orderer, bringUpType):
-    # Get the last stopped kafka broker from the stopped broker list
+    # Get the last stopped kafka broker  from the stopped broker list
     broker = context.stopped_brokers.pop()
     basic_impl.bringup_impl(context, broker, bringUpType)
 
