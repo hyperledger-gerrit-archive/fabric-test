@@ -44,7 +44,7 @@ pre-setup:
 ci-daily: git-update fabric ca clean pre-setup docker-images daily-tests
 
 .PHONY: fabric
-fabric:
+fabric: git-update
 	if [ ! -d "$(FABRIC_DIR)" ]; then \
 		echo "Clone FABRIC REPO"; \
 		cd $(HYPERLEDGER_DIR); \
@@ -53,7 +53,7 @@ fabric:
 	cd $(FABRIC_DIR) && git pull $(FABRIC)
 
 .PHONY: docker-images
-docker-images:
+docker-images: fabric
 	@make docker -C $(FABRIC_DIR)
 	@make native -C $(FABRIC_DIR)
 	@make docker -C $(CA_DIR)
