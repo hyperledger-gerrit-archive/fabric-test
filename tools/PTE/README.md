@@ -556,7 +556,10 @@ The following chaincodes are tested and supported:
         },
         "ccType": "general",
         "ccOpt": {
+            "keyIdx": [1],
+            "keyPayLoad": [2],
             "keyStart": "5000",
+            "payLoadType": "Random",
             "payLoadMin": "1024",
             "payLoadMax": "2048"
         },
@@ -664,8 +667,13 @@ where:
     * **ccchecker**: The first argument (key) in the query and invoke request is incremented by 1 for every transaction.  The prefix of the key is made of process ID, ex, all keys issued from process 4 will have prefix of **key3_**. And, the second argument (payload) in an invoke (Move) is a random string of size ranging between payLoadMin and payLoadMax defined in ccOpt.
     * **general**: The arguments of transaction request are taken from the user input json file without any changes.
 * **ccOpt**: chaincode options
+    * **keyIdx**: the transaction key indexes
+    * **keyPayLoad**: the transaction key indexes of payload
     * **keyStart**: the starting transaction key index, this is used when the ccType is non general which requires a unique key for each invoke.
-    * **payLoadMin**: minimum size in bytes of the payload. The payload is made of random string with various size between payLoadMin and payLoadMax.
+    * **payLoadType**: payload type
+        * **Fixed**: fixed payload with the size of payLoadMin for every trandsaction
+        * **Random**: random payload with a random size between payLoadMin and payLoadMax for every transaction
+    * **payLoadMin**: minimum size in bytes of the payload
     * **payLoadMax**: maximum size in bytes of the payload
 * **deploy**: deploy transaction contents
     * language: the chaincode language including:
