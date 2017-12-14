@@ -48,32 +48,23 @@ class InterfaceBase:
                 peers.append(container)
         return peers
 
-    def deploy_chaincode(self, context, path, args, name, language, peer, username, timeout, channel=TEST_CHANNEL_ID):
-        self.pre_deploy_chaincode(context, path, args, name, language, peer, channel)
-        all_peers = self.get_peers(context)
-        self.install_chaincode(context, all_peers, username)
-        self.instantiate_chaincode(context, peer, username)
-        self.post_deploy_chaincode(context, peer, timeout)
+    def deploy_chaincode(self, context, chaincode, containers, channelId=TEST_CHANNEL_ID, user="Admin"):
+        for container in containers:
+            assert container in context.composition.collectServiceNames(), "Unknown component '{0}'".format(container)
 
-    def pre_deploy_chaincode(self, context, path, args, name, language, peer, channelId=TEST_CHANNEL_ID):
-        config_util.generateChannelConfig(channelId, config_util.CHANNEL_PROFILE, context)
         orderers = self.get_orderers(context)
         peers = self.get_peers(context)
         assert orderers != [], "There are no active orderers in this network"
 
-        context.chaincode={
-                          "path": path,
-                          "language": language,
-                          "name": name,
-                          "args": args,
-                          "orderers": orderers,
+        chaincode.update({"orderers": orderers,
                           "channelID": channelId,
-                          }
+                          })
 
-    def post_deploy_chaincode(self, context, peer, timeout):
-        chaincode_container = "{0}-{1}-{2}-0".format(context.projectName, peer, context.chaincode['name'])
-        context.interface.wait_for_deploy_completion(context, chaincode_container, timeout)
+        if not hasattr(context, "network") and not self.channel_block_present(context, containers, channelId):
+            config_util.generateChannelConfig(channelId, config_util.CHANNEL_PROFILE, context)
 
+        self.install_chaincode(context, chaincode, peers, user)
+        self.instantiate_chaincode(context, chaincode, containers, user)
 
     def channel_block_present(self, context, containers, channelId):
         ret = False
@@ -122,17 +113,17 @@ class InterfaceBase:
     def wait_for_deploy_completion(self, context, chaincode_container, timeout):
         pass
 
-    def install_chaincode(self, context, peers, user="Admin"):
-        return self.cli.install_chaincode(context, peers, user=user)
+    def install_chaincode(self, context, chaincode, peers, user="Admin"):
+        return self.cli.install_chaincode(context, chaincode, peers, user=user)
 
-    def instantiate_chaincode(self, context, peer, user="Admin"):
-        return self.cli.instantiate_chaincode(context, peer, user=user)
+    def instantiate_chaincode(self, context, chaincode, peers, user="Admin"):
+        return self.cli.instantiate_chaincode(context, chaincode, peers, user=user)
 
     def create_channel(self, context, orderer, channelId, user="Admin"):
         return self.cli.create_channel(context, orderer, channelId, user=user)
 
-    def fetch_channel(self, context, peers, orderer,channelId=TEST_CHANNEL_ID, location=None, user="Admin"):
-        return self.cli.fetch_channel(context, peers, orderer, channelId, location, user=user)
+    def fetch_channel(self, context, peers, orderer, channelId, user="Admin"):
+        return self.cli.fetch_channel(context, peers, orderer, channelId, user=user)
 
     def join_channel(self, context, peers, channelId, user="Admin"):
         return self.cli.join_channel(context, peers, channelId, user=user)
@@ -151,28 +142,28 @@ class ToolInterface(InterfaceBase):
         # use CLI for non implemented functions
         self.cli = CLIInterface()
 
-    def install_chaincode(self, context, peers, user="Admin"):
+    def install_chaincode(self, context, chaincode, peers, user="Admin"):
         results = {}
         for peer in peers:
             peer_name = context.networkInfo["nodes"][peer]["nodeName"]
-            cmd = "node v1.0_sdk_tests/app.js installcc -i {0} -v 1 -p {1}".format(context.chaincode['name'],
+            cmd = "node v1.0_sdk_tests/app.js installcc -i {0} -v 1 -p {1}".format(chaincode['name'],
                                                                     peer_name)
             print(cmd)
             results[peer] = subprocess.check_call(cmd.split(), env=os.environ)
         return results
 
-    def instantiate_chaincode(self, context, peer="peer0.org1.example.com", user="Admin"):
-        channel = str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID))
-        args = json.loads(context.chaincode["args"])
+    def instantiate_chaincode(self, context, chaincode, containers, user="Admin"):
+        channel = str(chaincode.get('channelID', self.TEST_CHANNEL_ID))
+        args = json.loads(chaincode["args"])
         print(args)
-        peer_name = context.networkInfo["nodes"][peer]["nodeName"]
+        peer_name = context.networkInfo["nodes"]["peer0.org1.example.com"]["nodeName"]
         cmd = "node v1.0_sdk_tests/app.js instantiatecc -c {0} -i {1} -v 1 -a {2} -b {3} -p {4}".format(channel,
-                                                                                    context.chaincode["name"],
-                                                                                    args[2],
-                                                                                    args[4],
-                                                                                    peer_name)
+                                                                                        chaincode["name"],
+                                                                                        args[2],
+                                                                                        args[4],
+                                                                                        peer_name)
         print(cmd)
-        subprocess.check_call(cmd.split(), env=os.environ)
+        return subprocess.check_call(cmd.split(), env=os.environ)
 
     def create_channel(self, context, orderer, channelId, user="Admin"):
         orderer_name = context.networkInfo["nodes"][orderer]["nodeName"]
@@ -301,6 +292,21 @@ class SDKInterface(InterfaceBase):
         result = self.query_func.call("query", "{0}@{1}".format(user, org), orgName, reformatted, [peer], self.networkConfigFile)
         return {peer: result}
 
+    def wait_for_deploy_completion(self, context, chaincode_container, timeout):
+        if context.remote:
+            time.sleep(30)
+
+        containers = subprocess.check_output(["docker ps -a"], shell=True)
+        try:
+            with common_util.Timeout(timeout):
+                while chaincode_container not in containers:
+                    containers = subprocess.check_output(["docker ps -a"], shell=True)
+                    time.sleep(1)
+        finally:
+            assert chaincode_container in containers, "The expected chaincode container {} is not running".format(chaincode_container)
+
+        # Allow time for chaincode initialization to complete
+        time.sleep(15)
 
 class CLIInterface(InterfaceBase):
 
@@ -333,7 +339,7 @@ class CLIInterface(InterfaceBase):
             ccDeploymentSpec.ParseFromString(f.read())
         return ccDeploymentSpec
 
-    def install_chaincode(self, context, peers, user="Admin"):
+    def install_chaincode(self, context, chaincode, peers, user="Admin"):
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
         output = {}
         for peer in peers:
@@ -341,49 +347,50 @@ class CLIInterface(InterfaceBase):
             org = '.'.join(peerParts[1:])
             setup = self.get_env_vars(context, peer, user=user)
             command = ["peer", "chaincode", "install",
-                       "--name",context.chaincode['name'],
-                       "--lang", context.chaincode['language'],
-                       "--version", str(context.chaincode.get('version', 0)),
-                       "--path", context.chaincode['path']]
-            if "orderers" in context.chaincode:
+                       "--name", chaincode['name'],
+                       "--lang", chaincode['language'],
+                       "--version", str(chaincode.get('version', 0)),
+                       "--path", chaincode['path']]
+            if "orderers" in chaincode:
                 command = command + ["--orderer", 'orderer0.example.com:7050']
-            if "user" in context.chaincode:
-                command = command + ["--username", context.chaincode["user"]]
-            if "policy" in context.chaincode:
-                command = command + ["--policy", context.chaincode["policy"]]
+            if "user" in chaincode:
+                command = command + ["--username", chaincode["user"]]
+            if "policy" in chaincode:
+                command = command + ["--policy", chaincode["policy"]]
             command.append('"')
             ret = context.composition.docker_exec(setup+command, ['cli'])
             output[peer] = ret['cli']
         print("[{0}]: {1}".format(" ".join(setup + command), output))
         return output
 
-    def instantiate_chaincode(self, context, peer="peer0.org1.example.com", user="Admin"):
+    def instantiate_chaincode(self, context, chaincode, peers, user="Admin"):
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
-        args = context.chaincode.get('args', '[]').replace('"', r'\"')
+        args = chaincode.get('args', '[]').replace('"', r'\"')
         output = {}
-        peerParts = peer.split('.')
-        org = '.'.join(peerParts[1:])
-        setup = self.get_env_vars(context, peer, user=user)
-        command = ["peer", "chaincode", "instantiate",
-                   "--name", context.chaincode['name'],
-                   "--version", str(context.chaincode.get('version', 0)),
-                   "--lang", context.chaincode['language'],
-                   "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID)),
-                   "--ctor", r"""'{\"Args\": %s}'""" % (args)]
-        if context.tls:
-            command = command + ["--tls",
-                                 common_util.convertBoolean(context.tls),
-                                 "--cafile",
-                                 '{0}/ordererOrganizations/example.com/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir)]
-        if "orderers" in context.chaincode:
-            command = command + ["--orderer", 'orderer0.example.com:7050']
-        if "user" in context.chaincode:
-            command = command + ["--username", context.chaincode["user"]]
-        if "policy" in context.chaincode:
-            command = command + ["--policy", context.chaincode["policy"]]
-        command.append('"')
+        for peer in peers:
+            peerParts = peer.split('.')
+            org = '.'.join(peerParts[1:])
+            setup = self.get_env_vars(context, peer, user=user)
+            command = ["peer", "chaincode", "instantiate",
+                       "--name", chaincode['name'],
+                       "--version", str(chaincode.get('version', 0)),
+                       "--lang", chaincode['language'],
+                       "--channelID", str(chaincode.get('channelID', self.TEST_CHANNEL_ID)),
+                       "--ctor", r"""'{\"Args\": %s}'""" % (args)]
+            if context.tls:
+                command = command + ["--tls",
+                                     common_util.convertBoolean(context.tls),
+                                     "--cafile",
+                                     '{0}/ordererOrganizations/example.com/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir)]
+            if "orderers" in chaincode:
+                command = command + ["--orderer", 'orderer0.example.com:7050']
+            if "user" in chaincode:
+                command = command + ["--username", chaincode["user"]]
+            if "policy" in chaincode:
+                command = command + ["--policy", chaincode["policy"]]
+            command.append('"')
 
-        output[peer] = context.composition.docker_exec(setup + command, [peer])
+            output[peer] = context.composition.docker_exec(setup + command, [peer])
         print("[{0}]: {1}".format(" ".join(setup + command), output))
         return output
 
