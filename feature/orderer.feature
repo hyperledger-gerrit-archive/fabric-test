@@ -64,7 +64,9 @@ Scenario Outline: FAB-3852: Message Payloads Less than 1MB, for <type> orderer u
     Given I have a bootstrapped fabric network of type <type>
     And I use the <interface> interface
     When a user sets up a channel
+    And I wait "3" seconds
     And a user deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/map" with args [""]
+    And I wait "30" seconds
     # 1K
     And a user invokes on the chaincode named "mycc" with random args ["put","a","{random_value}"] of length 1024
     And I wait "3" seconds
