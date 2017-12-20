@@ -1,0 +1,8 @@
+Verified+1: Hyperledger Jobbuilder <jobbuilder@jenkins.hyperledger.org>
+Code-Review+1: Dongming Hwang <dming@us.ibm.com>
+Code-Review+2: Scott Zwierzynski <scott.zwierzynski@gmail.com>
+Submitted-by: Scott Zwierzynski <scott.zwierzynski@gmail.com>
+Submitted-at: Wed, 20 Dec 2017 15:32:10 +0000
+Reviewed-on: https://gerrit.hyperledger.org/r/16243
+Project: fabric-test
+Branch: refs/heads/master
