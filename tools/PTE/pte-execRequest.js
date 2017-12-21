@@ -209,8 +209,10 @@ var payLoadMax=0;
 var payLoadType='RANDOM'
 var arg0=0;
 var keyIdx = [];
-for (i=0; i<uiContent.ccOpt.keyIdx.length; i++) {
-    keyIdx.push(uiContent.ccOpt.keyIdx[i]);
+if (typeof( uiContent.ccOpt.keyIdx ) !== 'undefined') {
+    for (i=0; i<uiContent.ccOpt.keyIdx.length; i++) {
+        keyIdx.push(uiContent.ccOpt.keyIdx[i]);
+    }
 }
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] keyIdx: ', Nid, channel.getName(), org, pid, keyIdx);
 var keyPayLoad = [];
