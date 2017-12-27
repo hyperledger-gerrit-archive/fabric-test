@@ -94,7 +94,8 @@ Scenario Outline: FAB-4776/FAB-4777: Bring up a kafka based network and check pe
     When a user sets up a channel
     And a user deploys chaincode
     And a user queries on the chaincode with args ["query","a"]
-    Then a user receives a success response of 100
+    Then orderer node of type "<type>" logs receiving genesis block
+    And a user receives a success response of 100
     When a user fetches genesis information from peer "peer1.org1.example.com" using "orderer0.example.com"
     Then the block file is fetched from peer "peer1.org1.example.com"
     When a user queries on the chaincode with args ["query","a"] from "peer1.org1.example.com"
@@ -104,9 +105,9 @@ Scenario Outline: FAB-4776/FAB-4777: Bring up a kafka based network and check pe
     When a user queries on the chaincode with args ["query","a"] from "peer1.org2.example.com"
     Then a user receives a success response of 100 from "peer1.org2.example.com"
 Examples:
-    | database |
-    | leveldb  |
-    | couchdb  |
+    | database | type  |
+    | leveldb  | kafka |
+#    | couchdb  | kafka |
 
 
 @daily

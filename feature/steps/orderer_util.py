@@ -9,7 +9,7 @@ import sys
 import datetime
 from pykafka import KafkaClient
 import endorser_util
-import pudb; pudb.set_trace()
+
 
 
 try:
@@ -21,7 +21,7 @@ except:
     sys.exit(1)
 
 
-def getAllBrokerList(context):
+def getOrdererList(context):
     # Get the Orderers list from the orderer environment var
     orderers = list()
     for container in context.composition.containerDataList:
