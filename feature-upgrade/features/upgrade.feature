@@ -124,8 +124,6 @@ Feature: Bootstrap
 
     And the user "configAdminOrdererOrg0" using cert alias "config-admin-cert" broadcasts ConfigUpdate Tx "consortiumsConfigUpdateTx1" to orderer "<orderer0>"
 
-
-
     Given the following application developers are defined for peer organizations and each saves their cert as alias
       | Developer | Consortium  | Organization | AliasSavedUnder  |
       | dev0Org0  | consortium1 | peerOrg0     | consortium1-cert |
@@ -396,7 +394,7 @@ Feature: Bootstrap
       | ChainId                           | Start | End |
       | com.acme.blockchain.jdoe.channel1 | 3     | 3   |
 
-    Then user "dev0Org0" should get a delivery "deliveredInvokeTx1Block" from "<orderer0>" of "1" blocks with "1" messages within "1" seconds
+    Then user "dev0Org0" should get a delivery "deliveredInvokeTx1Block" from "<orderer0>" of "1" blocks with "1" messages within "5" seconds
 
 
     # Stanza to demonstrate upgrade
@@ -697,6 +695,8 @@ Feature: Bootstrap
 
     #  So if you create a new Channel post orderer fix, you will now have a correctly set mod_policy at channel level vs prior channel genesis block.
 
+ 
+
     ###########################################################################
     #
     # orderer config Admin then adds the same capability to the Orderer group for existing channels
@@ -737,6 +737,95 @@ Feature: Bootstrap
       | Service | Status | Running |
 
 
+
+    
+    ###########################################################################
+    #
+    # Updates : Entry point for creating a channel2
+    #
+    ###########################################################################
+    Given the user "dev0Org0" creates a new channel ConfigUpdate "createChannelConfigUpdate2" using consortium "consortium1"
+      | ChannelID                         | PeerOrgSet  | [PeerAnchorSet] |
+      | com.acme.blockchain.jdoe.channel2 | peerOrgSet1 | anchors1        |
+
+    And the user "dev0Org0" creates a configUpdateEnvelope "createChannelConfigUpdate2Envelope" using configUpdate "createChannelConfigUpdate2"
+
+
+    And the user "dev0Org0" collects signatures for ConfigUpdateEnvelope "createChannelConfigUpdate2Envelope" from developers:
+      | Developer | Cert Alias       |
+      | dev0Org0  | consortium1-cert |
+      | dev0Org1  | consortium1-cert |
+
+    And the user "dev0Org0" creates a ConfigUpdate Tx "configUpdateTx2" using cert alias "consortium1-cert" using signed ConfigUpdateEnvelope "createChannelConfigUpdate2Envelope"
+
+    And the user "dev0Org0" using cert alias "consortium1-cert" broadcasts ConfigUpdate Tx "configUpdateTx2" to orderer "<orderer0>"
+
+    # Sleep as the local orderer needs to bring up the resources that correspond to the new channel
+    # For the Kafka orderer, this includes setting up a producer and consumer for the channel's partition
+    # Requesting a deliver earlier may result in a SERVICE_UNAVAILABLE response and a connection drop
+
+    And I wait "<ChannelJoinDelay>" seconds
+    When user "dev0Org0" using cert alias "consortium1-cert" connects to deliver function on node "<orderer0>" using port "7050"
+    And user "dev0Org0" sends deliver a seek request on node "<orderer0>" with properties:
+      | ChainId                           | Start | End |
+      | com.acme.blockchain.jdoe.channel2 | 0     | 0   |
+
+    Then user "dev0Org0" should get a delivery "genesisBlockForMyNewChannel2" from "<orderer0>" of "1" blocks with "1" messages within "1" seconds
+
+    Given user "dev0Org0" gives "genesisBlockForMyNewChannel2" to user "dev0Org1" who saves it as "genesisBlockForMyNewChannel2"
+
+    Given user "dev0Org0" gives "genesisBlockForMyNewChannel2" to user "peer0Admin" who saves it as "genesisBlockForMyNewChannel2"
+    Given user "dev0Org0" gives "genesisBlockForMyNewChannel2" to user "peer1Admin" who saves it as "genesisBlockForMyNewChannel2"
+      # This is entry point for joining a new channel
+    When user "peer0Admin" using cert alias "peer-admin-cert" requests to join channel using genesis block "genesisBlockForMyNewChannel2" on peers with result "joinChannelResult2"
+      | Peer  |
+      | peer0 |
+
+    Then user "peer0Admin" expects result code for "joinChannelResult2" of "200" from peers:
+      | Peer  |
+      | peer0 |
+
+    When user "peer1Admin" using cert alias "peer-admin-cert" requests to join channel using genesis block "genesisBlockForMyNewChannel2" on peers with result "joinChannelResult2"
+      | Peer  |
+      | peer1 |
+
+    Then user "peer1Admin" expects result code for "joinChannelResult2" of "200" from peers:
+      | Peer  |
+      | peer1 |
+
+
+    #####################################################################################################################
+    #
+    # orderer config Admin then adds the same capability to /Channel/Application group for channel2 
+    # Channel/Orderer and /Channel capabilities are already defined
+    #
+    #####################################################################################################################
+    Given user "configAdminOrdererOrg0" retrieves the latest config update "latestPeerConfigForCapabilitiesChangeForChannel2" from orderer "<orderer0>" for channel "com.acme.blockchain.jdoe.channel2"
+    And user "configAdminOrdererOrg0" creates a capabilities config update "capabilitiesV1.1ConfigUpdateForPeerChannelLevel2" using config "latestPeerConfigForCapabilitiesChangeForChannel2" using channel ID "com.acme.blockchain.jdoe.channel2" with mod policy "Admins" to add capabilities:
+      | Group                | Capabilities |
+#      | /Channel             | V1_1         |
+      | /Channel/Application | V1_1         |
+    And the user "configAdminOrdererOrg0" creates a configUpdateEnvelope "capabilitiesV1.1ConfigUpdateEnvelopeForPeerChannelLevel2" using configUpdate "capabilitiesV1.1ConfigUpdateForPeerChannelLevel2"
+
+    And the user "configAdminOrdererOrg0" collects signatures for ConfigUpdateEnvelope "capabilitiesV1.1ConfigUpdateEnvelopeForPeerChannelLevel2" from developers:
+      | Developer              | Cert Alias        |
+      | configAdminOrdererOrg0 | config-admin-cert |
+      | configAdminPeerOrg0    | config-admin-cert |
+      | configAdminPeerOrg1    | config-admin-cert |
+#      | configAdminOrdererOrg1 | config-admin-cert |
+
+    And the user "configAdminOrdererOrg0" creates a ConfigUpdate Tx "capabilitiesConfigUpdateForPeerTx2ChannelLevel2" using cert alias "config-admin-cert" using signed ConfigUpdateEnvelope "capabilitiesV1.1ConfigUpdateEnvelopeForPeerChannelLevel2"
+
+    And the user "configAdminOrdererOrg0" using cert alias "config-admin-cert" broadcasts ConfigUpdate Tx "capabilitiesConfigUpdateForPeerTx2ChannelLevel2" to orderer "<orderer0>"
+
+
+    ###########################################################################
+    #
+    # End Updates : Entry point for creating a channel2
+    #
+    ###########################################################################
+
+
     ###########################################################################
     #
     # Verifying blockinfo for all peers in the existing channel
@@ -757,14 +846,14 @@ Feature: Bootstrap
       | peer2    |
       | peer3    |
 
-    Then user "dev0Org0" expects proposal responses "queryGetChainInfoProposal1Responses" with status "200" from endorsers:
+   Then user "dev0Org0" expects proposal responses "queryGetChainInfoProposal1Responses" with status "200" from endorsers:
       | Endorser |
       | peer0    |
       | peer1    |
       | peer2    |
       | peer3    |
 
-    And user "dev0Org0" expects proposal responses "queryGetChainInfoProposal1Responses" each have the same value from endorsers:
+   And user "dev0Org0" expects proposal responses "queryGetChainInfoProposal1Responses" each have the same value from endorsers:
       | Endorser |
       | peer0    |
       | peer1    |
@@ -782,8 +871,8 @@ Feature: Bootstrap
     Given user "configAdminOrdererOrg0" retrieves the latest config update "latestPeerConfigForCapabilitiesChangeForChannel" from orderer "<orderer0>" for channel "com.acme.blockchain.jdoe.channel1"
     And user "configAdminOrdererOrg0" creates a capabilities config update "capabilitiesV1.1ConfigUpdateForPeerChannelLevel" using config "latestPeerConfigForCapabilitiesChangeForChannel" using channel ID "com.acme.blockchain.jdoe.channel1" with mod policy "Admins" to add capabilities:
       | Group                | Capabilities |
-      | /Channel             | V1.1         |
-      | /Channel/Application | V1.1         |
+      | /Channel             | V1_1         |
+      | /Channel/Application | V1_1         |
     And the user "configAdminOrdererOrg0" creates a configUpdateEnvelope "capabilitiesV1.1ConfigUpdateEnvelopeForPeerChannelLevel" using configUpdate "capabilitiesV1.1ConfigUpdateForPeerChannelLevel"
 
     And the user "configAdminOrdererOrg0" collects signatures for ConfigUpdateEnvelope "capabilitiesV1.1ConfigUpdateEnvelopeForPeerChannelLevel" from developers:
@@ -796,7 +885,7 @@ Feature: Bootstrap
     And the user "configAdminOrdererOrg0" creates a ConfigUpdate Tx "capabilitiesConfigUpdateForPeerTx1ChannelLevel" using cert alias "config-admin-cert" using signed ConfigUpdateEnvelope "capabilitiesV1.1ConfigUpdateEnvelopeForPeerChannelLevel"
 
     And the user "configAdminOrdererOrg0" using cert alias "config-admin-cert" broadcasts ConfigUpdate Tx "capabilitiesConfigUpdateForPeerTx1ChannelLevel" to orderer "<orderer0>"
-
+   
 
 
     ###########################################################################
@@ -840,6 +929,7 @@ Feature: Bootstrap
       | ComposeFile                       | SystemUpWaitTime | ConsensusType | ChannelJoinDelay | BroadcastWaitTime | orderer0 | orderer1 | orderer2 | Orderer Specific Info | RestartOrdererWaitTime | FabricBaseVersion | OrdererUpgradeVersion | RestartPeerWaitTime | PeerUpgradeVersion | VerifyAllBlockHeightsWaitTime |
 #      | dc-base.yml                       | 0                | solo          | 2                | 2                 | orderer0 | orderer0 | orderer0 |                       | 0                      | x86_64-1.0.3      | latest                | 2                   | latest             | 10                            |
 #      | dc-base.yml  dc-peer-couchdb.yml                      | 10               | solo          | 2                | 2                 | orderer0 | orderer0 | orderer0 |                       | 2                      | latest                | 2                   | latest             |
-      | dc-base.yml  dc-orderer-kafka.yml | 40               | kafka         | 10               | 5                 | orderer0 | orderer1 | orderer2 |                       | 2                      | x86_64-1.0.4      | latest                | 0                   | latest             | 30                            |
+      | dc-base.yml  dc-orderer-kafka.yml | 40               | kafka         | 10               | 5                 | orderer0 | orderer1 | orderer2 |                       | 2                      | x86_64-1.0.1      | latest                | 10                   | latest             | 30                            |
+     # | dc-base.yml  dc-orderer-kafka.yml | 40               | kafka         | 10               | 5                 | orderer0 | orderer1 | orderer2 |                       | 2                      | x86_64-1.0.4      | latest                | 0                   | latest             | 30                            |
 #      | dc-base.yml  dc-peer-couchdb.yml dc-orderer-kafka.yml | 40               | kafka         | 10               | 5                 | orderer0 | orderer1 | orderer2 |                       | 2                      | latest                | 0                   | latest             |
 #      | dc-base.yml  dc-peer-couchdb.yml dc-composer.yml      | 10               | solo          | 2                | 2                 | orderer0 | orderer0 | orderer0 |                       | 2                      | latest                | 0                   | latest             |
