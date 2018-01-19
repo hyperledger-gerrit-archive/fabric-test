@@ -21,6 +21,7 @@ var os = require('os');
 var path = require('path');
 var util = require('util');
 
+var pteLogger = require('./pte-logger.js');
 var KEYUTIL = jsrsa.KEYUTIL;
 
 
@@ -28,7 +29,11 @@ var copService = require('fabric-ca-client/lib/FabricCAClientImpl.js');
 var User = require('fabric-client/lib/User.js');
 //var Constants = require('./constants.js');
 
-var logger = require('fabric-client/lib/utils.js').getLogger('PTE util');
+// var logger = require('fabric-client/lib/utils.js').getLogger('PTE util');
+
+var PTEid = parseInt(process.argv[5]);
+var loggerMsg='PTE ' + PTEid + ' util';
+var logger = new pteLogger({"prefix":loggerMsg, "level":"info"});
 
 module.exports.CHAINCODE_PATH = 'github.com/example_cc';
 module.exports.CHAINCODE_UPGRADE_PATH = 'github.com/example_cc1';

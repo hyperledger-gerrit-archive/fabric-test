@@ -37,11 +37,11 @@ var path = require('path');
 var testUtil = require('./pte-util.js');
 var util = require('util');
 
-var utils = require('fabric-client/lib/utils.js');
+var pteLogger = require('./pte-logger.js');
 
-var PTEid=process.argv[7];
-var loggerMsg='PTE '+PTEid+' exec';
-var logger = utils.getLogger(loggerMsg);
+var PTEid = process.argv[7];
+var loggerMsg = 'PTE ' + PTEid + ' exec';
+var logger = new pteLogger({"prefix":loggerMsg, "level":"info"});
 
 
 // local vars
