@@ -114,8 +114,9 @@ If planning to run your Fabric network locally, you'll need docker and a bit mor
 
 
 4. Install PTE:
-    - `cd $GOPATH/src/github.com/hyperledger/fabric-test/tools`
-    - `cp -r PTE $GOPATH/src/github.com/hyperledger/fabric-test/fabric-sdk-node/test`
+    - `cd $GOPATH/src/github.com/hyperledger/fabric-test/tools/PTE`
+    - `npm install fabric-client@1.0.2`
+    - `npm install fabric-ca-client@1.0.2`
 
 
 5. Create Service Credentials file(s) for your Fabric network:
