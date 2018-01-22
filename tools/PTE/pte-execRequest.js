@@ -72,6 +72,9 @@ var targets = [];
 var eventPromises = [];
 var txidList = [];
 
+var requestQueue = [];
+var maxRequestQueueLength = 100;
+
 // need to override the default key size 384 to match the member service backend
 // otherwise the client will not be able to decrypt the enrollment challenge
 hfc.setConfigSetting('crypto-keysize', 256);
@@ -285,6 +288,8 @@ function getMoveRequest() {
         }
     }
 
+    var ri = Object.assign({}, request_invoke);
+    return ri;
 }
 
 //construct query request
@@ -1662,10 +1667,18 @@ function invoke_move_const(freq) {
     inv_m++;
 
     var t1 = new Date().getTime();
-    getMoveRequest();
+    // getMoveRequest();
+    var txProposal = requestQueue.pop();
+    if (!txProposal) {
+        logger.debug("empty requestQueue");
+        invoke_move_const_go(t1, freq);
+        return;
+    }
+    txProposal.targets = targets;
 
     var ts = new Date().getTime();
-    channel.sendTransactionProposal(request_invoke)
+    // channel.sendTransactionProposal(request_invoke)
+    channel.sendTransactionProposal(txProposal)
     .then((results) => {
 
             var te = new Date().getTime();
@@ -1681,13 +1694,16 @@ function invoke_move_const(freq) {
                 return;
             }
 
-            getTxRequest(results);
-            txidList[tx_id.getTransactionID().toString()] = new Date().getTime();
+            // getTxRequest(results);
+            // txidList[tx_id.getTransactionID().toString()] = new Date().getTime();
+            txidList[txProposal.txId.getTransactionID().toString()] = new Date().getTime();
 
-            eventRegister(tx_id, function(sendPromise) {
+            //  eventRegister(tx_id, function(sendPromise) {
+            eventRegister(txProposal.txId, function(sendPromise) {
 
                 var tos = new Date().getTime();
-                var sendPromise = channel.sendTransaction(txRequest);
+                // var sendPromise = channel.sendTransaction(txRequest);
+                var sendPromise = channel.sendTransaction({proposalResponses: results[0], proposal: results[1], header: results[2]});
                 return Promise.all([sendPromise].concat(eventPromises))
                 .then((results) => {
 
@@ -1847,6 +1863,7 @@ function execModeConstant() {
                 evtDisconnect();
                 invoke_move_const_evtBlock(freq);
             } else {
+                requestPusher(getMoveRequest, (freq / 10));
                 invoke_move_const(freq);
             }
         } else if ( invokeType == 'QUERY' ) {
@@ -2229,7 +2246,7 @@ function execModeBurst() {
 }
 
 function sleep(ms) {
-	return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function evtDisconnect() {
@@ -2241,3 +2258,14 @@ function evtDisconnect() {
     }
 }
 
+function requestPusher(fn, delay) {
+    if ( inv_m < nRequest ) {
+        if ( requestQueue.length < maxRequestQueueLength ) {
+            var data = fn();
+            requestQueue.unshift(data);
+        } else {
+            logger.debug("no data pushed");
+        }
+        setTimeout(requestPusher, delay, fn, delay)
+    }
+}
