@@ -129,6 +129,9 @@ class InterfaceBase:
     def instantiate_chaincode(self, context, peer, user="Admin"):
         return self.cli.instantiate_chaincode(context, peer, user=user)
 
+    def upgrade_chaincode(self, context, peer, user="Admin"):
+        return self.cli.upgrade_chaincode(context, peer, user=user)
+
     def create_channel(self, context, orderer, channelId, user="Admin"):
         return self.cli.create_channel(context, orderer, channelId, user=user)
 
@@ -176,6 +179,21 @@ class ToolInterface(InterfaceBase):
                                                                                     peer_name)
         print(cmd)
         return subprocess.check_call(cmd.split(), env=os.environ)
+
+    def upgrade_chaincode(self, context, peer="peer0.org1.example.com", user="Admin"):
+        #TO-DO
+        channel = str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID))
+        args = json.loads(context.chaincode["args"])
+        print(args)
+        peer_name = context.networkInfo["nodes"][peer]["nodeName"]
+        cmd = "node v1.0_sdk_tests/app.js upgradecc -c {0} -i {1} -v 1 -a {2} -b {3} -p {4}".format(channel,
+                                                                                    context.chaincode["name"],
+                                                                                    args[2],
+                                                                                    args[4],
+                                                                                    peer_name)
+        print(cmd)
+        return subprocess.check_call(cmd.split(), env=os.environ)
+
 
     def create_channel(self, context, orderer, channelId, user="Admin"):
         orderer_name = context.networkInfo["nodes"][orderer]["nodeName"]
@@ -407,6 +425,36 @@ class CLIInterface(InterfaceBase):
             command = command + ["--username", context.chaincode["user"]]
         if context.chaincode.get("policy", None) is not None:
             command = command + ["--policy", context.chaincode["policy"].replace('"', r'\"')]
+        command.append('"')
+
+        output[peer] = context.composition.docker_exec(setup + command, [peer])
+        print("[{0}]: {1}".format(" ".join(setup + command), output))
+        return output
+
+    def upgrade_chaincode(self, context, peer="peer0.org1.example.com", user="Admin"):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        args = context.chaincode.get('args', '[]').replace('"', r'\"')
+        output = {}
+        peerParts = peer.split('.')
+        org = '.'.join(peerParts[1:])
+        setup = self.get_env_vars(context, peer, user=user)
+        command = ["peer", "chaincode", "upgrade",
+                   "--name", context.chaincode['name'],
+                   "--version", str(context.chaincode.get('version', 0)),
+                   "--lang", context.chaincode['language'],
+                   "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID)),
+                   "--ctor", r"""'{\"Args\": %s}'""" % (args)]
+        if context.tls:
+            command = command + ["--tls",
+                                 common_util.convertBoolean(context.tls),
+                                 "--cafile",
+                                 '{0}/ordererOrganizations/example.com/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir)]
+        if "orderers" in context.chaincode:
+            command = command + ["--orderer", 'orderer0.example.com:7050']
+        if "user" in context.chaincode:
+            command = command + ["--username", context.chaincode["user"]]
+        if "policy" in context.chaincode:
+            command = command + ["--policy", context.chaincode["policy"]]
         command.append('"')
 
         output[peer] = context.composition.docker_exec(setup + command, [peer])
