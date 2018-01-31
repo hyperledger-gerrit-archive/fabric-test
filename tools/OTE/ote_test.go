@@ -309,9 +309,16 @@ func Test_ORD105_1ch_3ord_kafka_4kbs(t *testing.T) {
         if !passResult { t.Error(finalResultSummaryString) }
 }
 
-//FAB-6996 - send txns to solo orderer with default batchsize and default payload
+//FAB-6996 - DEFAULT testcase - send txns to solo orderer with default batchsize and default payload
 func Test_FAB6996_1ch_1ord_solo(t *testing.T) {
         passResult, finalResultSummaryString := ote("FAB-6996", 30000, 1, 1, "solo", 0, spyOff, 1, 0 )
+        if !passResult { t.Error(finalResultSummaryString) }
+}
+
+//FAB-7936-SMOKE - send a few txns to 3 chans on 3 orderers, 3 kafka brokers, 1 zookeeper with default batchsize and default payload
+func Test_FAB7936_SMOKE_3ch_3ord_3kb(t *testing.T) {
+        // (Later we should add spyDefer, after fixing that functionality.)
+        passResult, finalResultSummaryString := ote("FAB-7936-SMOKE", 1000, 3, 3, "kafka", 3, spyOff, 1, 0 )
         if !passResult { t.Error(finalResultSummaryString) }
 }
 
