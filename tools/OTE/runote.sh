@@ -139,6 +139,14 @@ FAB-7038 () {
         numChannels=3 testcase=Test_FAB7038_3ch_3ord_5kb docker-compose -f ote-compose.yml up -d
 }
 
+FAB-7936-SMOKE () {
+        cd $CWD/../NL
+        ./networkLauncher.sh -o 3 -x 1 -r 1 -p 1 -n 3 -k 3 -z 1 -t kafka -f test -w localhost -S enabled
+        cd $OTE_DIR
+        # run testcase
+        numChannels=3 testcase=Test_FAB7936_SMOKE_3ch_3ord_3kb docker-compose -f ote-compose.yml up -d
+}
+
 FAB-7076 () {
         cd $CWD/../NL
         ./networkLauncher.sh -o 3 -x 1 -r 1 -p 1 -n 3 -k 5 -z 3 -t kafka -f test -w localhost -S enabled
