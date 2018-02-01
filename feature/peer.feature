@@ -193,6 +193,12 @@ Scenario Outline: FAB-7150/FAB-7153/FAB-7759: Test Mutual TLS/ClientAuth <securi
   Then a user receives a response containing org2.example.com
   Then a user receives a response containing example.com
   Then a user receives a response containing CERTIFICATE
+
+  When a user defines a couchDB index named indexColorOnly with design document name "indexColorDDoc" containing the fields "color" to the chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/marbles02"
+  When a user defines a couchDB index named indexSizeOnly with design document name "indexSizeDDoc" containing the fields "size" to the chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/node"
+  When a user defines a couchDB index named indexOwnerOnly with design document name "indexOwnerDoc" containing the fields "owner" to the chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/node"
+  When a user defines a couchDB index named indexSizeOnly with design document name "indexSizeOwnerDDoc" containing the fields "size:desc,owner" to the chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/node"
+
 Examples:
     | type  |   security  |  interface |
     | kafka |   with tls  | NodeJS SDK |
