@@ -188,6 +188,12 @@ Scenario Outline: FAB-7150: Test Mutual TLS/ClientAuth <security> with <type> ba
   And I wait "10" seconds
   And a user queries on the chaincode named "mycc" with args ["query","a"] on "peer0.org2.example.com"
   Then a user receives a success response of 980 from "peer0.org2.example.com"
+
+
+  When a user defines a couchDB index named indexColorOnly from indexColorDDoc documents containing the field "color" to the chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/marbles02"
+  When a user defines a couchDB index named indexSizeOnly from indexSizeDDoc documents containing the field "size" to the chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/node"
+  When a user defines a couchDB index named indexOwnerOnly from indexOwnerDoc documents containing the field "owner" to the chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/node"
+  
 Examples:
     | type  |   security  |  interface |
     | kafka |   with tls  | NodeJS SDK |
