@@ -63,6 +63,8 @@ The command is located in `PTE/CITest/scripts`
         FAB-7334-4i: samplecc Node JS chaincode, 4 processes X 10000 invokes, TLS, levelDB, 2 channel, filtered block event service, event listener: per block
         FAB-7627-16i: samplecc GO chaincode, 16 processes X 10000 invokes, TLS, levelDB, 8 channel, peer event service, event listener: per block
         FAB-7929-8i: smoke test, samplecc GO chaincode, 8 processes X 100 invokes, TLS, levelDB, 4 channel, channel event service, event listener: per block
+        FAB-7647-6i: latency mode, samplecc GO chaincode, 6 processes X 10000 invokes, TLS, levelDB, 3 channels, channel event service, event listener: per block, blocksize 1
+        FAB-7647-6q: latency mode, samplecc GO chaincode, 6 processes X 10000 queries, TLS, levelDB, 3 channels
 
 
 * ### Examples
@@ -120,6 +122,7 @@ The command is located in `PTE/CITest/scripts`
         FAB-7334-4i.sh: execute FAB-7334-4i
         FAB-7627-16i.sh: execute FAB-7627-16i
         FAB-7929-16i.sh: execute FAB-7929-8i
+        FAB-7647-6i.sh: execute FAB-7647-6i
 
 
 * ### Network

@@ -1,0 +1,1 @@
+sdk=node CITest/FAB-7647-6i/preconfig/channels/chan1-create-TLS.json

@@ -1,0 +1,6 @@
+sdk=node CITest/FAB-7647-6i/preconfig/samplecc/samplecc-chan1-install1-TLS.json
+sdk=node CITest/FAB-7647-6i/preconfig/samplecc/samplecc-chan1-install2-TLS.json
+sdk=node CITest/FAB-7647-6i/preconfig/samplecc/samplecc-chan1-install3-TLS.json
+sdk=node CITest/FAB-7647-6i/preconfig/samplecc/samplecc-chan1-install4-TLS.json
+sdk=node CITest/FAB-7647-6i/preconfig/samplecc/samplecc-chan1-install5-TLS.json
+sdk=node CITest/FAB-7647-6i/preconfig/samplecc/samplecc-chan1-install6-TLS.json
