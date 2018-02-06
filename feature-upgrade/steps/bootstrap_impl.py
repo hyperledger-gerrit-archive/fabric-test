@@ -485,6 +485,24 @@ def step_impl(context, user_name, compose_service, upgrade_version):
     composition.set_version_for_service(compose_service, upgrade_version)
     composition.issueCommand(['up','-d'],[compose_service])
 
+@given(u'user "{user_name}" stops "{compose_service}"')
+def step_impl(context, user_name, compose_service):
+    directory = bootstrap_util.getDirectory(context)
+    user = directory.getUser(userName=user_name)
+    assert "composition" in context, "No composition found in context"
+    composition = context.composition
+    composition.issueCommand(['stop'],[compose_service])
+    composition.issueCommand(['rm','-f'],[compose_service])
+
+@given(u'user "{user_name}" upgrades "{compose_service}" to version "{upgrade_version}" after stop')
+def step_impl(context, user_name, compose_service, upgrade_version):
+    directory = bootstrap_util.getDirectory(context)
+    user = directory.getUser(userName=user_name)
+    assert "composition" in context, "No composition found in context"
+    composition = context.composition
+    composition.set_version_for_service(compose_service, upgrade_version)
+    composition.issueCommand(['up','-d'],[compose_service])
+ 
 
 @given(u'all users disconnect from orderers')
 def step_impl(context):
