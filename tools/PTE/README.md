@@ -77,12 +77,18 @@ To build and test the following prerequisites must be installed first:
 
 If planning to run your Fabric network locally, you'll need docker and a bit more. See [Hyperledger Fabric - Getting Started](http://hyperledger-fabric.readthedocs.io/en/latest/getting_started.html) for details.
 `
+### If running on a Mac
+Only for Mac, you need to install a gnu-compatible version of the `awk`, `date` utility:
+
+- Install Brew: http://brew.sh
+- run `brew install gawk —-with-default-names; brew install gdate —-with-default-names` in order to swap out Mac's default `awk` and `date` commands for  gnu-compliant ones.
+
 ## Setup
 1. Download fabric-test sources:
     - `go get -d github.com/hyperledger/fabric-test`
 
 2. Download or update fabric, fabric-ca, and fabric-sdk-node sources, see [Hyperledger fabric-test](https://github.com/hyperledger/fabric-test) for details:
-    - `cd $GOPATH/src/github.com/hyperledger/fabric-test`
+    - `cd [GOPATH]/src/github.com/hyperledger/fabric-test`
     - if first time:
          - `git submodule update --init --recursive`
          - `git submodule foreach git pull origin master`
@@ -95,18 +101,18 @@ If planning to run your Fabric network locally, you'll need docker and a bit mor
 
     - fabric
         - download from dockerhub:
-            * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric/scripts`
+            * `cd [GOPATH]/src/github.com/hyperledger/fabric-test/fabric/scripts`
             * If testing v1.0.0: `./bootstrap-1.0.0.sh`
         - build images yourself (v1.0.0 shown here):
-            * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric/`
+            * `cd [GOPATH]/src/github.com/hyperledger/fabric-test/fabric/`
             * `git checkout v1.0.0`
             * `make docker`
     - fabric-ca
-        * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric-ca`
+        * `cd [GOPATH]/src/github.com/hyperledger/fabric-test/fabric-ca`
         * `git checkout v1.0.0`
         * `make docker`
     - fabric-sdk-node
-        * `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric-sdk-node`
+        * `cd [GOPATH]/src/github.com/hyperledger/fabric-test/fabric-sdk-node`
         * If testing v1.0.0: `git checkout v1.0.0`
         * `npm install`
             *  you should be able to safely ignore any warnings
@@ -114,8 +120,8 @@ If planning to run your Fabric network locally, you'll need docker and a bit mor
 
 
 4. Install PTE:
-    - `cd $GOPATH/src/github.com/hyperledger/fabric-test/tools`
-    - `cp -r PTE $GOPATH/src/github.com/hyperledger/fabric-test/fabric-sdk-node/test`
+    - `cd [GOPATH]/src/github.com/hyperledger/fabric-test/tools`
+    - `cp -r PTE [GOPATH]/src/github.com/hyperledger/fabric-test/fabric-sdk-node/test`
 
 
 5. Create Service Credentials file(s) for your Fabric network:
@@ -126,7 +132,9 @@ If planning to run your Fabric network locally, you'll need docker and a bit mor
 
 ## Running PTE
 
-Before attempting to run PTE ensure your network is running!
+Before attempting to run PTE please ensure
+1. your network is running!
+2. you are in the correct directory `[GOPATH]/src/github.com/hyperledger/fabric-test/fabric-sdk-node/test`
 If you do not have access to a Fabric network, please see the section on [Creating a local Fabric network](#creating-a-local-fabric-network).
 
 ### Usage
@@ -198,7 +206,7 @@ A single test case is described by a user input file. User input files define al
 
         "channelOpt": {
             "name": "testchannel1",
-            "channelTX": "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
+            "channelTX": "[GOPATH]/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
             "action":  "create",
             "orgName": [
                 "testOrg1"
@@ -223,7 +231,7 @@ A single test case is described by a user input file. User input files define al
 
         "channelOpt": {
             "name": "testchannel1",
-            "channelTX": "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
+            "channelTX": "[GOPATH]/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
             "action":  "create",
             "orgName": [
                 "testOrg1"
@@ -264,7 +272,7 @@ Although PTE's primary use case is to drive transactions into a Fabric network, 
 
             "channelOpt": {
                 "name": "testchannel1",
-                "channelTX": "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
+                "channelTX": "[GOPATH]/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
                 "action":  "create",
                 "orgName": [
                     "testOrg1"
@@ -276,7 +284,7 @@ Although PTE's primary use case is to drive transactions into a Fabric network, 
 
             "channelOpt": {
                 "name": "testchannel1",
-                "channelTX": "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
+                "channelTX": "[GOPATH]/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
                 "action":  "join",
                 "orgName": [
                     "testOrg1"
@@ -323,7 +331,7 @@ Although PTE's primary use case is to drive transactions into a Fabric network, 
 
             "channelOpt":
                 "name":  "testchannel1",
-                "channelTX": "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
+                "channelTX": "[GOPATH]/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
                 "action":  "create",
                 "orgName": [
                     "testOrg1"
@@ -342,7 +350,7 @@ Although PTE's primary use case is to drive transactions into a Fabric network, 
 
             "channelOpt": {
                 "name":  "testchannel1",
-                "channelTX": "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
+                "channelTX": "[GOPATH]/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
                 "action":  "create",
                 "orgName": [
                     "testOrg1",
@@ -522,7 +530,7 @@ The following chaincodes are tested and supported:
         },
         "channelOpt": {
             "name": "testchannel1",
-            "channelTX": "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
+            "channelTX": "[GOPATH]/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
             "action":  "create",
             "orgName": [
                 "org1"
@@ -761,11 +769,12 @@ The service credentials contain the information of the network and are stored in
 
 
 ## Creating a local Fabric network
-- If you do not yet have the Fabric docker images in your local docker registry, please either build them from Fabric source or download them from dockerhub.
-    - `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric/examples/e2e_cli/`
+Prequisite: If you do not yet have the Fabric docker images in your local docker registry, please either build them from Fabric source or download them from dockerhub.
+    - `cd [GOPATH]/src/github.com/hyperledger/fabric-test/fabric/examples/e2e_cli/`
     - `sh ./download-dockerimages.sh -c x86_64-1.0.0 -f x86_64-1.0.0`
-- If you do not have an existing network already, you can start a network using the Fabric e2e example:
-    - `cd $GOPATH/src/github.com/hyperledger/fabric-test/fabric/examples/e2e_cli/`
+Here are two ways to create a local netork:
+- Using the Fabric e2e example:
+    - `cd [GOPATH]/src/github.com/hyperledger/fabric-test/fabric/examples/e2e_cli/`
     - Edit `network_setup.sh`
 
         * change **COMPOSE_FILE** to
@@ -775,8 +784,8 @@ The service credentials contain the information of the network and are stored in
         * comment out `docker logs -f cli`
 
     - `./network_setup.sh up`
-- Alternatively, consider using the [NetworkLauncher](https://github.com/hyperledger/fabric-test/tree/master/tools/NL) tool:
-    - `cd $GOPATH/src/github.com/hyperledger/`
+- Alternatively, by using the [NetworkLauncher](https://github.com/hyperledger/fabric-test/tree/master/tools/NL) tool:
+    - `cd [GOPATH]/src/github.com/hyperledger/`
     - `git clone https://github.com/hyperledger/fabric-test`
     - `cd tools/NL`
     - `./networkLauncher.sh -?`
