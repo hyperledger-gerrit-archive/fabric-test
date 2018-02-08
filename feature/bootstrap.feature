@@ -121,4 +121,4 @@ Scenario: FAB-4773: Fetching of a channel genesis block
     When a user creates a channel named "mychannel"
     And a user fetches genesis information for a channel "mychannel" from peer "peer1.org1.example.com"
     Then the "mychannel.tx" file is generated
-    Then the "mychannel.tx" file is fetched from peer "peer1.org1.example.com"
+    Then the "mychannel.block" file is fetched from peer "peer1.org1.example.com"
