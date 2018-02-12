@@ -1781,6 +1781,9 @@ Feature: Upgrade
     Given user "peer3Admin" stops "peer3"
 
 
+    ########################################################################
+    # comment below line to test failure of FAB-7915
+    ########################################################################
     Given all peer admins remove existing chaincode docker images
 
     And I wait "<BroadcastWaitTime>" seconds
