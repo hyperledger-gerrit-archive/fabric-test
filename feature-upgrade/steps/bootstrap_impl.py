@@ -23,6 +23,13 @@ import compose
 import composer
 import time
 import ast
+import subprocess
+
+
+@given(u'the user unzips vendor folder {folderName}')
+def step_impl(context, folderName):
+    subprocess.call(["unzip", "vendor.zip"], cwd=folderName)
+
 
 @given(u'the orderer network has organizations')
 def step_impl(context):

@@ -411,6 +411,7 @@ Feature: Upgrade
     # Entry point for install and instantiate chaincode plob that is vendored with 1.0.x shim on peers on a channel
     #
     ######################################################################################################################
+    Given the user unzips vendor folder ../chaincodes/shim-vendored/plob-1.0-shim/chaincode 
 
     When user "peer0Admin" creates a chaincode spec "ccSpec_plob10" with name "plob_vendor_one_0_shim" and version "1.0" of type "GOLANG" for chaincode "github.com/hyperledger/fabric-test/chaincodes/shim-vendored/plob-1.0-shim/chaincode" with args
       | funcName | 
@@ -695,6 +696,7 @@ Feature: Upgrade
     #
     ######################################################################################################################
 
+    #Given the user unzips vendor folder ../chaincodes/shim-vendored/plob-1.1-shim/chaincode 
     #When user "peer0Admin" creates a chaincode spec "ccSpec1_plob11" with name "plob_11_shim_1" and version "1.0" of type "GOLANG" for chaincode "github.com/hyperledger/fabric-test/chaincodes/shim-vendored/plob-1.1-shim/chaincode" with args
       #| funcName |
       # | init     |
@@ -1781,6 +1783,9 @@ Feature: Upgrade
     Given user "peer3Admin" stops "peer3"
 
 
+    ########################################################################
+    # comment below line to test failure of FAB-7915
+    ########################################################################
     Given all peer admins remove existing chaincode docker images
 
     And I wait "<BroadcastWaitTime>" seconds
