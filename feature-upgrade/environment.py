@@ -4,6 +4,8 @@
 #
 
 import subprocess
+import os
+import shutil
 
 from steps.docgen import DocumentGenerator
 from steps.bdd_test_util import cli_call
@@ -64,6 +66,11 @@ def after_scenario(context, scenario):
                     sys_rc = subprocess.call(["docker", "logs", containerName], stdout=logfile, stderr=logfile)
                     if sys_rc !=0 :
                         print("Cannot get logs for {0}. Docker rc = {1}".format(namepart,sys_rc))
+    if os.path.exists("../chaincodes/shim-vendored/plob-1.1-shim/chaincode/vendor"):
+        # Remove vendor folder 
+        shutil.rmtree("../chaincodes/shim-vendored/plob-1.1-shim/chaincode/vendor", ignore_errors=True)
+    if os.path.exists("../chaincodes/shim-vendored/plob-1.1-shim/chaincode/vendor"):
+        shutil.rmtree("../chaincodes/shim-vendored/plob-1.0-shim/chaincode/vendor", ignore_errors=True)
     if 'doNotDecompose' in scenario.tags:
         if 'compose_yaml' in context:
             print("Not going to decompose after scenario {0}, with yaml '{1}'".format(scenario.name, context.compose_yaml))
