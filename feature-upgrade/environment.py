@@ -4,6 +4,8 @@
 #
 
 import subprocess
+import os
+import shutil
 
 from steps.docgen import DocumentGenerator
 from steps.bdd_test_util import cli_call
@@ -67,6 +69,10 @@ def after_scenario(context, scenario):
     if 'doNotDecompose' in scenario.tags:
         if 'compose_yaml' in context:
             print("Not going to decompose after scenario {0}, with yaml '{1}'".format(scenario.name, context.compose_yaml))
+    if os.path.exists("../chaincodes/shim-vendored/plob-1.1-shim/chaincode/vendor"):
+        # Remove vendor folder 
+        shutil.rmtree("../chaincodes/shim-vendored/plob-1.1-shim/chaincode/vendor", ignore_errors=True)
+        shutil.rmtree("../chaincodes/shim-vendored/plob-1.0-shim/chaincode/vendor", ignore_errors=True)
     elif 'composition' in context:
         if coverageEnabled(context):
             # First stop the containers to allow for coverage files to be created.
