@@ -64,6 +64,11 @@ The command is located in `PTE/CITest/scripts`
         FAB-7627-16i: samplecc GO chaincode, 16 processes X 10000 invokes, TLS, levelDB, 8 channel, peer event service, event listener: per block
         FAB-7647-1i: latency mode, samplecc GO chaincode, 1 process X 10000 invokes, TLS, levelDB, 1 channel, peer event service, event listener: per block
         FAB-7929-8i: smoke test, samplecc GO chaincode, 8 processes X 100 invokes, TLS, levelDB, 4 channel, channel event service, event listener: per block
+        FAB-8192-4i: marbles02 GO chaincode, 4 processes X 1000 invokes, TLS, CouchDB, 2 channel, channel event service with block listener
+        FAB-8199-4q: marbles02 GO chaincode, 4 processes X 1000 queries, TLS, CouchDB, 2 channel
+        FAB-8200-4q: marbles02 GO chaincode, 4 processes X 1000 rich queries (queryMarblesByOwner), TLS, CouchDB, 2 channels
+        FAB-8201-4q: marbles02 GO chaincode, 4 processes X 1000 rich queries (queryMarbles: owner and docType), TLS, CouchDB, 2 channels
+        marbles02-4q: ledgers synchronization (for FAB-8192, FAB-8199, FAB-8200, FAB-8201), marbles02 GO chaincode, 4 processes X 10 queries, TLS, CouchDB, 2 channels
 
 
 * ### Examples
@@ -122,6 +127,10 @@ The command is located in `PTE/CITest/scripts`
         FAB-7627-16i.sh: execute FAB-7627-16i
         FAB-7647-1i.sh: execute FAB-7647-1i
         FAB-7929-16i.sh: execute FAB-7929-8i
+        FAB-8192-4i.sh: execute FAB-8192-4i
+        FAB-8199-4q.sh: execute FAB-8199-4q
+        FAB-8200-4q.sh: execute FAB-8200-4q
+        FAB-8201-4q.sh: execute FAB-8201-4q
 
 
 * ### Network
