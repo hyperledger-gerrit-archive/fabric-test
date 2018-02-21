@@ -214,7 +214,8 @@ services:
             - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
             - CORE_PEER_GOSSIP_ORGLEADER=${CORE_PEER_GOSSIP_ORGLEADER_PEER0_ORG1}
             - CORE_PEER_GOSSIP_USELEADERELECTION=${CORE_PEER_GOSSIP_USELEADERELECTION_PEER0_ORG1}
-            - CORE_PEER_LOCALMSPID=org1.example.com
+            #- CORE_PEER_LOCALMSPID=org1.example.com
+            - CORE_PEER_LOCALMSPID=Org1ExampleCom
             - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/var/hyperledger/users/Admin@org1.example.com/tls/ca.crt
             - CORE_PEER_TLS_CLIENTCERT_FILE=/var/hyperledger/users/Admin@org1.example.com/tls/client.crt
             - CORE_PEER_TLS_CLIENTKEY_FILE=/var/hyperledger/users/Admin@org1.example.com/tls/client.key
@@ -247,7 +248,8 @@ services:
             - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org2.example.com:7051
             - CORE_PEER_GOSSIP_ORGLEADER=${CORE_PEER_GOSSIP_ORGLEADER_PEER0_ORG2}
             - CORE_PEER_GOSSIP_USELEADERELECTION=${CORE_PEER_GOSSIP_USELEADERELECTION_PEER0_ORG2}
-            - CORE_PEER_LOCALMSPID=org2.example.com
+            #- CORE_PEER_LOCALMSPID=org2.example.com
+            - CORE_PEER_LOCALMSPID=Org2ExampleCom
             - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/var/hyperledger/users/Admin@org2.example.com/tls/ca.crt
             - CORE_PEER_TLS_CLIENTCERT_FILE=/var/hyperledger/users/Admin@org2.example.com/tls/client.crt
             - CORE_PEER_TLS_CLIENTKEY_FILE=/var/hyperledger/users/Admin@org2.example.com/tls/client.key
@@ -279,7 +281,8 @@ services:
             - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
             - CORE_PEER_GOSSIP_ORGLEADER=${CORE_PEER_GOSSIP_ORGLEADER_PEER1_ORG1}
             - CORE_PEER_GOSSIP_USELEADERELECTION=${CORE_PEER_GOSSIP_USELEADERELECTION_PEER1_ORG1}
-            - CORE_PEER_LOCALMSPID=org1.example.com
+            #- CORE_PEER_LOCALMSPID=org1.example.com
+            - CORE_PEER_LOCALMSPID=Org1ExampleCom
             - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/var/hyperledger/users/Admin@org1.example.com/tls/ca.crt
             - CORE_PEER_TLS_CLIENTCERT_FILE=/var/hyperledger/users/Admin@org1.example.com/tls/client.crt
             - CORE_PEER_TLS_CLIENTKEY_FILE=/var/hyperledger/users/Admin@org1.example.com/tls/client.key
@@ -312,7 +315,8 @@ services:
             - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org2.example.com:7051
             - CORE_PEER_GOSSIP_ORGLEADER=${CORE_PEER_GOSSIP_ORGLEADER_PEER1_ORG2}
             - CORE_PEER_GOSSIP_USELEADERELECTION=${CORE_PEER_GOSSIP_USELEADERELECTION_PEER1_ORG2}
-            - CORE_PEER_LOCALMSPID=org2.example.com
+            #- CORE_PEER_LOCALMSPID=org2.example.com
+            - CORE_PEER_LOCALMSPID=Org2ExampleCom
             - CORE_PEER_TLS_CLIENTROOTCAS_FILES=/var/hyperledger/users/Admin@org2.example.com/tls/ca.crt
             - CORE_PEER_TLS_CLIENTCERT_FILE=/var/hyperledger/users/Admin@org2.example.com/tls/client.crt
             - CORE_PEER_TLS_CLIENTKEY_FILE=/var/hyperledger/users/Admin@org2.example.com/tls/client.key
