@@ -33,6 +33,7 @@ ORDERER_HOST = '''
 PEER_ORG_STR = '''
   - Name: {name}
     Domain: {domain}
+    EnableNodeOUs: {ouEnable}
     Template:
       Count: {numPeers}
     Users:
@@ -60,7 +61,7 @@ def makeProjectConfigDir(context):
         os.mkdir(testConfigs)
     return testConfigs
 
-def buildCryptoFile(context, numOrgs, numPeers, numOrderers, numUsers, orgName=None):
+def buildCryptoFile(context, numOrgs, numPeers, numOrderers, numUsers, orgName=None, ouEnable=False):
     testConfigs = makeProjectConfigDir(context)
 
     # Orderer Stanza
@@ -77,7 +78,7 @@ def buildCryptoFile(context, numOrgs, numPeers, numOrderers, numUsers, orgName=N
         if orgName is not None:
             name = orgName.title().replace('.', '')
             domain = orgName
-        peerStanzas += PEER_ORG_STR.format(name=name, domain=domain, numPeers=numPeers, numUsers=numUsers)
+        peerStanzas += PEER_ORG_STR.format(name=name, domain=domain, numPeers=numPeers, numUsers=numUsers, ouEnable=ouEnable)
     peerStr = "PeerOrgs:" + peerStanzas
 
     cryptoStr = ordererStr + "\n\n" + peerStr
