@@ -74,9 +74,15 @@ def bootstrapped_impl(context, ordererType, database, tlsEnabled=False, timeout=
     elif not hasattr(context, "projectName"):
         context.projectName = str(uuid.uuid1()).replace('-','')
 
+    # Determine number of orderers
+    numOrderers = 1
+    if ordererType == 'kafka':
+        numOrderers = 3
+
     # Get Configs setup
     if ouEnabled:
-        config_util.buildCryptoFile(context, numOrgs, numPeers, numOrderers, numUsers, ouEnable=common_util.convertBoolean(ouEnabled))
+        #config_util.buildCryptoFile(context, numOrgs, numPeers, numOrderers, numUsers, ouEnable=common_util.convertBoolean(ouEnabled))
+        config_util.buildCryptoFile(context, 2, 2, numOrderers, 2, ouEnable=common_util.convertBoolean(ouEnabled))
         config_util.generateCrypto(context, "./configs/{0}/crypto.yaml".format(context.projectName))
     else:
         config_util.generateCrypto(context)
@@ -100,10 +106,11 @@ def wait_for_bootstrap_completion(context, timeout):
                 for kafka in kafkas:
                     broker = kafka.split(":")
                     brokers.append(broker[0])
-                common_util.wait_until_in_log(brokers, ", started (kafka.server.KafkaServer)")
+                common_util.wait_until_in_log(brokers, " Startup complete. ")
+                #common_util.wait_until_in_log(brokers, ", started (kafka.server.KafkaServer)")
     finally:
-        assert common_util.is_in_log(peers, "Starting profiling server with listenAddress = 0.0.0.0:6060"), "The containers are not ready in the allotted time ({} seconds)".format(timeout)
-        assert common_util.is_in_log(brokers, ", started (kafka.server.KafkaServer)"), "The containers are not ready in the allotted time ({} seconds)".format(timeout)
+        assert common_util.is_in_log(peers, "Starting profiling server with listenAddress = 0.0.0.0:6060"), "The peer containers are not ready in the allotted time ({} seconds)".format(timeout)
+        assert common_util.is_in_log(brokers, " Startup complete. "), "The kafka containers are not ready in the allotted time ({} seconds)".format(timeout)
 
     # A 5-second additional delay ensures ready state
     time.sleep(5)

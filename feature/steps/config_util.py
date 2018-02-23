@@ -185,8 +185,8 @@ def traverse_orderer(projectname, numOrderers, tlsExist):
     capath = opath + 'ca/'
     caCertificates(capath)
 
-    msppaath = opath + 'msp/'
-    rolebasedCertificate(msppaath)
+    msppath = opath + 'msp/'
+    rolebasedCertificate(msppath)
 
     for count in range(int(numOrderers)):
         ordererpath = opath + 'orderers/' + "orderer" +str(count)+".example.com/"
