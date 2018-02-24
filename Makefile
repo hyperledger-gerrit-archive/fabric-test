@@ -9,6 +9,8 @@
 #                and executes smoke tests.
 #   - ci-daily - update submodules, clone fabric & fabric-ca, build docker images
 #                and executes daily test suite.
+#   - ci-release-tests - runs byfn, sdk tests and make targets on released images
+#                and binaries.
 #   - docker-images - builds fabric & ca docker images.
 #   - fabric - clones fabric repository.
 #   - smoke-tests - runs Smoke Test Suite
@@ -49,6 +51,9 @@ pre-setup:
 .PHONY: ci-daily
 ci-daily: git-init git-latest fabric ca clean pre-setup docker-images daily-tests
 
+.PHONY: ci-release-tests
+ci-release-tests: pre-setup release-tests
+
 .PHONY: fabric
 fabric:
 	if [ ! -d "$(FABRIC_DIR)" ]; then \
@@ -85,6 +90,10 @@ daily-tests:
 .PHONY: pte-image
 pte-image:
 	docker build -t $(PTE_TAG) images/PTE
+
+.PHONY: release-tests
+release-tests:
+	cd $(HYPERLEDGER_DIR)/fabric-test/regression/release && ./runReleaseTestSuite.sh
 
 .PHONY: clean
 clean:
