@@ -1,4 +1,5 @@
 #!/bin/bash
+set -o pipefail
 
 #
 # Copyright IBM Corp. All Rights Reserved.
@@ -6,10 +7,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-set -o pipefail
+rm -rf ${GOPATH}/src/github.com/hyperledger/fabric
 
-CWD=$GOPATH/src/github.com/hyperledger/fabric
-cd $CWD
+WD="${GOPATH}/src/github.com/hyperledger/fabric"
+REPO_NAME=fabric
+
+git clone ssh://hyperledger-jobbuilder@gerrit.hyperledger.org:29418/$REPO_NAME $WD
+cd $WD && git checkout tags/v1.1.0-alpha
 
 VERSION=`cat Makefile | grep BASE_VERSION | awk '{print $3}' | head -n1`
 echo "===>Release_VERSION: $VERSION"
@@ -67,18 +71,6 @@ makeDistAll() {
 done
 }
 
-# Create docker images
-makeDocker() {
-    make docker-clean
-    make docker
-        if [ $? -ne 0 ] ; then
-           echo " ===> ERROR !!! Docker Images are not available"
-           echo
-           exit 1
-        fi
-           echo " ===> PASS !!! Docker Images are available"
-}
-
 # Verify the version built in peer and configtxgen binaries
 makeVersion() {
     make docker-clean
@@ -98,6 +90,21 @@ makeVersion() {
            exit 1
         fi
            echo "====> PASS !!! Configtxgen version verified:"
-}
+   ./orderer --version > orderer.txt
+   orderer=$(grep -v "2017" orderer.txt | grep Version: | awk '{print $2}' | head -n1)
+        if [ "$orderer" != "$VERSION" ]; then
+           echo "====> ERROR !!! orderer Version check failed:"
+           echo
+           exit 1
+        fi
+           echo "====> PASS !!! orderer version verified:"
 
-$1
+   ./configtxlator --version > configtxlator.txt
+   configtxlator=$(grep -v "2017" configtxlator.txt | grep Version: | awk '{print $2}' | head -n1)
+        if [ "$configtxlator" != "$VERSION" ]; then
+           echo "====> ERROR !!! configtxlator Version check failed:"
+           echo
+           exit 1
+        fi
+           echo "====> PASS !!! configtxlator version verified:"
+}
