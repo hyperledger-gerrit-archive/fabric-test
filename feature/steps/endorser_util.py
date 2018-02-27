@@ -72,7 +72,7 @@ class InterfaceBase:
             context.chaincode['policy'] = policy
 
     def post_deploy_chaincode(self, context, peer, timeout):
-        chaincode_container = "{0}-{1}-{2}-0".format(context.projectName, peer, context.chaincode['name'])
+        chaincode_container = "{0}-{1}-{2}-{3}".format(context.projectName, peer, context.chaincode['name'], context.chaincode.get('version', 0))
         context.interface.wait_for_deploy_completion(context, chaincode_container, timeout)
 
     def channel_block_present(self, context, containers, channelId):
@@ -487,6 +487,31 @@ class CLIInterface(InterfaceBase):
                 output = output[peer]
 
         print("[{0}]: {1}".format(" ".join(setup+command), output))
+        return output
+
+    def upgrade_chaincode(self, context, orderer, channelId=TEST_CHANNEL_ID, user="Admin", ext=""):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        setup = self.get_env_vars(context, "peer0.org1.example.com", user=user)
+        command = ["peer", "chaincode", "upgrade",
+                   "--name", context.chaincode['name'],
+                   "--version", str(context.chaincode.get('version', 1)),
+                   "--ctor", r"""'{\"Args\": %s}'""" % (str(context.chaincode['args'].replace('"', r'\"'))),
+                   "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID))]
+        if context.tls:
+            command = command + ["--tls",
+                                 common_util.convertBoolean(context.tls),
+                                 "--cafile",
+                                 '{0}/ordererOrganizations/example.com/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir)]
+        if "orderers" in context.chaincode:
+            command = command + ["--orderer", '{}:7050'.format(orderer)]
+        if "user" in context.chaincode:
+            command = command + ["--username", context.chaincode["user"]]
+        if context.chaincode.get("policy", None) is not None:
+            command = command + ["--policy", context.chaincode["policy"].replace('"', r'\"')]
+
+        command.append('"')
+        output = context.composition.docker_exec(setup+command, ['peer0.org1.example.com'])
+        print("[{0}]: {1}".format(" ".join(setup + command), output))
         return output
 
     def invoke_chaincode(self, context, chaincode, orderer, peer, channelId=TEST_CHANNEL_ID, targs="", user="User1"):
