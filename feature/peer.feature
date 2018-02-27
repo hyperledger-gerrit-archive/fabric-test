@@ -229,9 +229,10 @@ Scenario: FAB-8379: Test MSP Identity - Happy Path
 
 
 @daily
-Scenario: FAB-8380: Test MSP Identity - - Malicious Peer
+Scenario: FAB-8380: Test MSP Identity - Malicious Peer
   Given the CORE_PEER_TLS_CLIENTAUTHREQUIRED environment variable is "true"
   And the ORDERER_TLS_CLIENTAUTHREQUIRED environment variable is "true"
+  # peer bootstrapped using a client identity
   Given the peer "peer1.org2.example.com" is setup to use a client identity
   And I have a bootstrapped fabric network of type kafka with tls with organizational units enabled on all nodes
   When a user sets up a channel
@@ -242,6 +243,34 @@ Scenario: FAB-8380: Test MSP Identity - - Malicious Peer
   # Endorsement policies not enforced during initialization
   When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"] on "peer1.org2.example.com"
   Then the logs on peer1.org2.example.com contains "VSCC error: endorsement policy failure, err: signature set did not satisfy policy" within 10 seconds
-  And I wait "5" seconds
+  And I wait "2" seconds
   When a user queries on the chaincode named "mycc" with args ["query","a"] on "peer0.org1.example.com"
   Then a user receives a success response of 1000
+
+
+@daily
+Scenario: FAB-8381: Test MSP Identity - Malicious Peer (Clients set as writers in policy)
+  Given the CORE_PEER_TLS_CLIENTAUTHREQUIRED environment variable is "true"
+  And the ORDERER_TLS_CLIENTAUTHREQUIRED environment variable is "true"
+  And I have a bootstrapped fabric network of type kafka with tls with organizational units enabled on all nodes
+  When a user sets up a channel
+  And a user deploys chaincode with args ["init","a","1000","b","2000"] with policy "OR ('org1.example.com.client','org2.example.com.client')"
+
+  When the admin changes the policy to "OR ('org1.example.com.client','org2.example.com.client')"
+  And I wait "5" seconds
+  When a user queries on the chaincode named "mycc" with args ["query","a"] on "peer0.org2.example.com"
+  Then a user receives a success response of 1000 from "peer0.org2.example.com"
+  When a user queries on the chaincode named "mycc" with args ["query","a"]
+  Then a user receives a success response of 1000
+
+  When a user using a peer identity invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
+  Then the logs on peer0.org1.example.com contains "VSCC error: endorsement policy failure, err: signature set did not satisfy policy" within 10 seconds
+  And I wait "2" seconds
+
+  When a user queries on the chaincode named "mycc" with args ["query","a"] on "peer0.org1.example.com"
+  Then a user receives a success response of 1000
+
+  When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
+  And I wait "5" seconds
+  When a user queries on the chaincode named "mycc" with args ["query","a"]
+  Then a user receives a success response of 990
