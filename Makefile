@@ -36,6 +36,7 @@ ci-smoke: git-update fabric ca clean pre-setup docker-images smoke-tests
 .PHONY: git-update
 git-update:
 	@git submodule update --init --recursive
+	@git submodule foreach git pull origin master
 
 .PHONY: pre-setup
 pre-setup:
