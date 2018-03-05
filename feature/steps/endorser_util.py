@@ -489,6 +489,20 @@ class CLIInterface(InterfaceBase):
         print("[{0}]: {1}".format(" ".join(setup+command), output))
         return output
 
+    def sign_channel(self, context, peers, block_filename="update.pb", user="Admin"):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+
+        # peer channel signconfigtx -f org3_update_in_envelope.pb
+        for peer in peers:
+            peerParts = peer.split('.')
+            org = '.'.join(peerParts[1:])
+            setup = self.get_env_vars(context, peer, user=user)
+            command = ["peer", "channel", "signconfigtx",
+                       "--file", '/var/hyperledger/configs/{0}/{1}"'.format(context.composition.projectName, block_filename)]
+            output = context.composition.docker_exec(setup+command, [peer])
+        print("[{0}]: {1}".format(" ".join(setup+command), output))
+        return output
+
     def invoke_chaincode(self, context, chaincode, orderer, peer, channelId=TEST_CHANNEL_ID, targs="", user="User1"):
         # channelId, targs and user are optional parameters with defaults set if they are not included
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
