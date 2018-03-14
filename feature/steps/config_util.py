@@ -11,6 +11,7 @@ import sys
 from shutil import copyfile
 import uuid
 import json
+import base64
 import common_util
 
 ORDERER_TYPES = ["solo",
@@ -277,3 +278,125 @@ def tlsCertificates(path):
 def keystoreCheck(path):
     keystorepath = path + "keystore/"
     fileExistWithExtension(keystorepath, "There are missing files in {0}.".format(keystorepath), '')
+
+def addNewOrg(orgName, configDir):
+    # Format the args for adding a new org with the orgName (TitleCase name and remove '.' for MSPID)
+    # Example: org3.example.com (MSPID:Org3ExampleCom)
+    mspID = orgName.title().replace(".", "")
+
+    # open the crypto files and build the updated json
+    cert_base = "{0}/peerOrganizations/{1}/msp".format(configDir, orgName)
+    with open("{0}/admincerts/Admin@{1}-cert.pem".format(cert_base, orgName), "r") as fd:
+        admin_cert = unicode(base64.b64encode(fd.read()))
+    with open("{0}/cacerts/ca.{1}-cert.pem".format(cert_base, orgName), "r") as fd:
+        root_cert = unicode(base64.b64encode(fd.read()))
+    with open("{0}/tlscacerts/tlsca.{1}-cert.pem".format(cert_base, orgName), "r") as fd:
+        tls_root_cert = unicode(base64.b64encode(fd.read()))
+
+    # Generate new org changes using new certificates
+    args = {"groups": {},
+            "mod_policy": "Admins",
+            "version": "0",
+            "values": {"MSP": {"mod_policy": "Admins",
+                               "value": {"config": {"admins": [admin_cert],
+                                                    "crypto_config": {"identity_identifier_hash_function": "SHA256",
+                                                                      "signature_hash_family": "SHA2"},
+                                                    "name": mspID,
+                                                    "root_certs": [root_cert],
+                                                    "tls_root_certs": [tls_root_cert]
+                                                   },
+                                         "type": 0},
+                               "version": "0"}
+                      },
+            "policies": {}}
+
+    policy_ids = {"Admins": {"role": "ADMIN"},
+                  "Readers": {"role": "MEMBER"},
+                  "Writers": {"role": "MEMBER"}}
+
+    for policy in policy_ids:
+        args["policies"].update({policy: {"mod_policy": "Admins",
+                                     "version": "0",
+                                     "policy": {"type": 1,
+                                                "value": {"identities": [{"principal": {"msp_identifier": orgName,
+                                                                                        "role": policy_ids[policy]["role"]},
+                                                                          "principal_classification": "ROLE"}],
+                                                          "rule": {"n_out_of": {"n": 1,
+                                                                                "rules": [{"signed_by": 0}]
+                                                                               }
+                                                                  },
+                                                          "version": 0}
+                                               },
+                                    }
+                            })
+    return {mspID: args}
+
+def delNewOrg(orgName, configDir):
+    pass
+
+def configUpdate(context, config_update, group, channel):
+    updated_env = updateEnviron(context)
+    testConfigs = "./configs/{0}".format(context.projectName)
+    inputFile = "{0}.block".format(channel)
+
+    # configtxlator proto_decode --input config_block.pb --type common.Block | jq .data.data[0].payload.data.config > config.json
+    configStr = subprocess.check_output(["configtxlator", "proto_decode", "--input", inputFile, "--type", "common.Block"], cwd=testConfigs , env=updated_env)
+    config = json.loads(configStr)
+
+    with open("{0}/config.json".format(testConfigs), "w") as fd:
+        fd.write(json.dumps(config["data"]["data"][0]["payload"]["data"]["config"], indent=4))
+
+    # configtxlator proto_encode --input config.json --type common.Config --output config.pb
+    configStr = subprocess.check_output(["configtxlator", "proto_encode", "--input", "config.json", "--type", "common.Config", "--output", "config.pb"],
+                                        cwd=testConfigs,
+                                        env=updated_env)
+    print("Keys (channel_group): {}".format(config['data']['data'][0]["payload"]["data"]['config']['channel_group'].keys()))
+
+    # groups = "Application"
+    # config_update = {"Org3ExampleCom": <data>}
+
+    config["data"]["data"][0]["payload"]["data"]["config"]["channel_group"]["groups"][group]["groups"].update(config_update)
+
+    with open("{0}/modified_config.json".format(testConfigs), "w") as fd:
+        fd.write(json.dumps(config["data"]["data"][0]["payload"]["data"]["config"], indent=4))
+
+    print("Modified config: {}".format(config["data"]["data"][0]["payload"]["data"]["config"]["channel_group"]["groups"][group]["groups"]))
+
+    # configtxlator proto_encode --input config.json --type common.Config --output config.pb
+    configStr = subprocess.check_output(["configtxlator", "proto_encode", "--input", "config.json", "--type", "common.Config", "--output", "config.pb"],
+                                        cwd=testConfigs,
+                                        env=updated_env)
+
+    # configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
+    configStr = subprocess.check_output(["configtxlator", "proto_encode", "--input", "modified_config.json", "--type", "common.Config", "--output", "modified_config.pb"],
+                                        cwd=testConfigs,
+                                        env=updated_env)
+
+    # configtxlator compute_update --channel_id $CHANNEL_NAME --original config.pb --updated modified_config.pb --output update.pb
+    configStr = subprocess.check_output(["configtxlator", "compute_update", "--channel_id", channel, "--original", "config.pb", "--updated", "modified_config.pb", "--output", "update.pb"],
+                                        cwd=testConfigs,
+                                        env=updated_env)
+
+    # configtxlator proto_decode --input update.pb --type common.ConfigUpdate | jq . > org3_update.json
+    configStr = subprocess.check_output(["configtxlator", "proto_decode", "--input", "update.pb", "--type", "common.ConfigUpdate"],
+                                        cwd=testConfigs,
+                                        env=updated_env)
+    config = json.loads(configStr)
+
+    # echo '{"payload":{"header":{"channel_header":{"channel_id":"mychannel", "type":2}},"data":{"config_update":'$(cat org3_update.json)'}}}' | jq . > org3_update_in_envelope.json
+    updatedconfig = {"payload": {"header": {"channel_header": {"channel_id": channel,
+                                                               "type":2}
+                                           },
+                                 "data": {"config_update": config}
+                                }
+                    }
+
+    with open("{0}/update.json".format(testConfigs), "w") as fd:
+        fd.write(json.dumps(updatedconfig, indent=4))
+
+    # configtxlator proto_encode --input org3_update_in_envelope.json --type common.Envelope --output org3_update_in_envelope.pb
+    configStr = subprocess.check_output(["configtxlator", "proto_encode", "--input", "update.json", "--type", "common.Envelope", "--output", "update{0}.pb".format(channel)],
+                                        cwd=testConfigs,
+                                        env=updated_env)
+
+    return "{0}/update{1}.pb".format(testConfigs, channel)
