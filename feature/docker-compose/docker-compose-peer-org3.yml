@@ -9,6 +9,7 @@ networks:
     behave:
 
 services:
+
     peer0.org3.example.com:
         extends:
             file: docker-compose-base.yml
