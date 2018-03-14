@@ -513,15 +513,13 @@ class CLIInterface(InterfaceBase):
         return output
 
     def sign_channel(self, context, peers, block_filename="update.pb", user="Admin"):
-        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
-
         # peer channel signconfigtx -f org3_update_in_envelope.pb
         for peer in peers:
             peerParts = peer.split('.')
             org = '.'.join(peerParts[1:])
             setup = self.get_env_vars(context, peer, user=user)
             command = ["peer", "channel", "signconfigtx",
-                       "--file", '/var/hyperledger/configs/{0}/{1}"'.format(context.composition.projectName, block_filename)]
+                       "--file", '{}"'.format(block_filename)]
             output = context.composition.docker_exec(setup+command, [peer])
         print("[{0}]: {1}".format(" ".join(setup+command), output))
         return output
@@ -534,7 +532,6 @@ class CLIInterface(InterfaceBase):
                    "--version", str(context.chaincode.get('version', 1)),
                    "--channelID", str(context.chaincode.get('channelID', channelId))]
         if args:
-            #command = command + ["--ctor", r"""'{\"Args\": %s}'""" % (str(context.chaincode['args'].replace('"', r'\"')))]
             command = command + ["--ctor", r"""'{\"Args\": %s}'""" % (str(args.replace('"', r'\"')))]
         if context.tls:
             command = command + ["--tls",
