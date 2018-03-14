@@ -657,13 +657,21 @@ def step_impl(context, peer):
 
 @when('peer "{peer}" updates the "{channel}" channel')
 def update_impl(context, peer, channel):
-    filename = "/var/hyperledger/configs/{0}/update{1}.pb".format(context.composition.projectName, channel)
+    if not hasattr(context, "block_filename"):
+        filename = "/var/hyperledger/configs/{0}/update{1}.pb".format(context.composition.projectName, channel)
+    else:
+        filename = "/var/hyperledger/{}".format(context.block_filename)
+    #filename = "/var/hyperledger/configs/{0}/update{1}.pb".format(context.composition.projectName, channel)
 
     # If this is a string and not a list, convert to list
     peers = peer
     if type(peer) == str:
         peers = [peer]
     context.interface.update_channel(context, peers, channel, "orderer0.example.com", filename)
+
+@when('peer "{peer}" updates the channel')
+def step_impl(context, peer):
+    update_impl(context, [peer], context.interface.TEST_CHANNEL_ID)
 
 @when('all peers update the channel')
 def step_impl(context):
@@ -690,15 +698,22 @@ def step_impl(context, policy, args):
 def step_impl(context, policy):
     policyChannelUpdate_impl(context, policy, context.interface.TEST_CHANNEL_ID)
 
-@when('peer {peer} signs the updated channel config for channel "{channel}"')
+@when('peer "{peer}" signs the updated channel config for channel "{channel}"')
 def sign_impl(context, peer, channel):
-    filename = "/var/hyperledger/configs/{0}/update{1}.pb".format(context.composition.projectName, channel)
+    if not hasattr(context, "block_filename"):
+        filename = "/var/hyperledger/configs/{0}/update{1}.pb".format(context.composition.projectName, channel)
+    else:
+        filename = "/var/hyperledger/{}".format(context.block_filename)
 
     # If this is a string and not a list, convert to list
     peers = peer
     if type(peer) == str:
         peers = [peer]
     context.interface.sign_channel(context, peers, filename)
+
+@when('peer "{peer}" signs the updated channel config')
+def step_impl(context, peer):
+    sign_impl(context, [peer], context.interface.TEST_CHANNEL_ID)
 
 @when('all peers sign the updated channel config')
 def step_impl(context):
@@ -813,6 +828,10 @@ def block_found_impl(context, fileName, peer, location=None):
 @then(u'the block file is fetched from peer "{peer}" at location "{location}"')
 def step_impl(context, peer, location):
     block_found_impl(context, context.interface.TEST_CHANNEL_ID, peer, location)
+
+@then(u'the block file is fetched from peer "{peer}"')
+def step_impl(context, peer):
+    block_found_impl(context, context.interface.TEST_CHANNEL_ID, peer)
 
 @then(u'the "{fileName}" file is fetched from peer "{peer}"')
 def step_impl(context, fileName, peer):
