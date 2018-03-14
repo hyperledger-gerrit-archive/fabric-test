@@ -33,7 +33,7 @@ ci-smoke: git-init fabric ca clean pre-setup docker-images smoke-tests
 
 .PHONY: git-init
 git-init:
-	@git submodule update --init --recursive
+ 	@git submodule foreach git pull origin master
 
 .PHONY: pre-setup
 pre-setup:
@@ -49,8 +49,9 @@ fabric:
 		echo "Clone FABRIC REPO"; \
 		cd $(HYPERLEDGER_DIR); \
 		git clone $(FABRIC) $(FABRIC_DIR); \
+		cd $(FABRIC_DIR); \
+		git checkout release-1.1; \
 	fi
-	cd $(FABRIC_DIR) && git pull $(FABRIC)
 
 .PHONY: docker-images
 docker-images:
@@ -65,8 +66,9 @@ ca:
 		echo "Clone CA REPO"; \
 		cd $(HYPERLEDGER_DIR); \
 		git clone $(FABRIC_CA) $(CA_DIR); \
+		cd $(CA_DIR); \
+                git checkout release-1.1; \
 	fi
-	cd $(CA_DIR) && git pull $(FABRIC_CA)
 
 .PHONY: smoke-tests
 smoke-tests:
