@@ -376,7 +376,7 @@ def step_impl(context, name, channel, args):
 
 @when(u'a user queries on the chaincode named "{name}" with args {args}')
 def step_impl(context, name, args):
-    query_impl(context, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com")
+    query_impl(context, context.chaincode["channelID"], name, args, "peer0.org1.example.com")
 
 @when(u'a user queries on the channel "{channel}" using chaincode named "{name}" with args {args}')
 def step_impl(context, channel, name, args):
@@ -384,23 +384,23 @@ def step_impl(context, channel, name, args):
 
 @when(u'a user queries on the chaincode on channel "{channel}" with args {args}')
 def step_impl(context, channel, args):
-    query_impl(context, channel, "mycc", args, "peer0.org1.example.com")
+    query_impl(context, channel, context.chaincode["name"], args, "peer0.org1.example.com")
 
 @when(u'a user queries on the chaincode with args {args} from "{peer}"')
 def step_impl(context, args, peer):
-    query_impl(context, context.interface.TEST_CHANNEL_ID, "mycc", args, peer)
+    query_impl(context, context.chaincode["channelID"], context.chaincode["name"], args, peer)
 
 @when(u'a user queries on the chaincode with args {args}')
 def step_impl(context, args):
-    query_impl(context, context.interface.TEST_CHANNEL_ID, "mycc", args, "peer0.org1.example.com")
+    query_impl(context, context.chaincode["channelID"], context.chaincode["name"], args, "peer0.org1.example.com")
 
 @when(u'a user queries on the chaincode named "{name}"')
 def step_impl(context, name):
-    query_impl(context, context.interface.TEST_CHANNEL_ID, name, '["query","a"]', "peer0.org1.example.com")
+    query_impl(context, context.chaincode["channelID"], name, '["query","a"]', "peer0.org1.example.com")
 
 @when(u'a user queries on the chaincode')
 def step_impl(context):
-    query_impl(context, context.interface.TEST_CHANNEL_ID, "mycc", '["query","a"]', "peer0.org1.example.com")
+    query_impl(context, context.chaincode["channelID"], context.chaincode["name"], '["query","a"]', "peer0.org1.example.com")
 
 @when(u'a user invokes {numInvokes:d} times on the channel "{channel}" using chaincode named "{name}" with args {args} on "{peer}" using orderer "{orderer}"')
 def invokes_impl(context, numInvokes, channel, name, args, peer, orderer="orderer0.example.com", targs=''):
@@ -420,11 +420,11 @@ def step_impl(context, numInvokes, channel, name, args):
 
 @when(u'a user invokes {numInvokes:d} times using chaincode with args {args}')
 def step_impl(context, numInvokes, args):
-    invokes_impl(context, numInvokes, context.interface.TEST_CHANNEL_ID, "mycc", args, "peer0.org1.example.com")
+    invokes_impl(context, numInvokes, context.chaincode["channelID"], context.chaincode["name"], args, "peer0.org1.example.com")
 
 @when(u'a user invokes {numInvokes:d} times using chaincode named "{name}" with args {args}')
 def step_impl(context, numInvokes, name, args):
-    invokes_impl(context, numInvokes, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com")
+    invokes_impl(context, numInvokes, context.chaincode["channelID"], name, args, "peer0.org1.example.com")
 
 @when(u'a user invokes on the channel "{channel}" using chaincode named "{name}" with args {args} on "{peer}"')
 def step_impl(context, channel, name, args, peer):
@@ -434,29 +434,29 @@ def step_impl(context, channel, name, args, peer):
 def step_impl(context, name, args, targs, peer):
     # This is a workaround to allow targs to send a json structure
     generated = targs[2:-2].format(**context.command_result)
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, peer, targs=targs[:2] + generated + targs[-2:])
+    invokes_impl(context, 1, context.chaincode["channelID"], name, args, peer, targs=targs[:2] + generated + targs[-2:])
 
 @when(u'a user invokes on the chaincode named "{name}" with args {args} and generated transient args {targs}')
 def step_impl(context, name, args, targs):
     # This is a workaround to allow targs to send a json structure
     generated = targs[2:-2].format(**context.command_result)
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com", targs=targs[:2] + generated + targs[-2:])
+    invokes_impl(context, 1, context.chaincode["channelID"], name, args, "peer0.org1.example.com", targs=targs[:2] + generated + targs[-2:])
 
 @when(u'a user invokes on the chaincode named "{name}" with args {args} and transient args {targs} on "{peer}"')
 def step_impl(context, name, args, peer, targs):
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, peer, targs=targs)
+    invokes_impl(context, 1, context.chaincode["channelID"], name, args, peer, targs=targs)
 
 @when(u'a user invokes on the chaincode named "{name}" with args {args} and transient args {targs}')
 def step_impl(context, name, args, targs):
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com", targs=targs)
+    invokes_impl(context, 1, context.chaincode["channelID"], name, args, "peer0.org1.example.com", targs=targs)
 
 @when(u'a user invokes on the chaincode named "{name}" with args {args} on "{peer}"')
 def step_impl(context, name, args, peer):
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, peer)
+    invokes_impl(context, 1, context.chaincode["channelID"], name, args, peer)
 
 @when(u'a user invokes on the chaincode with args {args}')
 def step_impl(context, args):
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, "mycc", args, "peer0.org1.example.com")
+    invokes_impl(context, 1, context.chaincode["channelID"], context.chaincode["name"], args, "peer0.org1.example.com")
 
 @when(u'a user invokes on the channel "{channel}" using chaincode named "{name}" with args {args}')
 def step_impl(context, channel, name, args):
@@ -464,23 +464,23 @@ def step_impl(context, channel, name, args):
 
 @when(u'a user invokes on the chaincode named "{name}" with args {args} on the initial leader peer of "{org}"')
 def step_impl(context, name, args, org):
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, context.interface.get_initial_leader(context, org))
+    invokes_impl(context, 1, context.chaincode["channelID"], name, args, context.interface.get_initial_leader(context, org))
 
 @when(u'a user invokes on the chaincode named "{name}" with args {args} on the initial non-leader peer of "{org}"')
 def step_impl(context, name, args, org):
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, context.interface.get_initial_non_leader(context, org))
+    invokes_impl(context, 1, context.chaincode["channelID"], name, args, context.interface.get_initial_non_leader(context, org))
 
 @when(u'a user invokes on the chaincode named "{name}" with args {args} on {peer}')
 def step_impl(context, name, args, peer):
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, peer)
+    invokes_impl(context, 1, context.chaincode["channelID"], name, args, peer)
 
 @when(u'a user invokes on the chaincode named "{name}" with args {args}')
 def step_impl(context, name, args):
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com")
+    invokes_impl(context, 1, context.chaincode["channelID"], name, args, "peer0.org1.example.com")
 
 @when(u'a user invokes {numInvokes:d} times on the chaincode')
 def step_impl(context, numInvokes):
-    invokes_impl(context, numInvokes, context.interface.TEST_CHANNEL_ID, "mycc", '["invoke","a","b","5"]', "peer0.org1.example.com")
+    invokes_impl(context, numInvokes, context.chaincode["channelID"], context.chaincode["name"], '["invoke","a","b","5"]', "peer0.org1.example.com")
 
 @when(u'a user invokes random args {args} of length {length:d} {numInvokes:d} times on the chaincode named "{name}"')
 def step_impl(context, args, length, numInvokes, name):
@@ -515,7 +515,7 @@ def random_invoke_impl(context, name, args, length, peer, orderer):
     chaincode = {"args": args.format(random_value=payload, random_key=random_key),
                  "chaincodeId": str(name),
                  "name": str(name)}
-    context.result = context.interface.invoke_chaincode(context, chaincode, orderer, peer, context.interface.TEST_CHANNEL_ID)
+    context.result = context.interface.invoke_chaincode(context, chaincode, orderer, peer, context.chaincode["channelID"])
 
 @when(u'a user invokes on the chaincode named "{name}" with random args {args} of length {length:d} on peer "{peer}"')
 def step_impl(context, name, args, length):
