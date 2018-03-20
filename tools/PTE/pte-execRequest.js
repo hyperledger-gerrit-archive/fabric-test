@@ -510,7 +510,11 @@ function assignPeerListFromList(channel, client, org) {
                 peername = listOpt[key][i];
                 if (peername.indexOf('peer') === 0) {
                     if (TLS == 'ENABLED') {
-                        data = fs.readFileSync(path.resolve(goPath, ORGS[key][peername]['tls_cacerts']));
+                        if ( typeof ORGS.tls_cert !== 'undefined' ) {
+                            data = ORGS.tls_cert;
+                        } else {
+                            data = fs.readFileSync(path.resolve(goPath, ORGS[key][peername]['tls_cacerts']));
+                        }
                         peerTmp = client.newPeer(
                             ORGS[key][peername].requests,
                             {
@@ -542,7 +546,11 @@ function assignPeerList(channel, client, org) {
                 if (key.indexOf('peer') === 0) {
                     if (TLS == 'ENABLED') {
 
-                        data = fs.readFileSync(path.resolve(goPath, ORGS[key1][key]['tls_cacerts']));
+                        if ( typeof ORGS.tls_cert !== 'undefined' ) {
+                            data = ORGS.tls_cert;
+                        } else {
+                            data = fs.readFileSync(path.resolve(goPath, ORGS[key1][key]['tls_cacerts']));
+                        }
                         peerTmp = client.newPeer(
                             ORGS[key1][key].requests,
                             {
@@ -575,7 +583,11 @@ function assignThreadAllPeers(channel, client, org) {
             if (key.indexOf('peer') === 0) {
                 if (TLS == 'ENABLED') {
 
-                    data = fs.readFileSync(path.resolve(goPath, ORGS[key1][key]['tls_cacerts']));
+                    if ( typeof ORGS.tls_cert !== 'undefined' ) {
+                        data = ORGS.tls_cert;
+                    } else {
+                        data = fs.readFileSync(path.resolve(goPath, ORGS[key1][key]['tls_cacerts']));
+                    }
                     peerTmp = client.newPeer(
                         ORGS[key1][key].requests,
                         {
@@ -652,7 +664,11 @@ function assignThreadAllAnchorPeers(channel, client, org) {
             if (key.indexOf('peer1') === 0) {
                 if (TLS == 'ENABLED') {
 
-                    data = fs.readFileSync(path.resolve(goPath, ORGS[key1][key]['tls_cacerts']));
+                    if ( typeof ORGS.tls_cert !== 'undefined' ) {
+                        data = ORGS.tls_cert;
+                    } else {
+                        data = fs.readFileSync(path.resolve(goPath, ORGS[key1][key]['tls_cacerts']));
+                    }
                     peerTmp = client.newPeer(
                         ORGS[key1][key].requests,
                         {
@@ -725,7 +741,11 @@ function assignThreadOrgPeer(channel, client, org) {
         if (ORGS[org].hasOwnProperty(key)) {
             if (key.indexOf('peer') === 0) {
                 if (TLS == 'ENABLED') {
-                    data = fs.readFileSync(path.resolve(goPath, ORGS[org][key]['tls_cacerts']));
+                    if ( typeof ORGS.tls_cert !== 'undefined' ) {
+                        data = ORGS.tls_cert;
+                    } else {
+                        data = fs.readFileSync(path.resolve(goPath, ORGS[org][key]['tls_cacerts']));
+                    }
                     peerTmp = client.newPeer(
                         ORGS[org][key].requests,
                         {
@@ -802,7 +822,11 @@ function assignThreadPeerList(channel, client, org) {
                 peername = listOpt[key][i];
                 if (peername.indexOf('peer') === 0) {
                     if (TLS == 'ENABLED') {
-                        data = fs.readFileSync(path.resolve(goPath, ORGS[key][peername]['tls_cacerts']));
+                        if ( typeof ORGS.tls_cert !== 'undefined' ) {
+                            data = ORGS.tls_cert;
+                        } else {
+                            data = fs.readFileSync(path.resolve(goPath, ORGS[key][peername]['tls_cacerts']));
+                        }
                         peerTmp = client.newPeer(
                             ORGS[key][peername].requests,
                             {
@@ -867,13 +891,18 @@ function assignThreadPeerList(channel, client, org) {
 
 function channelAddPeer(channel, client, org) {
     logger.info('[Nid:chan:org:id=%d:%s:%s:%d channelAddPeer]', Nid, channelName, org, pid);
+    var data;
     var peerTmp;
     var eh;
     for (let key in ORGS[org]) {
         if (ORGS[org].hasOwnProperty(key)) {
             if (key.indexOf('peer') === 0) {
                 if (TLS == 'ENABLED') {
-                    let data = fs.readFileSync(path.resolve(goPath, ORGS[org][key]['tls_cacerts']));
+                    if ( typeof ORGS.tls_cert !== 'undefined' ) {
+                        data = ORGS.tls_cert;
+                    } else {
+                        data = fs.readFileSync(path.resolve(goPath, ORGS[org][key]['tls_cacerts']));
+                    }
                     peerTmp = client.newPeer(
                         ORGS[org][key].requests,
                         {
@@ -915,6 +944,7 @@ function channelAddPeer(channel, client, org) {
 
 function channelAddPeerEvent(channel, client, org) {
     logger.info('[Nid:chan:org:id=%d:%s:%s:%d channelAddPeerEvent]', Nid, channelName, org, pid);
+    var data;
     var eh;
     var peerTmp;
     for (let key in ORGS[org]) {
@@ -922,7 +952,11 @@ function channelAddPeerEvent(channel, client, org) {
         if (ORGS[org].hasOwnProperty(key)) {
             if (key.indexOf('peer') === 0) {
                 if (TLS == 'ENABLED') {
-                    let data = fs.readFileSync(path.resolve(goPath, ORGS[org][key]['tls_cacerts']));
+                    if ( typeof ORGS.tls_cert !== 'undefined' ) {
+                        data = ORGS.tls_cert;
+                    } else {
+                        data = fs.readFileSync(path.resolve(goPath, ORGS[org][key]['tls_cacerts']));
+                    }
                     peerTmp = client.newPeer(
                         ORGS[org][key].requests,
                         {
@@ -997,9 +1031,8 @@ function assignOrdererList(channel, client) {
     for (let key in ORGS['orderer']) {
         if (key.indexOf('orderer') === 0) {
             if (TLS == 'ENABLED') {
-                var caRootsPath = path.resolve(goPath, ORGS['orderer'][key].tls_cacerts);
-                if (fs.existsSync(caRootsPath)) {
-                    let data = fs.readFileSync(caRootsPath);
+                if ( typeof ORGS.tls_cert !== 'undefined' ) {
+                    let data = ORGS.tls_cert;
                     let caroots = Buffer.from(data).toString();
 
                     ordererTmp = client.newOrderer(
@@ -1011,7 +1044,22 @@ function assignOrdererList(channel, client) {
                     )
                     ordererList.push(ordererTmp);
                 } else {
-                    logger.info('[Nid:chan:org:id:ordererID=%d:%s:%s:%d assignOrdererList] file does not exist: %s', Nid, channelName, org, pid, caRootsPath);
+                    var caRootsPath = path.resolve(goPath, ORGS['orderer'][key].tls_cacerts);
+                    if (fs.existsSync(caRootsPath)) {
+                        let data = fs.readFileSync(caRootsPath);
+                        let caroots = Buffer.from(data).toString();
+
+                        ordererTmp = client.newOrderer(
+                            ORGS['orderer'][key].url,
+                            {
+                                'pem': caroots,
+                                'ssl-target-name-override': ORGS['orderer'][key]['server-hostname']
+                            }
+                        )
+                        ordererList.push(ordererTmp);
+                    } else {
+                        logger.info('[Nid:chan:org:id:ordererID=%d:%s:%s:%d assignOrdererList] file does not exist: %s', Nid, channelName, org, pid, caRootsPath);
+                    }
                 }
             } else {
                 ordererTmp = client.newOrderer(ORGS['orderer'][key].url);
@@ -1024,10 +1072,15 @@ function assignOrdererList(channel, client) {
 
 function channelAddOrderer(channel, client, org) {
     var ordererID = ORGS[org].ordererID;
+    var data;
     logger.info('[Nid:chan:org:id:ordererID=%d:%s:%s:%d:%s channelAddOrderer] ', Nid, channelName, org, pid, ordererID );
     if (TLS == 'ENABLED') {
-        var caRootsPath = path.resolve(goPath, ORGS['orderer'][ordererID].tls_cacerts);
-        let data = fs.readFileSync(caRootsPath);
+        if ( typeof ORGS.tls_cert !== 'undefined' ) {
+            data = ORGS.tls_cert;
+        } else {
+            var caRootsPath = path.resolve(goPath, ORGS['orderer'][ordererID].tls_cacerts);
+            data = fs.readFileSync(caRootsPath);
+        }
         let caroots = Buffer.from(data).toString();
 
         channel.addOrderer(
@@ -1057,7 +1110,11 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
         if (ORGS.hasOwnProperty(key) && typeof ORGS[key].peer1 !== 'undefined') {
             if ( key == org ) {
                 if (TLS == 'ENABLED') {
-                    data = fs.readFileSync(path.resolve(goPath, ORGS[key].peer1['tls_cacerts']));
+                    if ( typeof ORGS.tls_cert !== 'undefined' ) {
+                        data = ORGS.tls_cert;
+                    } else {
+                        data = fs.readFileSync(path.resolve(goPath, ORGS[key].peer1['tls_cacerts']));
+                    }
                     peerTmp = client.newPeer(
                         ORGS[key].peer1.requests,
                         {
