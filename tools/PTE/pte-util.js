@@ -342,3 +342,24 @@ function PTELogger(opts) {
 }
 module.exports.PTELogger = PTELogger;
 
+function getTLSCert(key, subkey) {
+
+    var data;
+    logger.info('[getTLSCert] key: %s, subkey: %s', key, subkey);
+    ORGS = hfc.getConfigSetting('test-network');
+    getgoPath();
+
+    if ( typeof(ORGS.tls_cert) !== 'undefined' ) {
+        data = ORGS.tls_cert;
+    } else {
+        var caRootsPath = path.resolve(goPath, ORGS[key][subkey].tls_cacerts);
+        if (fs.existsSync(caRootsPath)) {
+            data = fs.readFileSync(caRootsPath);
+        } else {
+            logger.info('[getTLSCert] tls_cacerts does not exist: caRootsPath: %s, key: %s, subkey: %s', caRootsPath, key, subkey);
+            return null;
+        }
+    }
+    return data;
+}
+module.exports.getTLSCert = getTLSCert;
