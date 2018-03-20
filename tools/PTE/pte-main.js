@@ -160,10 +160,15 @@ function printChainInfo(channel) {
 
 function clientNewOrderer(client, org) {
     var ordererID = ORGS[org].ordererID;
+    var data;
     logger.info('[clientNewOrderer] org: %s, ordererID: %s', org, ordererID);
     if (TLS.toUpperCase() == 'ENABLED') {
-        var caRootsPath = path.resolve(goPath, ORGS['orderer'][ordererID].tls_cacerts);
-        let data = fs.readFileSync(caRootsPath);
+        if ( typeof ORGS.tls_cert !== 'undefined' ) {
+            data = ORGS.tls_cert;
+        } else {
+            var caRootsPath = path.resolve(goPath, ORGS['orderer'][ordererID].tls_cacerts);
+            data = fs.readFileSync(caRootsPath);
+        }
         let caroots = Buffer.from(data).toString();
 
         orderer = client.newOrderer(
@@ -182,9 +187,14 @@ function clientNewOrderer(client, org) {
 function chainAddOrderer(channel, client, org) {
     logger.info('[chainAddOrderer] channel name: ', channel.getName());
     var ordererID = ORGS[org].ordererID;
+    var data;
     if (TLS.toUpperCase() == 'ENABLED') {
-        var caRootsPath = path.resolve(goPath, ORGS['orderer'][ordererID].tls_cacerts);
-        var data = fs.readFileSync(caRootsPath);
+        if ( typeof ORGS.tls_cert !== 'undefined' ) {
+            data = ORGS.tls_cert;
+        } else {
+            var caRootsPath = path.resolve(goPath, ORGS['orderer'][ordererID].tls_cacerts);
+            data = fs.readFileSync(caRootsPath);
+        }
         let caroots = Buffer.from(data).toString();
 
         channel.addOrderer(
