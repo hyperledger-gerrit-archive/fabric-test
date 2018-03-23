@@ -83,6 +83,7 @@ class Perf_Stress_CouchDB(unittest.TestCase):
                 cwd=scenarios_directory, shell=True)
         self.assertEqual(int(queryTxSucceeded.strip()), 2)
 
+    @unittest.skip("skipping; WIP")
     def test_FAB3832_4i_FAB3834_4q(self):
         '''
         Description:
@@ -151,7 +152,7 @@ class Perf_Stress_CouchDB(unittest.TestCase):
 
 class Perf_Stress_LevelDB(unittest.TestCase):
 
-
+    @unittest.skip("skipping; WIP")
     def test_FAB3808_2i_FAB3811_2q(self):
         '''
         Description:
@@ -211,7 +212,7 @@ class Perf_Stress_LevelDB(unittest.TestCase):
                 cwd=scenarios_directory, shell=True)
         self.assertEqual(int(queryTxSucceeded.strip()), 2)
 
-
+    @unittest.skip("skipping; WIP")
     def test_FAB3807_4i_FAB3835_4q(self):
         '''
         Description:
