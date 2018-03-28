@@ -941,7 +941,7 @@ func ote( testname string, txs int64, chans int, orderers int, ordType string, k
 
         // Establish the default configuration from yaml files - and this also
         // picks up any variables overridden on command line or in environment
-        ordConf = ordererConf.Load()
+        ordConf, err = ordererConf.Load()
         genConf = genesisconfig.Load(fmt.Sprintf("%s", p.Profile))
         var launchAppendFlags string
 
