@@ -126,7 +126,11 @@ function initDeploy() {
     logger.info('chaincode language: %s, path: %s', language, chaincodePath);
 
     if ((typeof( uiContent.deploy.metadataPath ) !== 'undefined')) {
-        metadataPath=uiContent.deploy.metadataPath;
+        if (typeof(goPath) !== 'undefined') {
+            metadataPath = path.join(goPath, 'src', uiContent.deploy.metadataPath);
+        } else {
+            metadataPath=uiContent.deploy.metadataPath;
+        }
         logger.info('metadataPath: %s', metadataPath);
     }
 }
@@ -681,6 +685,9 @@ function createOneChannel(client ,channelOrgName) {
     hfc.setConfigSetting('key-value-store', 'fabric-client/lib/impl/FileKeyValueStore.js');
 
     var channelTX=channelOpt.channelTX;
+    if ( typeof(goPath) !== 'undefined' ) {
+        channelTX = path.join(goPath, 'src', channelOpt.channelTX);
+    }
     logger.info('[createOneChannel] channelTX: ', channelTX);
     envelope_bytes = fs.readFileSync(channelTX);
     config = client.extractChannelConfig(envelope_bytes);

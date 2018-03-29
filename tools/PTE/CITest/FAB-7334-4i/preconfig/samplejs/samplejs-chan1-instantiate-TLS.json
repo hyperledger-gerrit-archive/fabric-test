@@ -14,7 +14,7 @@
         ]
     },
     "deploy": {
-        "chaincodePath": "github.com/hyperledger/fabric-test/chaincodes/samplecc/node",
+        "chaincodePath": "/home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/chaincodes/samplecc/node",
         "fcn": "init",
         "language": "node",
         "args": []
