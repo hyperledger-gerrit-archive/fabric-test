@@ -239,39 +239,53 @@ def step_impl(context):
                 "peer0.org1.example.com",
                 context.interface.TEST_CHANNEL_ID)
 
-@when(u'a user installs chaincode at path "{path}" as version "{version}" with args {args} with name "{name}" to "{peer}"')
-def step_impl(context, path, args, name, peer, version, username="Admin"):
-    context.interface.pre_deploy_chaincode(context, path, args, name, "GOLANG", version=version)
-    context.interface.install_chaincode(context, [peer], "Admin")
+@when(u'a user installs chaincode at path "{path}" of language "{language}" as version "{version}" with args {args} with name "{name}" to "{peer}"')
+def step_impl(context, path, args, name, peer, language, version):
+    install_impl(context, path, args, name, language, version, [peer])
 
-@when(u'a user installs chaincode at path "{path}" as version "{version}" with args {args} with name "{name}" on all peers')
-def step_impl(context, path, args, name, version, username="Admin"):
-    peers = context.interface.get_peers(context)
-    context.interface.pre_deploy_chaincode(context, path, args, name, "GOLANG", version=version)
-    context.interface.install_chaincode(context, peers, "Admin")
+@when(u'a user installs chaincode at path "{path}" of language "{language}" as version "{version}" with args {args} with name "{name}"')
+def install_impl(context, path, args, name, language, version, peers=None, username="Admin"):
+    context.interface.pre_deploy_chaincode(context, path, args, name, language, version=version)
+    if peers==None:
+        peers = context.interface.get_peers(context)
+    context.interface.install_chaincode(context, peers, username)
+
+@when(u'a user installs chaincode at path "{path}" as version "{version}" with args {args} with name "{name}" to "{peer}"')
+def step_impl(context, path, args, name, version, peer):
+    install_impl(context, path, args, name, "GOLANG", version, [peer])
+
+@when(u'a user installs chaincode at path "{path}" as version "{version}" with args {args} with name "{name}"')
+def step_impl(context, path, args, name, version):
+    install_impl(context, path, args, names, "GOLANG", version)
 
 @when(u'a user installs chaincode at path "{path}" with args {args} with name "{name}" to "{peer}"')
-def step_impl(context, path, args, name, peer, username="Admin"):
-    context.interface.pre_deploy_chaincode(context, path, args, name, "GOLANG")
-    context.interface.install_chaincode(context, [peer], "Admin")
+def step_impl(context, path, args, name, peer):
+    install_impl(context, path, args, name, "GOLANG", "0", [peer])
 
 @when(u'a user installs chaincode')
 def step_impl(context):
-    context.interface.pre_deploy_chaincode(context,
+    peers = context.interface.get_peers(context)
+    install_impl(context,
                 "github.com/hyperledger/fabric/examples/chaincode/go/chaincode_example02",
                 '["init", "a", "100" , "b", "200"]',
                 "mycc",
-                "GOLANG")
-    context.interface.install_chaincode(context, [peer], "Admin")
+                "GOLANG",
+                "0")
 
-@when(u'a user upgrades the chaincode on channel "{channel}" to version "{version:d}" on peer "{peer}" with args {args}')
-def upgrade_impl(context, channel, version, peer, args=None, timeout=120):
+@when(u'a user upgrades the chaincode with name "{name}" on channel "{channel}" to version "{version:d}" on peer "{peer}" with args {args}')
+def upgrade_impl(context, channel, version, peer, name=None, args=None, timeout=120):
     if args:
         context.chaincode["args"] = args
+    if name:
+        context.chaincode["name"] = name
     context.chaincode["version"] = version
     context.chaincode["channelID"] = channel
     context.interface.upgrade_chaincode(context, "orderer0.example.com", channel, args)
     context.interface.post_deploy_chaincode(context, peer, timeout)
+
+@when(u'a user upgrades the chaincode with name "{name}" on channel "{channel}" to version "{version:d}" with args {args}')
+def step_impl(context, name, channel, version, args):
+    upgrade_impl(context, channel, version, "peer0.org1.example.com", name, args)
 
 @when(u'a user upgrades the chaincode on channel "{channel}" to version "{version:d}" on peer "{peer}"')
 def step_impl(context, channel, version, peer):

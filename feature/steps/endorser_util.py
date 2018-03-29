@@ -56,7 +56,7 @@ class InterfaceBase:
         self.post_deploy_chaincode(context, peer, timeout)
 
     def pre_deploy_chaincode(self, context, path, args, name, language, channelId=TEST_CHANNEL_ID, version=0, policy=None):
-        config_util.generateChannelConfig(channelId, config_util.CHANNEL_PROFILE, context)
+        #config_util.generateChannelConfig(channelId, config_util.CHANNEL_PROFILE, context)
         orderers = self.get_orderers(context)
         peers = self.get_peers(context)
         assert orderers != [], "There are no active orderers in this network"
