@@ -60,6 +60,7 @@ Scenario: FAB-1306: Multiple organizations in a cluster - remove all, reinstate 
 
 
 @smoke
+
 Scenario Outline: FAB-3852: Message Payloads Less than 1MB, for <type> orderer using the <interface> interface
     Given I have a bootstrapped fabric network of type <type>
     And I use the <interface> interface
