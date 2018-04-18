@@ -85,4 +85,3 @@ class Perf_Stress_LevelDB(unittest.TestCase):
         self.assertNotIn("pte-exec:completed:timeout", result)
         # Check for completion of all of the PTE processes.
         self.assertIn("info: [PTE 0 main]: [performance_main] pte-main:completed", result)
-
