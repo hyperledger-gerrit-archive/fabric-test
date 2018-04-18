@@ -13,7 +13,7 @@ import subprocess
 
 class Perf_Stress_CouchDB(unittest.TestCase):
 
-    @unittest.skip("skipping; WIP")
+    #@unittest.skip("skipping; WIP")
     def test_FAB3833_2i(self):
         '''
         Description:
@@ -85,4 +85,3 @@ class Perf_Stress_LevelDB(unittest.TestCase):
         self.assertNotIn("pte-exec:completed:timeout", result)
         # Check for completion of all of the PTE processes.
         self.assertIn("info: [PTE 0 main]: [performance_main] pte-main:completed", result)
-
