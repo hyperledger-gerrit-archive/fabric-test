@@ -122,7 +122,9 @@ function initDeploy() {
         testDeployArgs.push(uiContent.deploy.args[i]);
     }
 
-    if (typeof(goPath) !== 'undefined') {
+    if (language == 'golang') {
+        chaincodePath = uiContent.deploy.chaincodePath;
+    } else if (typeof(goPath) !== '') {
         chaincodePath = path.join(goPath, 'src', uiContent.deploy.chaincodePath);
     } else {
         chaincodePath = uiContent.deploy.chaincodePath;
@@ -130,7 +132,7 @@ function initDeploy() {
     logger.info('chaincode language: %s, path: %s', language, chaincodePath);
 
     if ((typeof( uiContent.deploy.metadataPath ) !== 'undefined')) {
-        if (typeof(goPath) !== 'undefined') {
+        if (typeof(goPath) !== '') {
             metadataPath = path.join(goPath, 'src', uiContent.deploy.metadataPath);
         } else {
             metadataPath=uiContent.deploy.metadataPath;
@@ -689,7 +691,7 @@ function createOneChannel(client ,channelOrgName) {
     hfc.setConfigSetting('key-value-store', 'fabric-client/lib/impl/FileKeyValueStore.js');
 
     var channelTX=channelOpt.channelTX;
-    if ( typeof(goPath) !== 'undefined' ) {
+    if ( typeof(goPath) !== '' ) {
         channelTX = path.join(goPath, 'src', channelOpt.channelTX);
     }
     logger.info('[createOneChannel] channelTX: ', channelTX);
