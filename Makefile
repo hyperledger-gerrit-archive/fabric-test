@@ -33,7 +33,7 @@ ci-smoke: git-init fabric ca clean pre-setup docker-images smoke-tests
 
 .PHONY: git-init
 git-init:
-	@git submodule update --init --recursive
+	@git submodule foreach git pull origin master
 
 .PHONY: pre-setup
 pre-setup:
