@@ -817,7 +817,7 @@ def step_impl(context, response, org, status):
 def expected_impl(context, response, peer, status="a success"):
     assert peer in context.result, "There is no response from {0}".format(peer)
     if status == "a success":
-        assert context.result[peer] == "Query Result: {0}\n".format(response), \
+        assert context.result[peer] == "{0}\n".format(response), \
                "Expected response was {0}; received {1}".format(response,
                                                                 context.result[peer])
     elif status == "an error":
