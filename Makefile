@@ -13,7 +13,8 @@
 #   - fabric - clones fabric repository.
 #   - smoke-tests - runs Smoke Test Suite
 #   - daily-tests - runs Daily Test Suite
-#   - git-init  -   init git submodules
+#   - git-init  -   init git submodules to latest available commit.
+#   - git-update  - init git submodules
 #   - pre-setup - installs node, govendor and behave pre-requisites
 #   - clean  - cleans the docker containers and images
 #
@@ -33,6 +34,10 @@ ci-smoke: git-init fabric ca clean pre-setup docker-images smoke-tests
 
 .PHONY: git-init
 git-init:
+	@git submodule foreach git pull origin master
+
+.PHONY: git-update
+git-update:
 	@git submodule update --init --recursive
 
 .PHONY: pre-setup
