@@ -378,3 +378,11 @@ Scenario: FAB-7407: Update the channel policies - add an organization
   #Then a user receives a success response of 980 from "peer0.org3.example.com"
   When a user queries on the chaincode with args ["query","a"]
   Then a user receives a success response of 980
+
+  When an admin removes an organization named Org2ExampleCom from the channel config
+  And all organization admins sign the updated channel config
+  When the admin updates the channel using peer "peer0.org1.example.com"
+
+  When a user fetches genesis information using peer "peer0.org1.example.com"
+  Then the config block file is fetched from peer "peer0.org1.example.com"
+  Then the updated config block does not contain Org2ExampleCom
