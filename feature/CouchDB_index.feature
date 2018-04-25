@@ -12,8 +12,8 @@ Feature: Testing Fabric CouchDB indexing
     When a user defines a couchDB index named index_behave_test with design document name "indexdoc_behave_test" containing the fields "size" to the chaincode at path "<index_path>"
 
     # set up 1 channels, 1  cc each
-    When a user sets up a channel named "mychannel1"
-    And a user deploys chaincode at path "<cc_path>" with args [""] with name "mycc1" with language "<language>" on channel "mychannel1"
+    When an admin sets up a channel named "mychannel1"
+    And an admin deploys chaincode at path "<cc_path>" with args [""] with name "mycc1" with language "<language>" on channel "mychannel1"
 
     #Check index in every cc in every channel
     When a user requests to get the design doc "indexdoc_behave_test" for the chaincode named "mycc1" in the channel "mychannel1" and from the CouchDB instance "http://localhost:5984"
@@ -31,12 +31,12 @@ Examples:
     When a user defines a couchDB index named index_behave_test with design document name "indexdoc_behave_test" containing the fields "owner,docType,color" to the chaincode at path "<index_path>"
 
     # set up 1 channels, 1  cc each
-    When a user sets up a channel named "mychannel1"
-    And a user sets up a channel named "mychannel2"
-    And a user sets up a channel named "mychannel3"
-    And a user deploys chaincode at path "<cc_path>" with args [""] with name "mycc1" with language "<language>" on channel "mychannel1"
-    And a user deploys chaincode at path "<cc_path>" with args [""] with name "mycc2" with language "<language>" on channel "mychannel2"
-    And a user deploys chaincode at path "<cc_path>" with args [""] with name "mycc3" with language "<language>" on channel "mychannel3"
+    When an admin sets up a channel named "mychannel1"
+    And an admin sets up a channel named "mychannel2"
+    And an admin sets up a channel named "mychannel3"
+    And an admin deploys chaincode at path "<cc_path>" with args [""] with name "mycc1" with language "<language>" on channel "mychannel1"
+    And an admin deploys chaincode at path "<cc_path>" with args [""] with name "mycc2" with language "<language>" on channel "mychannel2"
+    And an admin deploys chaincode at path "<cc_path>" with args [""] with name "mycc3" with language "<language>" on channel "mychannel3"
 
     #Check index in every cc in every channel
     When a user requests to get the design doc "indexdoc_behave_test" for the chaincode named "mycc1" in the channel "mychannel1" and from the CouchDB instance "http://localhost:5984"
@@ -60,12 +60,12 @@ Examples:
     And a user defines a couchDB index named index_behave_test_3 with design document name "indexdoc_behave_test_3" containing the fields "color" to the chaincode at path "<index_path>"
 
     # set up 1 channels, 1  cc each
-    When a user sets up a channel named "mychannel1"
-    And a user sets up a channel named "mychannel2"
-    And a user sets up a channel named "mychannel3"
-    And a user deploys chaincode at path "<cc_path>" with args [""] with name "mycc1" with language "<language>" on channel "mychannel1"
-    And a user deploys chaincode at path "<cc_path>" with args [""] with name "mycc2" with language "<language>" on channel "mychannel2"
-    And a user deploys chaincode at path "<cc_path>" with args [""] with name "mycc3" with language "<language>" on channel "mychannel3"
+    When an admin sets up a channel named "mychannel1"
+    And an admin sets up a channel named "mychannel2"
+    And an admin sets up a channel named "mychannel3"
+    And an admin deploys chaincode at path "<cc_path>" with args [""] with name "mycc1" with language "<language>" on channel "mychannel1"
+    And an admin deploys chaincode at path "<cc_path>" with args [""] with name "mycc2" with language "<language>" on channel "mychannel2"
+    And an admin deploys chaincode at path "<cc_path>" with args [""] with name "mycc3" with language "<language>" on channel "mychannel3"
 
     #Check index in every cc in every channel
     When a user requests to get the design doc "indexdoc_behave_test_1" for the chaincode named "mycc1" in the channel "mychannel1" and from the CouchDB instance "http://localhost:5984"
