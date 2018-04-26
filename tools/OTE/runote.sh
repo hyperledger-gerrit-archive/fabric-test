@@ -42,7 +42,8 @@ done
 
 FAB-6996_1ch_solo () {
         cd $CWD/../NL
-        ./networkLauncher.sh -o 1 -x 1 -r 1 -p 1 -n 1 -f test -w localhost -S enabled
+      # ./networkLauncher.sh -o 1 -x 1 -r 1 -p 1 -n 1 -f test -w localhost -S enabled
+        ./networkLauncher.sh -o 1 -x 0 -r 1 -p 1 -n 1 -f test -w localhost -S enabled
         cd $OTE_DIR
         # run testcase
         numChannels=1 testcase=Test_FAB6996_1ch_1ord_solo docker-compose -f ote-compose.yml up -d
