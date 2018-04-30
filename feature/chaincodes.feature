@@ -329,7 +329,7 @@ Scenario Outline: FAB-6650: Test chaincode enccc_example.go negative scenario, p
   And I wait "5" seconds
   #query an encrypted entity without passing Encryption key
   When a user queries on the chaincode named "mycc" with args ["ENCRYPT","Social-Security-Number"]
-  Then a user receives an error response of status: 500
+  Then a user receives an error response of status:500
   And a user receives an error response of Expected transient encryption key ENCKEY
   #query passing in bad_enc_key
   When a user invokes on the chaincode named "mycc" with args ["ENCRYPT","Social-Security-Number","123-45-6789"] and transient args "{\\"ENCKEY\\":\\"<GOOD_ENC_KEY>\\"}"
@@ -489,7 +489,7 @@ Scenario Outline: FAB-5791: Test API in SHIM interface using marbles02 and shimA
   When a user invokes on the chaincode named "mycc" with args ["delete","marble201"]
   And I wait "3" seconds
   When a user queries on the chaincode named "mycc" with args ["readMarble","marble201"]
-  Then a user receives an error response of status: 500
+  Then a user receives an error response of status:500
   And a user receives an error response of {"Error":"Marble does not exist: marble201"}
 
 
