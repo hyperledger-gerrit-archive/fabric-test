@@ -544,8 +544,55 @@ The following chaincodes are tested and supported:
         info: [PTE 0 exec]: [Nid:chan:org:id=0:testorgschannel1:org2:0 latency_output] event latency stats: tx num= 1000, total time: 828433 ms, avg= 828.43 ms, min= 284 ms, max= 2195 ms
 
 
+* **Test Summary Report**
+
+    A test summary report file, namely pteReport.txt, at the PTE directory is generated after PTE execution.  The report contains overall tranasction TPS and latency statistics (min, max, avg) for endorsement, transaction acknowledgment, and end-to-end transaction events for each PTE execution, i.e., each runCases.txt. Below is an example of the report of executing PTE with 3 runCases.txt, involving chaincode sample_cc_ch1, sample_cc_ch2, and sample_cc_ch3 respectively.  The report will be appended to the report file is it exists.
 
 
+        PTE 0 main Test Summary:
+        (sample_cc_ch1): INVOKE transaction stats
+        (sample_cc_ch1):        Total transactions 2000  timeout transactions 0
+        (sample_cc_ch1):        start 1525189536408  end 1525189599183  duration 62775 ms
+        (sample_cc_ch1):        TPS 31.86
+        (sample_cc_ch1): peer latency stats (endorsement)
+        (sample_cc_ch1):        total transactions: 2000  total time: 36855 ms
+        (sample_cc_ch1):        min: 6 ms  max: 198 ms  avg: 18.4275 ms
+        (sample_cc_ch1): orderer latency stats (transaction ack)
+        (sample_cc_ch1):        total transactions: 2000  total time: 84344 ms
+        (sample_cc_ch1):        min: 6 ms  max: 580 ms  avg: 42.172 ms
+        (sample_cc_ch1): event latency stats (end-to-end)
+        (sample_cc_ch1):        total transactions: 2000  total time: 602606 ms
+        (sample_cc_ch1):        min: 56 ms  max: 1205 ms  avg: 301.303 ms
+
+        PTE 2 main Test Summary:
+        (sample_cc_ch3): INVOKE transaction stats
+        (sample_cc_ch3):        Total transactions 2000  timeout transactions 0
+        (sample_cc_ch3):        start 1525189536367  end 1525189591809  duration 55442 ms
+        (sample_cc_ch3):        TPS 36.07
+        (sample_cc_ch3): peer latency stats (endorsement)
+        (sample_cc_ch3):        total transactions: 2000  total time: 46188 ms
+        (sample_cc_ch3):        min: 6 ms  max: 230 ms  avg: 23.094 ms
+        (sample_cc_ch3): orderer latency stats (transaction ack)
+        (sample_cc_ch3):        total transactions: 2000  total time: 61100 ms
+        (sample_cc_ch3):        min: 6 ms  max: 607 ms  avg: 30.55 ms
+        (sample_cc_ch3): event latency stats (end-to-end)
+        (sample_cc_ch3):        total transactions: 2000  total time: 569655 ms
+        (sample_cc_ch3):        min: 61 ms  max: 1188 ms  avg: 284.8275 ms
+
+        PTE 1 main Test Summary:
+        (sample_cc_ch2): INVOKE transaction stats
+        (sample_cc_ch2):        Total transactions 2000  timeout transactions 0
+        (sample_cc_ch2):        start 1525189536208  end 1525189598838  duration 62630 ms
+        (sample_cc_ch2):        TPS 31.93
+        (sample_cc_ch2): peer latency stats (endorsement)
+        (sample_cc_ch2):        total transactions: 2000  total time: 36813 ms
+        (sample_cc_ch2):        min: 6 ms  max: 235 ms  avg: 18.4065 ms
+        (sample_cc_ch2): orderer latency stats (transaction ack)
+        (sample_cc_ch2):        total transactions: 2000  total time: 84848 ms
+        (sample_cc_ch2):        min: 6 ms  max: 678 ms  avg: 42.424 ms
+        (sample_cc_ch2): event latency stats (end-to-end)
+        (sample_cc_ch2):        total transactions: 2000  total time: 615506 ms
+        (sample_cc_ch2):        min: 72 ms  max: 1175 ms  avg: 307.753 ms
 
 
 ## Reference
