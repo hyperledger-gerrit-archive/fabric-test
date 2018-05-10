@@ -57,7 +57,7 @@ class Perf_Stress_CouchDB(unittest.TestCase):
         # We do these two testcases together in this one test scenario, with
         # one network, because the query test needs to query all those same
         # transactions that were done with the invokes.
-        returncode = subprocess.call("./FAB-3833-2i.sh",
+        returncode = subprocess.call("./FAB-3833-2i.sh ; cd ../../../NL && ./networkLauncher.sh -a down",
                 cwd=scenarios_directory, shell=True)
         self.assertEqual(returncode, 0, msg="Test Failed; check for errors in fabric-test/fabric-sdk-node/test/PTE/CITest/Logs/")
 
@@ -137,7 +137,7 @@ class Perf_Stress_CouchDB(unittest.TestCase):
         # We do these two testcases together in this one test scenario, with
         # one network, because the query test needs to query all those same
         # transactions that were done with the invokes.
-        returncode = subprocess.call("./FAB-3832-4i.sh",
+        returncode = subprocess.call("./FAB-3832-4i.sh ; cd ../../../NL && ./networkLauncher.sh -a down",
                 cwd=scenarios_directory, shell=True)
         self.assertEqual(returncode, 0, msg="Test Failed; check for errors in fabric-test/fabric-sdk-node/test/PTE/CITest/Logs/")
 
@@ -204,7 +204,7 @@ class Perf_Stress_LevelDB(unittest.TestCase):
         # We do these two testcases together in this one test scenario, with
         # one network, because the query test needs to query all those same
         # transactions that were done with the invokes.
-        returncode = subprocess.call("./FAB-3808-2i.sh",
+        returncode = subprocess.call("./FAB-3808-2i.sh ; cd ../../../NL && ./networkLauncher.sh -a down",
                 cwd=scenarios_directory, shell=True)
         self.assertEqual(returncode, 0, msg="Test Failed; check for errors in fabric-test/fabric-sdk-node/test/PTE/CITest/Logs/")
 
@@ -262,7 +262,7 @@ class Perf_Stress_LevelDB(unittest.TestCase):
         # We do these two testcases together in this one test scenario, with
         # one network, because the query test needs to query all those same
         # transactions that were done with the invokes.
-        returncode = subprocess.call("./FAB-3807-4i.sh",
+        returncode = subprocess.call("./FAB-3807-4i.sh ; cd ../../../NL && ./networkLauncher.sh -a down",
                 cwd=scenarios_directory, shell=True)
         self.assertEqual(returncode, 0, msg="Test Failed; check for errors in fabric-test/fabric-sdk-node/test/PTE/CITest/Logs/")
 
