@@ -1383,9 +1383,10 @@ function eventRegisterFilteredBlock() {
                 clearTimeout(handle);
 
                 // this block listener handles the filtered block
-                if (filtered_block.number) {
+                if (typeof(filtered_block.number) != 'undefined' && filtered_block.number > 0) {
                     //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] Successfully received the filtered block event for block_num: %d, txid number: %d', Nid, channelName, org, pid, filtered_block.number, filtered_block.filtered_tx.length);
-                    for (i=0; i<filtered_block.filtered_tx.length; i++) {
+                    if (typeof(filtered_block.filtered_tx) != 'undefined' {
+                      for (i=0; i<filtered_block.filtered_tx.length; i++) {
                         var txid = filtered_block.filtered_tx[i].txid;
                         if ( txidList[txid] ) {
                             evtRcvB = evtRcvB + 1;
@@ -1393,6 +1394,10 @@ function eventRegisterFilteredBlock() {
                             latency_update(evtRcvB, tend-txidList[txid], latency_event);
                             delete txidList[txid];
                         }
+                      }
+                    }
+                    else {
+                            logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] pte-exec: filtered_tx is undefined', Nid, channelName, org, pid);
                     }
 
                     if ( inv_m == evtRcvB  ) {
@@ -1416,7 +1421,7 @@ function eventRegisterFilteredBlock() {
                     }
                     resolve();
                 } else {
-                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] Failed - received the full block event for block_num:',Nid, channelName, org, pid, filtered_block.number);
+                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] Failure - received block with undefined filtered_block.number',Nid, channelName, org, pid);
                 }
             },
             (err) => {
