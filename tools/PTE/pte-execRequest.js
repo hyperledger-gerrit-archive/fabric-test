@@ -48,8 +48,9 @@ var tCurr;
 var tEnd=0;
 var tLocal;
 var i = 0;
-var inv_m = 0;    // counter of invoke move
-var inv_q = 0;    // counter of invoke query
+var inv_m = 0;                        // counter of invoke move
+var inv_q = 0;                        // counter of invoke query
+var proposal_failure = 0;             // counter of invoke proposal failure
 var evtTimeoutCnt = 0;                // counter of event timeout
 var evtType = 'FILTEREDBLOCK';        // event type: FILTEREDBLOCK|CHANNEL, default: FILTEREDBLOCK
 var evtTimeout = 120000;              // event timeout, default: 120000 ms
@@ -1212,7 +1213,7 @@ function isExecDone(trType){
                 tCurr = new Date().getTime();
                 console.log('[Nid:chan:org:id=%d:%s:%s:%d isExecDone] Timeout: curr time: %d', Nid, channelName, org, pid, tCurr);
                 var remain = Object.keys(txidList).length;
-                logger.info('[Nid:chan:org:id=%d:%s:%s:%d isExecDone] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d', Nid, channelName, org, pid, evtRcvB, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain);
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d isExecDone] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d proposal failure: %d', Nid, channelName, org, pid, evtRcvB-proposal_failure, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, proposal_failure);
                 if (invokeCheck == 'TRUE') {
                     arg0 = keyStart + inv_m - 1;
                     inv_q = inv_m - 1;
@@ -1306,7 +1307,7 @@ function eventRegisterFilteredBlock() {
                         if ( IDone == 1 ) {
                             tCurr = new Date().getTime();
                             var remain = Object.keys(txidList).length;
-                            logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d, Throughput=%d TPS', Nid, channelName, org, pid,  evtRcvB, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, (evtRcvB/(tCurr-tLocal)*1000).toFixed(2));
+                            logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d, Throughput=%d TPS, proposal failure=%d', Nid, channelName, org, pid,  evtRcvB-proposal_failure, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, (evtRcvB/(tCurr-tLocal)*1000).toFixed(2), proposal_failure);
                             if (invokeCheck == 'TRUE') {
                                 arg0 = keyStart + inv_m - 1;
                                 inv_q = inv_m - 1;
@@ -1359,7 +1360,7 @@ function eventRegisterBlock() {
                     if ( IDone == 1 ) {
                         tCurr = new Date().getTime();
                         var remain = Object.keys(txidList).length;
-                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterBlock] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d, Throughput=%d TPS', Nid, channelName, org, pid,  evtRcvB, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, (evtRcvB/(tCurr-tLocal)*1000).toFixed(2));
+                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterBlock] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d, Throughput=%d TPS, proposal failure: %d', Nid, channelName, org, pid,  evtRcvB-proposal_failure, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, (evtRcvB/(tCurr-tLocal)*1000).toFixed(2), proposal_failure);
                         if (invokeCheck == 'TRUE') {
                             arg0 = keyStart + inv_m - 1;
                             inv_q = inv_m - 1;
@@ -1403,7 +1404,7 @@ function eventRegister(tx, cb) {
             if ( ( IDone == 1 ) && ( inv_m == evtCount )  ) {
                 tCurr = new Date().getTime();
                 var remain = Object.keys(txidList).length;
-                logger.info('[Nid:chan:org:id=%d:%s:%s:%d TIMEOUT eventRegister] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d, Throughput=%d TPS', Nid, channelName, org, pid,  evtRcv, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, (evtRcv/(tCurr-tLocal)*1000).toFixed(2));
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d TIMEOUT eventRegister] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d, Throughput=%d TPS, proposal failure: %d', Nid, channelName, org, pid,  evtRcv-proposal_failure, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, (evtRcv/(tCurr-tLocal)*1000).toFixed(2), proposal_failure);
                 if ( remain > 0 ) {
                     console.log('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] unreceived: %d, tx_id: ', Nid, channelName, org, pid, remain, txidList);
                 }
@@ -1428,7 +1429,7 @@ function eventRegister(tx, cb) {
                     if ( ( IDone == 1 ) && ( inv_m == evtRcv ) ) {
                         tCurr = new Date().getTime();
                         var remain = Object.keys(txidList).length;
-                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d, Throughput=%d TPS', Nid, channelName, org, pid,  evtRcv, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, (evtRcv/(tCurr-tLocal)*1000).toFixed(2));
+                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d, Throughput=%d TPS, proposal failure: %d', Nid, channelName, org, pid,  evtRcv-proposal_failure, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, (evtRcv/(tCurr-tLocal)*1000).toFixed(2), proposal_failure);
                         if (invokeCheck == 'TRUE') {
                             arg0 = keyStart + inv_m - 1;
                             inv_q = inv_m - 1;
@@ -1513,6 +1514,11 @@ function invoke_move_latency() {
     .then(
         function(results) {
             var proposalResponses = results[0];
+            if ( typeof(proposalResponses[0].response) === 'undefined' || typeof(proposalResponses[0].response) === 'undefined' || (proposalResponses[0].response.status !== 200) ) {
+                proposal_failure++;
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_latency] Failed to send proposal (%d), results: %j', Nid, channelName, org, pid, proposal_failure, results);
+            }
+
 
             getTxRequest(results);
             eventRegister_latency(tx_id, function(sendPromise) {
@@ -1531,6 +1537,7 @@ function invoke_move_latency() {
                 })
             },
             function(err) {
+                proposal_failure++;
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_latency] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
                 evtDisconnect();
             })
@@ -1574,6 +1581,11 @@ function invoke_move_simple(freq) {
     .then(
         function(results) {
             var proposalResponses = results[0];
+            if ( typeof(proposalResponses[0].response) === 'undefined' || typeof(proposalResponses[0].response) === 'undefined' || (proposalResponses[0].response.status !== 200) ) {
+                proposal_failure++;
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_simple] Failed to send proposal (%d), results: %j', Nid, channelName, org, pid, proposal_failure, results);
+            }
+
 
             getTxRequest(results);
             eventRegister(request_invoke.txId, function(sendPromise) {
@@ -1600,6 +1612,7 @@ function invoke_move_simple(freq) {
                 })
             },
             function(err) {
+                proposal_failure++;
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_simple] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
                 evtDisconnect();
             })
@@ -1692,21 +1705,21 @@ function latency_output() {
 
     // output peers latency
     if ( latency_peer[0] != 0 ) {
-        logger.info('[Nid:chan:org:id=%d:%s:%s:%d latency_output] pte-exec:completed peer latency stats: tx num= %d, total time: %d ms, min= %d ms, max= %d ms, avg= %d ms', Nid, channelName, org, pid, latency_peer[0], latency_peer[1], latency_peer[2], latency_peer[3], (latency_peer[1]/latency_peer[0]).toFixed(2));
+        logger.info('[Nid:chan:org:id=%d:%s:%s:%d latency_output] pte-exec:completed peer latency stats: tx num= %d, total time: %d ms, min= %d ms, max= %d ms, avg= %d ms', Nid, channelName, org, pid, latency_peer[0], latency_peer[1], latency_peer[2], latency_peer[3], (latency_peer[1]/(latency_peer[0]-proposal_failure)).toFixed(2));
     } else {
         logger.info('[Nid:chan:org:id=%d:%s:%s:%d latency_output] pte-exec:completed peer latency stats: tx num= %d, total time: %d ms, min= %d ms, max= %d ms, avg= NA ms', Nid, channelName, org, pid, latency_peer[0], latency_peer[1], latency_peer[2], latency_peer[3]);
     }
 
     // output orderer latency
     if ( latency_orderer[0] != 0 ) {
-        logger.info('[Nid:chan:org:id=%d:%s:%s:%d latency_output] pte-exec:completed orderer latency stats: tx num= %d, total time: %d ms, min= %d ms, max= %d ms, avg= %d ms', Nid, channelName, org, pid, latency_orderer[0], latency_orderer[1], latency_orderer[2], latency_orderer[3], (latency_orderer[1]/latency_orderer[0]).toFixed(2));
+        logger.info('[Nid:chan:org:id=%d:%s:%s:%d latency_output] pte-exec:completed orderer latency stats: tx num= %d, total time: %d ms, min= %d ms, max= %d ms, avg= %d ms', Nid, channelName, org, pid, latency_orderer[0], latency_orderer[1], latency_orderer[2], latency_orderer[3], (latency_orderer[1]/(latency_orderer[0]-proposal_failure)).toFixed(2));
     } else {
         logger.info('[Nid:chan:org:id=%d:%s:%s:%d latency_output] pte-exec:completed orderer latency stats: tx num= %d, total time: %d ms, min= %d ms, max= %d ms, avg= NA ms', Nid, channelName, org, pid, latency_orderer[0], latency_orderer[1], latency_orderer[2], latency_orderer[3]);
     }
 
     // output event latency
     if ( latency_event[0] != 0 ) {
-        logger.info('[Nid:chan:org:id=%d:%s:%s:%d latency_output] pte-exec:completed event latency stats: tx num= %d, total time: %d ms, min= %d ms, max= %d ms, avg= %d ms', Nid, channelName, org, pid, latency_event[0], latency_event[1], latency_event[2], latency_event[3], (latency_event[1]/latency_event[0]).toFixed(2));
+        logger.info('[Nid:chan:org:id=%d:%s:%s:%d latency_output] pte-exec:completed event latency stats: tx num= %d, total time: %d ms, min= %d ms, max= %d ms, avg= %d ms', Nid, channelName, org, pid, latency_event[0], latency_event[1], latency_event[2], latency_event[3], (latency_event[1]/(latency_event[0]-proposal_failure)).toFixed(2));
     } else {
         logger.info('[Nid:chan:org:id=%d:%s:%s:%d latency_output] pte-exec:completed event latency stats: tx num= %d, total time: %d ms, min= %d ms, max= %d ms, avg= NA ms', Nid, channelName, org, pid, latency_event[0], latency_event[1], latency_event[2], latency_event[3]);
     }
@@ -1763,11 +1776,14 @@ function invoke_move_const_evtBlock(freq) {
     var ts = new Date().getTime();
     channel.sendTransactionProposal(request_invoke)
     .then((results) => {
+            var proposalResponses = results[0];
+            if ( typeof(proposalResponses[0].response) === 'undefined' || typeof(proposalResponses[0].response) === 'undefined' || (proposalResponses[0].response.status !== 200) ) {
+                proposal_failure++;
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const_evtBlock] Failed to send proposal (%d), results: %j', Nid, channelName, org, pid, proposal_failure, results);
+            }
 
             var te = new Date().getTime();
             latency_update(inv_m, te-ts, latency_peer);
-
-            var proposalResponses = results[0];
 
             getTxRequest(results);
             txidList[tx_id.getTransactionID().toString()] = new Date().getTime();
@@ -1804,8 +1820,8 @@ function invoke_move_const_evtBlock(freq) {
                         invoke_move_const_go_evtBlock(t1, freq);
                     } else {
                         tCurr = new Date().getTime();
-                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const_evtBlock] completed %d, evtTimoutCnt %d, unceived events %d, %s(%s) in %d ms, timestamp: start %d end %d', Nid, channelName, org, pid, inv_m, evtTimeoutCnt, remain, transType, invokeType, tCurr-tLocal, tLocal, tCurr);
                         var remain = Object.keys(txidList).length;
+                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const_evtBlock] completed %d, evtTimoutCnt %d, unceived events %d, %s(%s) in %d ms, timestamp: start %d end %d', Nid, channelName, org, pid, inv_m, evtTimeoutCnt, remain, transType, invokeType, tCurr-tLocal, tLocal, tCurr);
                         if ( remain > 0 ) {
                             console.log('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const_evtBlock] unreceived events(%d), txidList', Nid, channelName, org, pid, remain, txidList);
                         }
@@ -1827,9 +1843,10 @@ function invoke_move_const_evtBlock(freq) {
                 })
         }).catch((err) => {
                 var te = new Date().getTime();
+                proposal_failure++;
                 latency_update(inv_m, te-ts, latency_peer);
 
-                logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const_evtBlock] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+                logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const_evtBlock] Failed to send transaction proposal (%d) due to error: ', Nid, channelName, org, pid, proposal_failure, err.stack ? err.stack : err);
                 if (peerFO == 'TRUE') {
                     peerFailover(channel, client);
                 }
@@ -1874,20 +1891,21 @@ function invoke_move_const(freq) {
     txProposal.targets = targets;
 
     var ts = new Date().getTime();
-    // channel.sendTransactionProposal(request_invoke)
     channel.sendTransactionProposal(txProposal)
     .then((results) => {
+            var proposalResponses = results[0];
+            if ( typeof(proposalResponses[0].response) === 'undefined' || typeof(proposalResponses[0].response) === 'undefined' || (proposalResponses[0].response.status !== 200) ) {
+                proposal_failure++;
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const] Failed to send proposal (%d), results: %j', Nid, channelName, org, pid, proposal_failure, results);
+            }
 
             var te = new Date().getTime();
             latency_update(inv_m, te-ts, latency_peer);
-
-            var proposalResponses = results[0];
 
             // getTxRequest(results);
             // txidList[tx_id.getTransactionID().toString()] = new Date().getTime();
             txidList[txProposal.txId.getTransactionID().toString()] = new Date().getTime();
 
-            //  eventRegister(tx_id, function(sendPromise) {
             eventRegister(txProposal.txId, function(sendPromise) {
 
                 var tos = new Date().getTime();
@@ -1950,7 +1968,8 @@ function invoke_move_const(freq) {
             })
 
         }).catch((err) => {
-                logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+                proposal_failure++
+                logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const] Failed to send transaction proposal (%d) due to error: ', Nid, channelName, org, pid, proposal_failure, err.stack ? err.stack : err);
                 if (peerFO == 'TRUE') {
                     peerFailover(channel, client);
                 }
@@ -2094,6 +2113,11 @@ function invoke_move_mix(freq) {
     channel.sendTransactionProposal(request_invoke)
     .then((results) => {
             var proposalResponses = results[0];
+            if ( typeof(proposalResponses[0].response) === 'undefined' || typeof(proposalResponses[0].response) === 'undefined' || (proposalResponses[0].response.status !== 200) ) {
+                proposal_failure++;
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_mix] Failed to send proposal (%d), results: %j', Nid, channelName, org, pid, proposal_failure, results);
+            }
+
 
             getTxRequest(results);
             eventRegister(request_invoke.txId, function(sendPromise) {
@@ -2131,7 +2155,8 @@ function invoke_move_mix(freq) {
             })
 
         }).catch((err) => {
-                logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_mix] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+                proposal_failure++;
+                logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_mix] Failed to send transaction proposal (%d) due to error: ', Nid, channelName, org, pid, proposal_failure, err.stack ? err.stack : err);
 
                 isExecDone('Move');
                 if ( IDone != 1 ) {
@@ -2221,6 +2246,11 @@ function invoke_move_proposal() {
     .then(
         function(results) {
             var proposalResponses = results[0];
+            if ( typeof(proposalResponses[0].response) === 'undefined' || typeof(proposalResponses[0].response) === 'undefined' || (proposalResponses[0].response.status !== 200) ) {
+                proposal_failure++;
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_proposal] Failed to send proposal (%d), results: %j', Nid, channelName, org, pid, proposal_failure, results);
+            }
+
 
             isExecDone('Move');
             if ( IDone == 1 ) {
@@ -2236,7 +2266,8 @@ function invoke_move_proposal() {
 
         },
         function(err) {
-            logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_proposal] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+            proposal_failure++;
+            logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_proposal] Failed to send transaction proposal (%d) due to error: ', Nid, channelName, org, pid, proposal_failure, err.stack ? err.stack : err);
             evtDisconnect();
         });
 
@@ -2316,6 +2347,11 @@ function invoke_move_burst() {
     channel.sendTransactionProposal(request_invoke)
     .then((results) => {
             var proposalResponses = results[0];
+            if ( typeof(proposalResponses[0].response) === 'undefined' || typeof(proposalResponses[0].response) === 'undefined' || (proposalResponses[0].response.status !== 200) ) {
+                proposal_failure++;
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_burst] Failed to send proposal (%d), results: %j', Nid, channelName, org, pid, proposal_failure, results);
+            }
+
 
             getTxRequest(results);
             eventRegister(request_invoke.txId, function(sendPromise) {
@@ -2354,7 +2390,8 @@ function invoke_move_burst() {
             })
 
         }).catch((err) => {
-                logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_burst] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+                proposal_failure++;
+                logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_burst] Failed to send transaction proposal (%d) due to error: ', Nid, channelName, org, pid, proposal_failure, err.stack ? err.stack : err);
 
                 isExecDone('Move');
                 if ( IDone != 1 ) {

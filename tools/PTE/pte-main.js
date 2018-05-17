@@ -1185,6 +1185,7 @@ function performance_main() {
                         var maxMixedDuration=0;
                         var minMixedDuration=0;
                         var totalInvokeTimeout=0;
+                        var totalProposalFailure=0;
 
                         var totalInvokeTrans=0;
                         var totalInvokeTps=0;
@@ -1216,6 +1217,8 @@ function performance_main() {
                                 totalInvokeTrans=totalInvokeTrans+transNum;
                                 var tempTimeoutNum=parseInt(rawText.substring(rawText.indexOf("timeout:")+8).trim());
                                 totalInvokeTimeout=totalInvokeTimeout+tempTimeoutNum;
+                                totalProposalFailure=parseInt(rawText.substring(rawText.indexOf("proposal failure=")+17).trim());
+                                totalInvokeTrans=totalInvokeTrans+totalProposalFailure;
                                 var tempDur=parseInt(rawText.substring(rawText.indexOf(") in")+4,rawText.indexOf("ms")).trim());
                                 totalInvokeTime=totalInvokeTime+tempDur;
 
@@ -1247,7 +1250,6 @@ function performance_main() {
                             };
                             if (rawText.indexOf("peer latency stats")>-1) {
                                 update_latency_array(latency_peer, rawText);
-                                logger.info("Test Summary (%s): latency_peer", chaincode_id, latency_peer);
                             }
                             if (rawText.indexOf("orderer latency stats")>-1) {
                                 update_latency_array(latency_orderer, rawText);
@@ -1323,11 +1325,11 @@ function performance_main() {
                         }
                         logger.info("Test Summary: Total %d Threads run completed",procDone);
                         if (totalInvokeTrans>0) {
-                            logger.info("Test Summary (%s):Total INVOKE transaction=%d, timeout transaction=%d, the Min duration is %d ms,the Max duration is %d ms,Avg duration=%d ms, total throughput=%d TPS", chaincode_id, totalInvokeTrans, totalInvokeTimeout, minInvokeDuration, maxInvokeDuration,totalInvokeTime/procDone, totalInvokeTps.toFixed(2));
+                            logger.info("Test Summary (%s):Total INVOKE transaction=%d, timeout transaction=%d, proposal failure=%d, the Min duration is %d ms,the Max duration is %d ms,Avg duration=%d ms, total throughput=%d TPS", chaincode_id, totalInvokeTrans, totalInvokeTimeout, totalProposalFailure, minInvokeDuration, maxInvokeDuration, totalInvokeTime/procDone, totalInvokeTps.toFixed(2));
 
                             var dur=etmp-stmp;
-                            var iTPS=1000*totalInvokeTrans/dur;
-                            logger.info("Aggregate Test Summary (%s):Total INVOKE transaction %d, timeout transaction %d, start %d end %d duration is %d ms, TPS %d", chaincode_id, totalInvokeTrans, totalInvokeTimeout, stmp, etmp, dur, iTPS.toFixed(2));
+                            var iTPS=1000*(totalInvokeTrans-totalProposalFailure)/dur;
+                            logger.info("Aggregate Test Summary (%s):Total INVOKE transaction %d, timeout transaction %d, proposal failure %d, start %d end %d duration is %d ms, TPS %d", chaincode_id, totalInvokeTrans, totalInvokeTimeout, totalProposalFailure, stmp, etmp, dur, iTPS.toFixed(2));
 
 
                             // transaction output
@@ -1335,7 +1337,7 @@ function performance_main() {
                             fs.appendFileSync(rptFile, buff);
                             buff = "("+channelName+":"+chaincode_id+"): INVOKE transaction stats\n";
                             fs.appendFileSync(rptFile, buff);
-                            buff = "("+channelName+":"+chaincode_id+"):\tTotal transactions "+totalInvokeTrans + "  timeout transactions "+totalInvokeTimeout+"\n";
+                            buff = "("+channelName+":"+chaincode_id+"):\tTotal transactions "+totalInvokeTrans + "  timeout transactions "+totalInvokeTimeout+ "  proposal failure "+totalProposalFailure+"\n";
                             fs.appendFileSync(rptFile, buff);
 
                             buff = "("+channelName+":"+chaincode_id+"):\tstart "+stmp+"  end "+etmp+"  duration "+dur+" ms \n";
@@ -1349,7 +1351,7 @@ function performance_main() {
                             buff = "("+channelName+":"+chaincode_id+"):\ttotal transactions: "+ latency_peer[0] +"  total time: "+ latency_peer[1] +" ms \n";
                             fs.appendFileSync(rptFile, buff);
                             if ( latency_peer[0] > 0 ) {
-                                buff = "("+channelName+":"+chaincode_id+"):\tmin: "+ latency_peer[2] +" ms  max: "+ latency_peer[3] +" ms  avg: "+ latency_peer[1]/latency_peer[0].toFixed(2) +" ms \n";
+                                buff = "("+channelName+":"+chaincode_id+"):\tmin: "+ latency_peer[2] +" ms  max: "+ latency_peer[3] +" ms  avg: "+ latency_peer[1]/(latency_peer[0]-totalProposalFailure).toFixed(2) +" ms \n";
                                 fs.appendFileSync(rptFile, buff);
                             }
 
@@ -1359,7 +1361,7 @@ function performance_main() {
                             buff = "("+channelName+":"+chaincode_id+"):\ttotal transactions: "+ latency_orderer[0] +"  total time: "+ latency_orderer[1] +" ms \n";
                             fs.appendFileSync(rptFile, buff);
                             if ( latency_orderer[0] > 0 ) {
-                                buff = "("+channelName+":"+chaincode_id+"):\tmin: "+ latency_orderer[2] +" ms  max: "+ latency_orderer[3] +" ms  avg: "+ latency_orderer[1]/latency_orderer[0].toFixed(2) +" ms \n";
+                                buff = "("+channelName+":"+chaincode_id+"):\tmin: "+ latency_orderer[2] +" ms  max: "+ latency_orderer[3] +" ms  avg: "+ latency_orderer[1]/(latency_orderer[0]-totalProposalFailure).toFixed(2) +" ms \n";
                                 fs.appendFileSync(rptFile, buff);
                             }
 
@@ -1369,7 +1371,7 @@ function performance_main() {
                             buff = "("+channelName+":"+chaincode_id+"):\ttotal transactions: "+ latency_event[0] +"  total time: "+ latency_event[1] +" ms \n";
                             fs.appendFileSync(rptFile, buff);
                             if ( latency_event[0] > 0 ) {
-                                buff = "("+channelName+":"+chaincode_id+"):\tmin: "+ latency_event[2] +" ms  max: "+ latency_event[3] +" ms  avg: "+ latency_event[1]/latency_event[0].toFixed(2) +" ms \n\n";
+                                buff = "("+channelName+":"+chaincode_id+"):\tmin: "+ latency_event[2] +" ms  max: "+ latency_event[3] +" ms  avg: "+ latency_event[1]/(latency_event[0]-totalProposalFailure).toFixed(2) +" ms \n\n";
                                 fs.appendFileSync(rptFile, buff);
                             }
                         }
