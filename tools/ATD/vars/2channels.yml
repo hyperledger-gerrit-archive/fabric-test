@@ -54,5 +54,13 @@ pte: {
       payLoadMin: 1024,
       payLoadMax: 1024
     }
+  },
+  repo: {
+    # the url defines docker hub project access point
+    # official hub - url: "hyperledger/",
+    # fabric build hub - url: "nexus3.hyperledger.org:10001/hyperledger/",
+    url: "nexus3.hyperledger.org:10001/hyperledger/",
+    username: "docker",
+    password: "docker"
   }
 }
