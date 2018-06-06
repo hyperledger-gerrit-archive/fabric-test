@@ -13,6 +13,7 @@
 #   - fabric - clones fabric repository.
 #   - smoke-tests - runs Smoke Test Suite
 #   - daily-tests - runs Daily Test Suite
+#   - pte-tests   - pulls the images, binaries from Nexus and runs the PTE Performance tests.
 #   - git-latest  -   init git submodules to latest available commit.
 #   - git-init  - init git submodules
 #   - pre-setup - installs node, govendor and behave pre-requisites
@@ -81,6 +82,10 @@ smoke-tests:
 .PHONY: daily-tests
 daily-tests:
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runDailyTestSuite.sh
+
+.PHONY: pte-tests
+pte-tests:
+	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runPteTestSuite.sh
 
 .PHONY: pte-image
 pte-image:
