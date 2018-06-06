@@ -4,19 +4,23 @@
 # -------------------------------------------------------------
 # This makefile defines the following targets
 #
-#   - ca - clones the fabric-ca repository.
+#   - ca       - clones the fabric-ca repository.
 #   - ci-smoke - update submodules, clone fabric & fabric-ca, build docker images
 #                and executes smoke tests.
 #   - ci-daily - update submodules, clone fabric & fabric-ca, build docker images
 #                and executes daily test suite.
+#   - svt-daily     - pulls the images, binaries from Nexus and runs the daily test suite.
+#   - svt-smoke     - pulls the images, binaries from Nexus and runs the smoke tests.
 #   - docker-images - builds fabric & ca docker images.
-#   - fabric - clones fabric repository.
-#   - smoke-tests - runs Smoke Test Suite
-#   - daily-tests - runs Daily Test Suite
-#   - git-latest  -   init git submodules to latest available commit.
-#   - git-init  - init git submodules
-#   - pre-setup - installs node, govendor and behave pre-requisites
-#   - clean  - cleans the docker containers and images
+#   - fabric        - clones fabric repository.
+#   - smoke-tests   - runs Smoke Test Suite.
+#   - daily-tests   - runs Daily Test Suite.
+#   - pull-images   - pull the images and binaries from Nexus.
+#   - svt-daily-pte-tests - pulls the images, binaries from Nexus and runs the PTE Performance tests.
+#   - git-latest    - init git submodules to latest available commit.
+#   - git-init      - init git submodules.
+#   - pre-setup     - installs node, govendor and behave pre-requisites.
+#   - clean         - cleans the docker containers and images.
 #
 # ------------------------------------------------------------------
 
@@ -81,6 +85,20 @@ smoke-tests:
 .PHONY: daily-tests
 daily-tests:
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runDailyTestSuite.sh
+
+.PHONY: pull-images
+pull-images:
+	cd $(HYPERLEDGER_DIR)/fabric-test/feature/scripts && ./PullDockerImages.sh
+
+.PHONY: svt-daily-pte-tests
+svt-daily-pte-tests: pull-images
+	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runPteTestSuite.sh
+
+.PHONY: svt-daily
+svt-daily: pull-images daily-tests
+
+.PHONY: svt-smoke
+svt-smoke: pull-images smoke-tests
 
 .PHONY: pte-image
 pte-image:
