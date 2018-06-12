@@ -183,6 +183,7 @@ var cfgtxFile;
 var allEventhubs = [];
 var org;
 var orgName;
+var channelAction;
 
 var orderer;
 
@@ -695,8 +696,8 @@ function readAllFiles(dir) {
         return certs;
 }
 
-//create channel
-async function createOneChannel(client ,channelOrgName) {
+//create or update channel
+async function createOrUpdateOneChannel(client, channelOrgName, channelAction) {
 
     var config;
     var envelope_bytes;
@@ -716,15 +717,15 @@ async function createOneChannel(client ,channelOrgName) {
     if ( goPath !== '' ) {
         channelTX = path.join(goPath, 'src', channelOpt.channelTX);
     }
-    logger.info('[createOneChannel] channelTX: ', channelTX);
+    logger.info('[createOrUpdateOneChannel] channelTX: ', channelTX);
     envelope_bytes = fs.readFileSync(channelTX);
     config = client.extractChannelConfig(envelope_bytes);
-    logger.info('[createOneChannel] Successfull extracted the config update from the configtx envelope: ', channelTX);
+    logger.info('[createOrUpdateOneChannel] Successfull extracted the config update from the configtx envelope: ', channelTX);
 
     // get client key
     if ( TLS == testUtil.TLSCLIENTAUTH ) {
         await testUtil.tlsEnroll(client, channelOrgName[0], svcFile);
-        logger.info('[createOneChannel] get user private key: org= %s', channelOrgName[0]);
+        logger.info('[createOrUpdateOneChannel] get user private key: org= %s', channelOrgName[0]);
     }
     clientNewOrderer(client, channelOrgName[0]);
 
@@ -744,7 +745,7 @@ async function createOneChannel(client ,channelOrgName) {
                 username=ORGS[org].username;
                 secret=ORGS[org].secret;
                 orgName = ORGS[org].name;
-                logger.info('[createOneChannel] org= %s, org name= %s', org, orgName);
+                logger.info('[createOrUpdateOneChannel] org= %s, org name= %s', org, orgName);
                 client._userContext = null;
                 resolve(testUtil.getSubmitter(username, secret, client, true, Nid, org, svcFile));
             });
@@ -756,7 +757,7 @@ async function createOneChannel(client ,channelOrgName) {
     .then((results) => {
         results.forEach(function(result){
             var signature = client.signChannelConfig(config);
-            logger.info('[createOneChannel] Successfully signed config update for one organization ');
+            logger.info('[createOrUpdateOneChannel] Successfully signed config update for one organization ');
             // collect signature from org admin
             signatures.push(signature);
         });
@@ -766,17 +767,17 @@ async function createOneChannel(client ,channelOrgName) {
         return testUtil.getOrderAdminSubmitter(client, channelOrgName[0], svcFile);
     }).then((admin) => {
         the_user = admin;
-        logger.info('[createOneChannel] Successfully enrolled user \'admin\' for', "orderer");
+        logger.info('[createOrUpdateOneChannel] Successfully enrolled user \'admin\' for', "orderer");
         var signature = client.signChannelConfig(config);
-        logger.info('[createOneChannel] Successfully signed config update: ', "orderer");
+        logger.info('[createOrUpdateOneChannel] Successfully signed config update: ', "orderer");
         // collect signature from org admin
         signatures.push(signature);
 
-        logger.info('[createOneChannel] done signing: %s', channelName);
+        logger.info('[createOrUpdateOneChannel] done signing: %s', channelName);
 
         // build up the create request
         let tx_id = client.newTransactionID();
-	let nonce = tx_id.getNonce();
+        let nonce = tx_id.getNonce();
         var request = {
             config: config,
             signatures : signatures,
@@ -786,23 +787,27 @@ async function createOneChannel(client ,channelOrgName) {
             nonce : nonce
         };
         //logger.info('request: ',request);
-        return client.createChannel(request);
+        if (channelAction == 'CREATE') {
+		return client.createChannel(request);
+        } else if (channelAction == 'UPDATE') {
+                return client.updateChannel(request);
+        }
     }, (err) => {
         logger.error('Failed to enroll user \'admin\'. ' + err);
         evtDisconnect();
         process.exit();
     }).then((result) => {
-        logger.info('[createOneChannel] Successfully created the channel (%s).', channelName);
+        logger.info('[createOrUpdateOneChannel] Successfully created/updated the channel (%s).', channelName);
         evtDisconnect();
         process.exit();
     }, (err) => {
-        logger.error('Failed to create the channel (%s) ', channelName);
-        logger.error('Failed to create the channel:: %j '+ err.stack ? err.stack : err);
+        logger.error('Failed to create/update the channel (%s) ', channelName);
+        logger.error('Failed to create/update the channel:: %j '+ err.stack ? err.stack : err);
         evtDisconnect();
         process.exit();
     })
     .then((nothing) => {
-        logger.info('Successfully waited to make sure new channel was created.');
+        logger.info('Successfully waited to make sure new channel was created/updated.');
         evtDisconnect();
         process.exit();
     }, (err) => {
@@ -913,6 +918,7 @@ function joinOneChannel(channel, client, org) {
 
 }
 
+
 function queryBlockchainInfo(channel, client, org) {
 
     logger.info('[queryBlockchainInfo] channel (%s)', channelName);
@@ -991,7 +997,8 @@ function queryBlockchainInfo(channel, client, org) {
 
 async function performance_main() {
     var channelCreated = 0;
-    // set timeout for create/join channel and install/instantiate chaincode
+    var channelUpdated = 0;
+    // set timeout for create/join/update channel and install/instantiate chaincode
     hfc.setConfigSetting('request-timeout', cfgTimeout);
     // send proposal to endorser
     for (var i=0; i<channelOrgName.length; i++ ) {
@@ -1059,16 +1066,27 @@ async function performance_main() {
             });
             break;
         } else if ( transType == 'CHANNEL' ) {
-            if ( channelOpt.action.toUpperCase() == 'CREATE' ) {
+            if ((channelOpt.action.toUpperCase() == 'CREATE') || (channelOpt.action.toUpperCase() == 'UPDATE')) {
                 // create channel once
-                if(channelCreated == 0) {
-                    createOneChannel(client, channelOrgName);
+                if((channelCreated == 0) && (channelOpt.action.toUpperCase() == 'CREATE')) {
+                    createOrUpdateOneChannel(client, channelOrgName,'CREATE');
                     channelCreated = 1;
+                } else if ((channelCreated == 1) && (channelOpt.action.toUpperCase() == 'UPDATE')) {
+                     createOrUpdateOneChannel(client, channelOrgName,'UPDATE');
                 }
             } else if ( channelOpt.action.toUpperCase() == 'JOIN' ) {
                 var channel = client.newChannel(channelName);
-                logger.info('[performance_main] channel name: ', channelName);
+                logger.info('[performance_main] peer channel join, channel name: ', channelName);
                 joinChannel(channel, client, org);
+            } else if ( channelOpt.action.toUpperCase() == 'UPDATE' ) {
+                var channel = client.newChannel(channelName);
+                logger.info('[performance_main] peer channel update, channel name: ', channelName);
+                if(channelUpdated == 0) {
+                    updateChannel(channel, client, org);
+                    channelUpdated = 1;
+                }
+            } else {
+                logger.info('[performance_main] UNDEFINED channelOpt.action (%s); channel name: ', channelOpt.action, channelName);
             }
         } else if ( transType == 'QUERYBLOCK' ) {
             var channel = client.newChannel(channelName);
@@ -1417,7 +1435,7 @@ function readFile(path) {
 }
 
 function sleep(ms) {
-	return new Promise(resolve => setTimeout(resolve, ms));
+        return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 function evtDisconnect(eventHubs, blockCallbacks) {

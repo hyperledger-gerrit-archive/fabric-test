@@ -331,9 +331,9 @@ echo "        ####################################################### "
 echo " "
 for (( i=1; i<=$nOrg; i++ ))
 do
-    OrgMSP=$ordererDir"/PeerOrg"$i"anchors.tx"
-    echo "$CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $OrgMSP -channelID $ORG_PROFILE"$i" -asOrg PeerOrg$i"
-    $CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $OrgMSP -channelID $ORG_PROFILE"$i" -asOrg PeerOrg$i
+    anchorTx=$ordererDir"/PeerOrg"$i"anchors.tx"
+    echo "$CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $anchorTx -channelID $ORG_PROFILE"$i" -asOrg PeerOrg$i"
+    $CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $anchorTx -channelID $ORG_PROFILE"$i" -asOrg PeerOrg$i
 done
 
 echo " "

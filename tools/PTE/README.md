@@ -301,10 +301,21 @@ Although PTE's primary use case is to drive transactions into a Fabric network, 
 
             "channelOpt": {
                 "name": "testchannel1",
-                "channelTX": "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
                 "action":  "join",
                 "orgName": [
                     "testOrg1"
+                ]
+            },
+
+    * ### Update a channel to set Anchor Peers
+        To update a channel, use channelOpt. Set action to `update`, set name to the channel name, set orgName list to contain an org in the channel which contains a peer that has joined the channel, and set channelUpdateTX to a list of config update transactions. 
+
+            "channelOpt": {
+                "name": "testchannel1",
+                "channelTX": "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/PeerOrg1anchors.tx", 
+                "action":  "update",
+                "orgName": [
+                    "PeerOrg1"
                 ]
             },
 
@@ -855,7 +866,7 @@ where:
 * **channelOpt**: transType channel options
     * **name**: channel name
     * **channelTX**: channel transaction file. If the `gopath` is defined in the service credential json, then the path is relative to `gopath/src`. Otherwise, absolute path is required.
-    * **action**: channel action: create or join
+    * **action**: channel action: create or join or update
     * **orgName**: name of organization for the test
 * **burstOpt**: the frequencies and duration for Burst transaction mode traffic. Currently, two transaction rates are supported. The traffic will issue one transaction every burstFreq0 ms for burstDur0 ms, then one transaction every burstFreq1 ms for burstDur1 ms, then the pattern repeats. These parameters are valid only if the transMode is set to **Burst**.
     * **burstFreq0**: frequency in ms for the first transaction rate
