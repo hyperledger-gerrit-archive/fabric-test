@@ -328,10 +328,18 @@ echo "        ####################################################### "
 echo " "
 for (( i=1; i<=$nOrg; i++ ))
 do
-    OrgMSP=$ordererDir"/PeerOrg"$i"anchors.tx"
-    echo "$CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $OrgMSP -channelID $ORG_PROFILE"$i" -asOrg PeerOrg$i"
-    $CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $OrgMSP -channelID $ORG_PROFILE"$i" -asOrg PeerOrg$i
+    anchorTx=$ordererDir"/PeerOrg"$i"anchors.tx"
+    echo "$CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $anchorTx -channelID $ORG_PROFILE"$i" -asOrg PeerOrg$i"
+    $CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $anchorTx -channelID $ORG_PROFILE"$i" -asOrg PeerOrg$i
 done
+#####Later in pte_main, after creating channels and joining peers, we need to send the updates with some logic like this:
+#  for (( i=1; i<=$nOrg; i++ ))
+#  do
+#    anchorTx=$ordererDir"/PeerOrg"$i"anchors.tx"
+#    peer channel signconfigtx -f $anchorTx
+#    peer channel update -o orderer.example.com:7050 -c $ORG_PROFILE"$i" -f $anchorTx --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA
+#  done
+
 
 echo " "
 echo "        ####################################################### "

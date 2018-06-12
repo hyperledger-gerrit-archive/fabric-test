@@ -85,9 +85,11 @@ If planning to run your Fabric network locally, you'll need docker and a bit mor
 
 ### If running on a Mac
 You need to install a gnu-compatible version of the `awk`, `date` utility. Install Brew (http://brew.sh) and run the following commands:
+Install coreutils will install gdate
 ```
 brew install gawk --with-default-names
-brew install gdate --with-default-names
+brew install coreutils
+
 ```
 
 ## Setup
@@ -298,11 +300,26 @@ Although PTE's primary use case is to drive transactions into a Fabric network, 
 
             "channelOpt": {
                 "name": "testchannel1",
-                "channelTX": "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/testorgschannel1.tx",
                 "action":  "join",
                 "orgName": [
                     "testOrg1"
                 ]
+            },
+
+    * ### Update a channel
+        To update a channel, use channelOpt. Set action to `update`, set name to the channel name, set orgName list to contain an org in the channel which contains a peer that has joined the channel, and set channelUpdateTX to a list of config update transactions. 
+        Here is some help with setting Anchor Peers. Note 1: when sending updates to configure anchor peers, it is recommended to provide an update transaction for every org in the channel to set an anchor peer. Note 2: anchor peers are required for orgs to share private data when using sideDB. Note 3: networkLauncher can run cryptogen tool to generate the anchors.tx artifacts (see example below) which would be sent to the network by PTE similar to "peer channel update" transaction proposals. Note 4: furthermore, when using networkLauncher, the first peer (peer1) in each org will be automatically selected as the anchor peer; if requested, it could be investigated whether a future enhancement could be done to allow the user to specify each anchor peer.
+
+            "channelOpt": {
+                "name": "testchannel1",
+                "action":  "update",
+                "orgName": [
+                    "PeerOrg1"
+                ],
+                "channelUpdateTX": [
+                    "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/PeerOrg1anchors.tx",
+                    "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/PeerOrg2anchors.tx"
+                ],
             },
 
 * ### Chaincode Operations
@@ -728,7 +745,7 @@ where
         "nProcPerOrg": "4",
         "nRequest": "0",
         "runDur": "600",
-        "TLS": "enabled",
+        "TLS": "serverauth",
         "queryBlockOpt": {
             "org":  "org1",
             "peer":  "peer1",
@@ -836,7 +853,10 @@ where:
     * if nRequest is non-zero the nRequest is executed.
     * if nRequest is zero and runDur is non-zero, then runDur is executed.
     * if both nRequest and runDur are zero, then PTE runs forever.
-* **TLS**: TLS setting for the test: Disabled or Enabled.
+* **TLS**: TLS setting for the test
+    * disabled: TLS is disabled
+    * serverauth: server authentication, TLS
+    * clientauth: client authentication, mutual TLS
 * **queryBlock**: query blockchain information options
     * **org**: the org to be queried
     * **peer**: the peer to be queried
@@ -845,7 +865,7 @@ where:
 * **channelOpt**: transType channel options
     * **name**: channel name
     * **channelTX**: channel transaction file. If the `gopath` is defined in the service credential json, then the path is relative to `gopath/src`. Otherwise, absolute path is required.
-    * **action**: channel action: create or join
+    * **action**: channel action: create or join or update
     * **orgName**: name of organization for the test
 * **burstOpt**: the frequencies and duration for Burst transaction mode traffic. Currently, two transaction rates are supported. The traffic will issue one transaction every burstFreq0 ms for burstDur0 ms, then one transaction every burstFreq1 ms for burstDur1 ms, then the pattern repeats. These parameters are valid only if the transMode is set to **Burst**.
     * **burstFreq0**: frequency in ms for the first transaction rate
