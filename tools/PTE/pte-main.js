@@ -987,6 +987,48 @@ function joinOneChannel(channel, client, org) {
 
 }
 
+function updateAnchors(channel, client, org) {
+//  After creating channels and joining peers, we can send anchor peer config updates in each org of each channel. Here we do one.
+//          anchorTx=$ordererDir"/"$org"anchors.tx" , e.g.,
+//          /root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/PeerOrg1anchors.tx
+//
+//      Notes from byfn scripts:
+//      1.  ? Is this needed? Maybe not, because we created the anchorTx with the -asOrg option.
+//          peer channel signconfigtx -f $anchorTx
+//
+//      2.  peer channel update -o orderer.example.com:7050 -c $channel -f $anchorTx
+//          or, with TLS:
+//          peer channel update -o orderer.example.com:7050 -c $channel -f $anchorTx --tls $CORE_PEER_TLS_ENABLED --cafile $ORDERER_CA
+//          or, is it same with Mutual TLS?
+
+    for (let key in ORGS[org]) {
+        if (ORGS[org].hasOwnProperty(key)) {
+            if (key.includes('peer')) {
+                if (TLS == 'ENABLED') {
+                    data = testUtil.getTLSCert(org, key);
+                    if ( data !== null ) {
+                        peerTmp = client.newPeer(
+                            ORGS[org][key].requests,
+                            {
+                                pem: Buffer.from(data).toString(),
+                                'ssl-target-name-override': ORGS[org][key]['server-hostname']
+                            }
+                        );
+                        targets.push(peerTmp);
+                        //channel.addPeer(peerTmp);
+                        //Instead, must call (and write) something like:  channel.configUpdateAnchor(peerTmp);
+                    }
+                } else {
+                    peerTmp = client.newPeer( ORGS[org][key].requests);
+                    targets.push(peerTmp);
+                    //channel.addPeer(peerTmp);
+                    //Instead, must call (and write):  channel.configUpdateAnchor(peerTmp);
+                }
+            }
+        }
+    }
+}
+
 function queryBlockchainInfo(channel, client, org) {
 
     logger.info('[queryBlockchainInfo] channel (%s)', channelName);
@@ -1141,8 +1183,14 @@ function performance_main() {
                 }
             } else if ( channelOpt.action.toUpperCase() == 'JOIN' ) {
                 var channel = client.newChannel(channelName);
-                logger.info('[performance_main] channel name: ', channelName);
+                logger.info('[performance_main] peer channel join, channel name: ', channelName);
                 joinChannel(channel, client, org);
+            } else if ( channelOpt.action.toUpperCase() == 'UPDATEANCHORS' ) {
+                var channel = client.newChannel(channelName);
+                logger.info('[performance_main] peer channel update, configure orgs anchor peers for channel name: ', channelName);
+                updateAnchors(channel, client, org);
+            } else {
+                logger.info('[performance_main] UNKNOWN channelOpt.action, channel name: ', channelOpt.action, channelName);
             }
         } else if ( transType == 'QUERYBLOCK' ) {
             var channel = client.newChannel(channelName);
