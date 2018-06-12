@@ -85,9 +85,11 @@ If planning to run your Fabric network locally, you'll need docker and a bit mor
 
 ### If running on a Mac
 You need to install a gnu-compatible version of the `awk`, `date` utility. Install Brew (http://brew.sh) and run the following commands:
+Install coreutils will install gdate
 ```
 brew install gawk --with-default-names
-brew install gdate --with-default-names
+brew install coreutils
+
 ```
 
 ## Setup
@@ -302,6 +304,19 @@ Although PTE's primary use case is to drive transactions into a Fabric network, 
                 "action":  "join",
                 "orgName": [
                     "testOrg1"
+                ]
+            },
+
+    * ### Update a channel to configure anchor peers
+        To configure anchor peers in the orgs of a channel, use channelOpt. Set the channelOpt action to `updateAnchors`, set channelOpt name to the channel name, set channelOpt orgName to a list of the orgs to be configured with anchor peers (recommended to use complete list of all orgs in the channel), and optionally set channelOpt anchorsTXpath to change the location of the anchor config update transactions (default is same place as channel creation transactions). Note anchor peers are required for orgs to share private data when using sideDB. Note networkLauncher can run cryptogen tool to generate the anchors.tx artifacts which would be sent to the network by PTE as "peer channel update" transaction proposals.
+        For now, you must place the anchors.tx artifacts in the same default location as other channel.tx artifacts, and name the files with the format $orgName"anchors.tx, i.e.: "/root/gopath/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/crypto-config/ordererOrganizations/PeerOrg1anchors.tx". Furthermore, peer1 in each org will be automatically selected as the anchor peer; a future enhancement could be done to allow the user to specify each anchor peer using listOpt.
+
+            "channelOpt": {
+                "name": "testchannel1",
+                "action":  "updateAnchors",
+                "orgName": [
+                    "PeerOrg1",
+                    "PeerOrg2"
                 ]
             },
 
@@ -728,7 +743,7 @@ where
         "nProcPerOrg": "4",
         "nRequest": "0",
         "runDur": "600",
-        "TLS": "enabled",
+        "TLS": "serverauth",
         "queryBlockOpt": {
             "org":  "org1",
             "peer":  "peer1",
@@ -836,7 +851,10 @@ where:
     * if nRequest is non-zero the nRequest is executed.
     * if nRequest is zero and runDur is non-zero, then runDur is executed.
     * if both nRequest and runDur are zero, then PTE runs forever.
-* **TLS**: TLS setting for the test: Disabled or Enabled.
+* **TLS**: TLS setting for the test
+    * disabled: TLS is disabled
+    * serverauth: server authentication, TLS
+    * clientauth: client authentication, mutual TLS
 * **queryBlock**: query blockchain information options
     * **org**: the org to be queried
     * **peer**: the peer to be queried
@@ -845,7 +863,7 @@ where:
 * **channelOpt**: transType channel options
     * **name**: channel name
     * **channelTX**: channel transaction file. If the `gopath` is defined in the service credential json, then the path is relative to `gopath/src`. Otherwise, absolute path is required.
-    * **action**: channel action: create or join
+    * **action**: channel action: create or join or updateAnchors
     * **orgName**: name of organization for the test
 * **burstOpt**: the frequencies and duration for Burst transaction mode traffic. Currently, two transaction rates are supported. The traffic will issue one transaction every burstFreq0 ms for burstDur0 ms, then one transaction every burstFreq1 ms for burstDur1 ms, then the pattern repeats. These parameters are valid only if the transMode is set to **Burst**.
     * **burstFreq0**: frequency in ms for the first transaction rate
