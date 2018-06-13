@@ -657,6 +657,7 @@ function assignThreadAllAnchorPeers(channel, client, org) {
     var peerTmp;
     var eh;
     var data;
+    var found = 0; // Indicates if we found first peer in the org, as identified in the SCFile.
     for (let key1 in ORGS) {
         if (ORGS.hasOwnProperty(key1)) {
             for (let key in ORGS[key1]) {
@@ -675,6 +676,7 @@ function assignThreadAllAnchorPeers(channel, client, org) {
                         channel.addPeer(peerTmp);
                         if ( peerFOList == 'TARGETPEERS' ) {
                             peerList.push(peerTmp);
+                            found = 1;
                         }
 
                         if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
@@ -693,6 +695,7 @@ function assignThreadAllAnchorPeers(channel, client, org) {
                     channel.addPeer(peerTmp);
                     if ( peerFOList == 'TARGETPEERS' ) {
                         peerList.push(peerTmp);
+                        found = 1;
                     }
                     if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
                         eh = channel.newChannelEventHub(peerTmp);
@@ -703,6 +706,12 @@ function assignThreadAllAnchorPeers(channel, client, org) {
                             eh.connect(true);
                         }
                     }
+                }
+                if ( found == 1 ) {
+                    // Found the first peer in this org. Break out of searching for more peers in this org.
+                    // And Now reset it, so we can find the first peer in another org.
+                    found = 0;
+                    break;
                 }
             }
             }
@@ -1005,12 +1014,15 @@ function channelAddOrderer(channel, client, org) {
 }
 
 
+// User set "OrgAnchor" to send traffic to only the first peer in the org.
+// PTE assumes the first peer is "anchor peer", hence the function name.
 // assign thread the anchor peer (peer1) from the org
 function assignThreadOrgAnchorPeer(channel, client, org) {
     logger.info('[Nid:chan:org:id=%d:%s:%s:%d assignThreadOrgAnchorPeer] ', Nid, channelName, org, pid );
     var peerTmp;
     var eh;
     var data;
+    var found = 0; // found first peer, as identified in the SCFile.
     for (let key in ORGS) {
         if ( key == org ) {
         for ( let subkey in ORGS[key] ) {
@@ -1029,6 +1041,7 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
                         channel.addPeer(peerTmp);
                         if ( peerFOList == 'TARGETPEERS' ) {
                             peerList.push(peerTmp);
+                            found = 1;
                         }
 
                         if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
@@ -1048,6 +1061,7 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
                     channel.addPeer(peerTmp);
                     if ( peerFOList == 'TARGETPEERS' ) {
                         peerList.push(peerTmp);
+                        found = 1;
                     }
                     if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
                         eh = channel.newChannelEventHub(peerTmp);
@@ -1058,6 +1072,9 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
                             eh.connect(true);
                         }
                     }
+                }
+                if ( found == 1 ) {
+                    break;
                 }
             }
         }
