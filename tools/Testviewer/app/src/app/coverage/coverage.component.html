@@ -1,0 +1,121 @@
+<div>
+	<a class="navlink" [routerLink]="['']">Cover</a>
+	<a class="navlink" [routerLink]="['/data']">Data</a>
+</div>
+<div class="coverage-container">
+	<h1>Coverage</h1>
+	<div class="coverage">
+		<h3>MASTER BRANCH</h3>
+		<div>
+			<div class="dateselect">
+				<h4>Chart</h4>
+				<mat-form-field>
+					<input matInput [matDatepicker]="picker1_master" placeholder="Start date" #startdateinput_master>
+					<mat-datepicker-toggle matSuffix [for]="picker1_master"></mat-datepicker-toggle>
+					<mat-datepicker #picker1_master></mat-datepicker>
+				</mat-form-field>
+				<mat-form-field>
+					<input matInput [matDatepicker]="picker2_master" placeholder="End date" #enddateinput_master>
+					<mat-datepicker-toggle matSuffix [for]="picker2_master"></mat-datepicker-toggle>
+					<mat-datepicker #picker2_master>_master</mat-datepicker>
+			  	</mat-form-field>
+			  	<button>Load</button>
+			</div>
+			<fusioncharts
+			    [id]="id_master"
+			    [width]="width"
+			    [height]="height"
+			    [type]="type"
+			    [dataFormat]="dataFormat"
+			    [dataSource]="dataSource_master"
+			></fusioncharts>
+		</div>
+		<div class="dateselect">
+		<h4>Single Day Data</h4>
+		  	<mat-form-field>
+				<input matInput [matDatepicker]="picker_master" placeholder="Choose a date" #dateinput_master>
+				<mat-datepicker-toggle matSuffix [for]="picker_master"></mat-datepicker-toggle>
+				<mat-datepicker #picker_master></mat-datepicker>
+		  	</mat-form-field>
+		  	<button (click)="getData('master',dateinput_master.value); updateChosenDate(dateinput_master.value, 'master')">Load</button>
+		  	<h3 id="buildnum">Build {{buildnum['master']}} ({{chosendate['master']}})</h3>
+		</div>
+		<table class="coveragetable">
+			<tr>
+				<th class="cov-col">Project</th>
+				<th class="cov-col">Packages</th>
+				<th class="cov-col">Files</th>
+				<th class="cov-col">Classes</th>
+				<th class="cov-col">Methods</th>
+				<th class="cov-col">Lines</th>
+				<th class="cov-col">Conditionals</th>
+			</tr>
+			<tr>
+				<td class="cov-col">{{prjcts.master.name}}
+				<td class="cov-col">{{prjcts.master.packages}}</td>
+				<td class="cov-col">{{prjcts.master.files}}</td>
+				<td class="cov-col">{{prjcts.master.classes}}</td>
+				<td class="cov-col">{{prjcts.master.methods}}</td>
+				<td class="cov-col">{{prjcts.master.lines}}</td>
+				<td class="cov-col">{{prjcts.master.conditionals}}</td>
+			</tr>
+		</table>
+	</div>
+	<div class="coverage">
+		<h3>1.1 BRANCH</h3>
+		<div>
+			<div class="dateselect">
+				<h4>Chart</h4>
+				<mat-form-field>
+					<input matInput [matDatepicker]="picker1_1dot1" placeholder="Start date" #startdateinput_1dot1>
+					<mat-datepicker-toggle matSuffix [for]="picker1_1dot1"></mat-datepicker-toggle>
+					<mat-datepicker #picker1_1dot1></mat-datepicker>
+				</mat-form-field>
+				<mat-form-field>
+					<input matInput [matDatepicker]="picker2_1dot1" placeholder="End date" #enddateinput_1dot1>
+					<mat-datepicker-toggle matSuffix [for]="picker2_1dot1"></mat-datepicker-toggle>
+					<mat-datepicker #picker2_1dot1></mat-datepicker>
+			  	</mat-form-field>
+			  	<button>Load</button>
+			</div>
+			<fusioncharts
+			    [id]="id_1dot1"
+			    [width]="width"
+			    [height]="height"
+			    [type]="type"
+			    [dataFormat]="dataFormat"
+			    [dataSource]="dataSource_1dot1"
+			></fusioncharts>
+		</div>
+		<div class="dateselect">
+		<h4>Single Day Data</h4>
+		  	<mat-form-field>
+				<input matInput [matDatepicker]="picker_1dot1" placeholder="Choose a date" #dateinput_1dot1>
+				<mat-datepicker-toggle matSuffix [for]="picker_1dot1"></mat-datepicker-toggle>
+				<mat-datepicker #picker_1dot1></mat-datepicker>
+		  	</mat-form-field>
+		  	<button (click)="getData('1dot1',dateinput_1dot1.value); updateChosenDate(dateinput_1dot1.value, '1dot1')">Load</button>
+		  	<h3 id="buildnum">Build {{buildnum['1dot1']}} ({{chosendate['1dot1']}})</h3>
+		</div>
+		<table class="coveragetable">
+			<tr>
+				<th class="cov-col">Project</th>
+				<th class="cov-col">Packages</th>
+				<th class="cov-col">Files</th>
+				<th class="cov-col">Classes</th>
+				<th class="cov-col">Methods</th>
+				<th class="cov-col">Lines</th>
+				<th class="cov-col">Conditionals</th>
+			</tr>
+			<tr>
+				<td class="cov-col">{{prjcts['1dot1'].name}}
+				<td class="cov-col">{{prjcts['1dot1'].packages}}</td>
+				<td class="cov-col">{{prjcts['1dot1'].files}}</td>
+				<td class="cov-col">{{prjcts['1dot1'].classes}}</td>
+				<td class="cov-col">{{prjcts['1dot1'].methods}}</td>
+				<td class="cov-col">{{prjcts['1dot1'].lines}}</td>
+				<td class="cov-col">{{prjcts['1dot1'].conditionals}}</td>
+			</tr>
+		</table>
+	</div>
+</div>
