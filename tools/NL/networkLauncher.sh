@@ -36,8 +36,7 @@ function printHelp {
    echo "    -B: batch size, default=10"
    echo "    -F: local MSP base directory, default=$GOPATH/src/github.com/hyperledger/fabric-test/fabric/common/tools/cryptogen/"
    echo "    -G: src MSP base directory, default=/opt/hyperledger/fabric/msp/crypto-config"
-   echo "    -m: mutual TLS, [enabled|disabled], default=disabled"
-   echo "    -S: TLS enablement [enabled|disabled], default=disabled"
+   echo "    -S: TLS enablement [disabled|serverauth|clientauth], default=disabled"
    echo "    -C: company name, default=example.com "
    echo " "
    echo " example: "
@@ -75,7 +74,7 @@ ordererLogLevel="ERROR"
 batchTimeOut="2s"
 batchSize=10
 
-while getopts ":a:z:x:d:f:h:k:e:n:o:p:r:t:s:w:l:q:c:B:F:G:S:m:C:" opt; do
+while getopts ":a:z:x:d:f:h:k:e:n:o:p:r:t:s:w:l:q:c:B:F:G:S:C:" opt; do
   case $opt in
     # peer environment options
     a)
@@ -188,11 +187,6 @@ while getopts ":a:z:x:d:f:h:k:e:n:o:p:r:t:s:w:l:q:c:B:F:G:S:m:C:" opt; do
       echo "TLSEnabled: $TLSEnabled"
       ;;
 
-    m)
-      MutualTLSEnabled=`echo $OPTARG | tr [A-Z] [a-z]`
-      echo "MutualTLSEnabled: $MutualTLSEnabled"
-      ;;
-
     C)
       comName=$OPTARG
       echo "comName: $comName"
@@ -222,6 +216,12 @@ elif [ $networkAction != "up" ]; then
     exit;
 fi
 
+if [ $TLSEnabled == "clientauth" ]; then
+    TLSEnabled="enabled"
+    MutualTLSEnabled="enabled"
+fi
+
+echo "TLSEnabled $TLSEnabled, MutualTLSEnabled $MutualTLSEnabled"
 #if [ $nCA -eq 0 ]; then
 #   nCA=$nOrg
 #fi
