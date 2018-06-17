@@ -16,6 +16,7 @@
 
 var fs = require('fs-extra');
 var hfc = require('fabric-client');
+var FabricCAServices = require('fabric-ca-client');
 var jsrsa = require('jsrsasign');
 var os = require('os');
 var path = require('path');
@@ -363,3 +364,41 @@ function getTLSCert(key, subkey) {
     return data;
 }
 module.exports.getTLSCert = getTLSCert;
+
+module.exports.tlsEnroll = async function(client, orgName, svcFile) {
+    logger.info('[tlsEnroll] CA tls enroll: %s, svcFile: %s', orgName, svcFile);
+    hfc.addConfigFile(svcFile);
+    return new Promise(function (resolve, reject) {
+        FabricCAServices.addConfigFile(svcFile);
+        let orgs = FabricCAServices.getConfigSetting('test-network');
+        if (!orgs[orgName]) {
+                throw new Error('Invalid org name: ' + orgName);
+        }
+        let fabricCAEndpoint = orgs[orgName].ca.url;
+        let tlsOptions = {
+            trustedRoots: [],
+            verify: false
+        };
+        let caService = new FabricCAServices(fabricCAEndpoint, tlsOptions, orgs[orgName].ca.name);
+        logger.info('[tlsEnroll] CA tls enroll ca name: %j', orgs[orgName].ca.name);
+        let req = {
+            enrollmentID: 'admin',
+            enrollmentSecret: 'adminpw',
+            profile: 'tls'
+        };
+        caService.enroll(req).then(
+            function(enrollment) {
+                const key = enrollment.key.toBytes();
+                const cert = enrollment.certificate;
+                client.setTlsClientCertAndKey(cert, key);
+                logger.info('[tlsEnroll] CA tls enroll succeeded');
+
+                return resolve(enrollment);
+            },
+            function(err) {
+                logger.info('[tlsEnroll] CA tls enroll failed: %j', err);
+                return reject(err);
+            }
+        );
+    });
+}

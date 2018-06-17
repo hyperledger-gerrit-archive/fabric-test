@@ -112,9 +112,20 @@ if ( typeof(uiContent.ccDfnPtr) === 'undefined' ) {
 }
 
 var TLS=txCfgPtr.TLS.toUpperCase();
+var TLSDISABLED = 0;
+var TLSSERVERAUTH = 1;
+var TLSCLIENTAUTH = 2;
+var TLSin=txCfgPtr.TLS.toUpperCase();
+var TLS = TLSDISABLED;     // default
+if ( TLSin == 'SERVERAUTH' ) {
+    TLS = TLSSERVERAUTH;
+} else if ( TLSin == 'CLIENTAUTH' ) {
+   TLS = TLSCLIENTAUTH;
+}
+
 var targetPeers=txCfgPtr.targetPeers.toUpperCase();
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] input parameters: uiFile=%s, tStart=%d', Nid, channelName, org, pid, uiFile, tStart);
-logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] TLS: %s', Nid, channelName, org, pid, TLS);
+logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] TLS: %s', Nid, channelName, org, pid, TLSin);
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] targetPeers: %s', Nid, channelName, org, pid, targetPeers.toUpperCase());
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] channelOrgName.length: %d, channelOrgName: %s', Nid, channelName, org, pid, channelOrgName.length, channelOrgName);
 
@@ -214,13 +225,13 @@ logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] runForever: %d', Nid,
 var timeoutOpt;
 var reqTimeout=45000; // default 45 sec
 if ((typeof( txCfgPtr.timeoutOpt ) !== 'undefined')) {
-    timeoutOpt = parseInt(txCfgPtr.timeoutOpt);
+    timeoutOpt = txCfgPtr.timeoutOpt;
     logger.info('main - timeoutOpt: %j', timeoutOpt);
     if ((typeof( timeoutOpt.request ) !== 'undefined')) {
         reqTimeout = parseInt(timeoutOpt.request);
     }
 }
-logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] reqTimeout: ', Nid, channel.getName(), org, pid, reqTimeout);
+logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] reqTimeout: %d', Nid, channel.getName(), org, pid, reqTimeout);
 
 // init latencies matrix: tx num/avg/min/max
 var latency_peer = [0, 0, 99999999, 0];
@@ -547,7 +558,7 @@ function assignPeerListFromList(channel, client, org) {
             if (ORGS[key].hasOwnProperty(listOpt[key][i])) {
                 peername = listOpt[key][i];
                 if (peername.includes('peer')) {
-                    if (TLS == 'ENABLED') {
+                    if (TLS > TLSDISABLED) {
                         data = testUtil.getTLSCert(key, peername);
                         if ( data !== null ) {
                             peerTmp = client.newPeer(
@@ -580,7 +591,7 @@ function assignPeerList(channel, client, org) {
         if (ORGS.hasOwnProperty(key1)) {
             for (let key in ORGS[key1]) {
                 if (key.includes('peer')) {
-                    if (TLS == 'ENABLED') {
+                    if (TLS > TLSDISABLED) {
                         data = testUtil.getTLSCert(key1, key);
                         if ( data !== null ) {
                             peerTmp = client.newPeer(
@@ -614,7 +625,7 @@ function assignThreadAllPeers(channel, client, org) {
         if (ORGS.hasOwnProperty(key1)) {
             for (let key in ORGS[key1]) {
             if (key.includes('peer')) {
-                if (TLS == 'ENABLED') {
+                if (TLS > TLSDISABLED) {
                     data = testUtil.getTLSCert(key1, key);
                     if ( data !== null ) {
                         peerTmp = client.newPeer(
@@ -677,7 +688,7 @@ function assignThreadAllAnchorPeers(channel, client, org) {
         if (ORGS.hasOwnProperty(key1)) {
             for (let key in ORGS[key1]) {
             if (key.includes('peer')) {
-                if (TLS == 'ENABLED') {
+                if (TLS > TLSDISABLED) {
                     data = testUtil.getTLSCert(key1, key);
                     if ( data !== null ) {
                         peerTmp = client.newPeer(
@@ -691,7 +702,6 @@ function assignThreadAllAnchorPeers(channel, client, org) {
                         channel.addPeer(peerTmp);
                         if ( peerFOList == 'TARGETPEERS' ) {
                             peerList.push(peerTmp);
-                            found = 1;
                         }
 
                         if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
@@ -703,6 +713,7 @@ function assignThreadAllAnchorPeers(channel, client, org) {
                                 eh.connect(true);
                             }
                         }
+                        found = 1;
                     }
                 } else {
                     peerTmp = client.newPeer( ORGS[key1][key].requests);
@@ -710,7 +721,6 @@ function assignThreadAllAnchorPeers(channel, client, org) {
                     channel.addPeer(peerTmp);
                     if ( peerFOList == 'TARGETPEERS' ) {
                         peerList.push(peerTmp);
-                        found = 1;
                     }
                     if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
                         eh = channel.newChannelEventHub(peerTmp);
@@ -721,6 +731,7 @@ function assignThreadAllAnchorPeers(channel, client, org) {
                             eh.connect(true);
                         }
                     }
+                    found = 1;
                 }
                 if ( found == 1 ) {
                     // Found the first peer in this org. Break out of searching for more peers in this org.
@@ -744,7 +755,7 @@ function assignThreadOrgPeer(channel, client, org) {
     for (let key in ORGS[org]) {
         if (ORGS[org].hasOwnProperty(key)) {
             if (key.includes('peer')) {
-                if (TLS == 'ENABLED') {
+                if (TLS > TLSDISABLED) {
                     data = testUtil.getTLSCert(org, key);
                     if ( data !== null ) {
                         peerTmp = client.newPeer(
@@ -808,7 +819,7 @@ function assignThreadPeerList(channel, client, org) {
             if (ORGS[key].hasOwnProperty(listOpt[key][i])) {
                 peername = listOpt[key][i];
                 if (peername.includes('peer')) {
-                    if (TLS == 'ENABLED') {
+                    if (TLS > TLSDISABLED) {
                         data = testUtil.getTLSCert(key, peername);
                         if ( data !== null ) {
                             peerTmp = client.newPeer(
@@ -865,7 +876,7 @@ function channelAddPeer(channel, client, org) {
     for (let key in ORGS[org]) {
         if (ORGS[org].hasOwnProperty(key)) {
             if (key.includes('peer')) {
-                if (TLS == 'ENABLED') {
+                if (TLS > TLSDISABLED) {
                     data = testUtil.getTLSCert(org, key);
                     if ( data !== null ) {
                         peerTmp = client.newPeer(
@@ -918,7 +929,7 @@ function channelAddPeerEvent(channel, client, org) {
         logger.info('key: ', key);
         if (ORGS[org].hasOwnProperty(key)) {
             if (key.includes('peer')) {
-                if (TLS == 'ENABLED') {
+                if (TLS > TLSDISABLED) {
                     data = testUtil.getTLSCert(org, key);
                     if ( data !== null ) {
                         peerTmp = client.newPeer(
@@ -979,7 +990,7 @@ function assignOrdererList(channel, client) {
     var ordererTmp;
     for (let key in ORGS['orderer']) {
         if (key.includes('orderer')) {
-            if (TLS == 'ENABLED') {
+            if (TLS > TLSDISABLED) {
                 data = testUtil.getTLSCert('orderer', key);
                 if ( data !== null ) {
                     let caroots = Buffer.from(data).toString();
@@ -1006,7 +1017,7 @@ function channelAddOrderer(channel, client, org) {
     var ordererID = ORGS[org].ordererID;
     var data;
     logger.info('[Nid:chan:org:id:ordererID=%d:%s:%s:%d:%s channelAddOrderer] ', Nid, channelName, org, pid, ordererID );
-    if (TLS == 'ENABLED') {
+    if (TLS > TLSDISABLED) {
         data = testUtil.getTLSCert('orderer', ordererID);
         if ( data !== null ) {
             let caroots = Buffer.from(data).toString();
@@ -1029,8 +1040,6 @@ function channelAddOrderer(channel, client, org) {
 }
 
 
-// User set "OrgAnchor" to send traffic to only the first peer in the org.
-// PTE assumes the first peer is "anchor peer", hence the function name.
 // assign thread the anchor peer (peer1) from the org
 function assignThreadOrgAnchorPeer(channel, client, org) {
     logger.info('[Nid:chan:org:id=%d:%s:%s:%d assignThreadOrgAnchorPeer] ', Nid, channelName, org, pid );
@@ -1042,7 +1051,7 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
         if ( key == org ) {
         for ( let subkey in ORGS[key] ) {
             if (subkey.includes('peer')) {
-                if (TLS == 'ENABLED') {
+                if (TLS > TLSDISABLED) {
                     data = testUtil.getTLSCert(key, subkey);
                     if ( data !== null ) {
                         peerTmp = client.newPeer(
@@ -1056,7 +1065,6 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
                         channel.addPeer(peerTmp);
                         if ( peerFOList == 'TARGETPEERS' ) {
                             peerList.push(peerTmp);
-                            found = 1;
                         }
 
                         if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
@@ -1068,6 +1076,7 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
                                 eh.connect(true);
                             }
                         }
+                        found = 1;
                     }
                 } else {
                     logger.info('[Nid:chan:org:id=%d:%s:%s:%d assignThreadOrgAnchorPeer] key: %s, subkey: %s', Nid, channelName, org, pid, key, ORGS[org][subkey].requests);
@@ -1076,7 +1085,6 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
                     channel.addPeer(peerTmp);
                     if ( peerFOList == 'TARGETPEERS' ) {
                         peerList.push(peerTmp);
-                        found = 1;
                     }
                     if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
                         eh = channel.newChannelEventHub(peerTmp);
@@ -1087,6 +1095,7 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
                             eh.connect(true);
                         }
                     }
+                    found = 1;
                 }
                 if ( found == 1 ) {
                     break;
@@ -1103,7 +1112,7 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
  */
     execTransMode();
 
-function execTransMode() {
+async function execTransMode() {
 
     // init vars
     inv_m = 0;
@@ -1113,6 +1122,11 @@ function execTransMode() {
     var secret = ORGS[org].secret;
     logger.debug('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] user= %s, secret=%s', Nid, channelName, org, pid, username, secret);
 
+    //var tlsInfo = null;
+    if ( TLS == TLSCLIENTAUTH ) {
+        await testUtil.tlsEnroll(client, org, svcFile);
+        logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] got user private key: org=%s', Nid, channelName, org, pid, org);
+    }
 
     var cryptoSuite = hfc.newCryptoSuite();
 //    var useStore = false;
@@ -1319,7 +1333,6 @@ function eventRegisterFilteredBlock() {
 
                 // this block listener handles the filtered block
                 if ( (typeof(filtered_block.number) != 'undefined') && (filtered_block.number > 0) ) {
-                    //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] Successfully received the filtered block event for block_num: %d, txid number: %d', Nid, channelName, org, pid, filtered_block.number, filtered_block.filtered_transactions.length);
                     if (typeof(filtered_block.filtered_transactions) != 'undefined') {
                       for (i=0; i<filtered_block.filtered_transactions.length; i++) {
                         var txid = filtered_block.filtered_transactions[i].txid;
