@@ -1484,6 +1484,12 @@ function eventRegister(tx) {
                             latency_output();
                         }
                     }
+                    if (transMode == 'LATENCY') {
+                        isExecDone('Move');
+                        if ( IDone != 1 ) {
+                            invoke_move_latency();
+                        }
+                    }
                     }
                 }).catch((err) => {
                     clearTimeout(handle);
@@ -1513,6 +1519,7 @@ function invoke_move_latency() {
 
             getTxRequest(results);
             txidList[tx_id.getTransactionID().toString()] = new Date().getTime();
+            eventRegister(request_invoke.txId);
             return channel.sendTransaction(txRequest)
             .then((results) => {
                 // do nothing here
@@ -1539,8 +1546,6 @@ function execModeLatency() {
             if ( ccType == 'ccchecker' ) {
                 freq = 0;
             }
-
-            eventRegisterFilteredBlock();
             invoke_move_latency();
         } else if ( invokeType == 'QUERY' ) {
             invoke_query_simple(0);
