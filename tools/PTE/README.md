@@ -832,6 +832,7 @@ where:
     * **OrgPeers**: send to all peers in the organization being executed in the current process
     * **AllPeers**: send to all peers in all organizations
     * **List**: only send to the peers given in listOpt, see listOpt below for details
+    * **Disovery**: use service discovery to determine the target peers
 * **nProcPerOrg**: number of processes for the test
 * **nRequest**: number of transactions to be executed for each process
 * **runDur**: run duration in seconds to be executed  for each process.
@@ -870,7 +871,8 @@ where:
                  "org3": ["peer1"],
                  "org6": ["peer3"]
              }
-
+* **discoveryOpt**: service discovery option. The option is valid only when targetPeer is set to `Discovery`.
+    * **localHost**: set to `true` when fabric is running in containers and executing PTE from outside container, else set to `false`.
 * **eventOpt**: event options
     * **type**: event service type, default: FilteredBlock
         * **FilteredBlock**: efficient option, delivers filtered events per channel for each block or transaction
