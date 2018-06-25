@@ -41,6 +41,7 @@ export class CoverComponent implements OnInit {
 
   OTEdataSource
   LTEdataSource
+  diameter
 
   loadPTE(startdate, enddate) {
     // Loads PTE chart using the PTEchart service
@@ -51,6 +52,10 @@ export class CoverComponent implements OnInit {
       this.PTEdataSource.invoke.line = invokeline
       this.PTEdataSource.query.line = queryline
     })
+    .catch(err => {
+      this.diameter = 0
+      throw err
+    })
   }
 
   loadOTE(startdate, enddate) {
@@ -60,6 +65,10 @@ export class CoverComponent implements OnInit {
   		line.chart['showValues'] = 0
   		this.OTEdataSource = line
   	})
+    .catch(err => {
+      this.diameter = 0
+      throw err
+    })
   }
 
   loadLTE(startdate, enddate) {
@@ -68,10 +77,16 @@ export class CoverComponent implements OnInit {
   	.then(([line, diffline]) => {
   		line.chart['showValues'] = 0
   		this.LTEdataSource = line
+      this.diameter = 0
   	})
+    .catch(err => {
+      this.diameter = 0
+      throw err
+    })
   }
 
   loadCharts(startdate, enddate) {
+    this.diameter = 50
   	this.loadPTE(startdate, enddate)
   	this.loadOTE(startdate, enddate)
   	this.loadLTE(startdate, enddate)
