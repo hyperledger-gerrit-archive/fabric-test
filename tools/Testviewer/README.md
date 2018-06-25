@@ -46,6 +46,8 @@ ng serve
 
 ### Ports
 
+Set `LOCAL = true` in `Testviewer/config.ts`
+
 By default, the application will run on localhost:4200, and the server will run on localhost:3000.
 
 #### Application port
@@ -54,10 +56,11 @@ To change the application port, instead of running `ng serve`, run `ng serve --p
 #### Server port
 To change the server port, first open `Testviewer/server/index.js` and change the port constant to your desired port number.
 
-Then, open `Testviewer/app/src/app/serveraction.ts` and change the port constant in that file as well.
+Then, open `Testviewer/config.ts` and change the port constant in that file as well.
 
 
-## Running Testviewer On a Docker Container
+
+## Running Testviewer On with Docker
 
 ### Prerequisites
 
@@ -72,5 +75,18 @@ Then, run `docker-compose up` to start up the app and the server.
 
 ### Ports
 
+If you are using Docker locally, make sure `LOCAL = true` in `Testviewer/config.ts`.
+
 By default, the application will run on localhost:4200, and the server will run on localhost:3000.
 Port numbers can be edited on `docker-compose.yaml`.
+
+
+## Running Testviewer On a Kubernetes Cluster
+
+Make sure your IBM Cloud CLI and Kubernetes CLI are set up. `k8fabricreport.yaml` is included in the Testviewer directory.
+
+### Deployment
+
+Set `LOCAL = False` in `Testviewer/config.ts` and change K8_IP and K8_PORT as necessary.
+
+Run `kubectl create -f Testviewer/k8fabricreport.yaml`
