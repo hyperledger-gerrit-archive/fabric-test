@@ -1,0 +1,27 @@
+apiVersion: apps/v1beta1 # don't use v1 ?
+kind: Deployment
+metadata:
+  name: fabricreport
+spec:
+  selector:
+    matchLabels:
+      app: fabricreport
+  replicas: 1 # tells deployment to run 1 pods matching the template
+  template: # create pods using pod definition in this template
+    metadata:
+      labels:
+        app: fabricreport
+    spec:
+      containers:
+      - name: server
+        image: mk55/fabricreport:latest
+        workingDir: /code/server
+        command: ["node", "index.js"]
+        ports:
+          - containerPort: 3000
+      - name: app
+        image: mk55/fabricreport:latest
+        workingDir: /code/app
+        command: ["./node_modules/.bin/ng", "serve", "--host", "0.0.0.0"]
+        ports:
+          - containerPort: 4200
