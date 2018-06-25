@@ -35,7 +35,7 @@ npm install
 
 ### To run the application and the server
 
-Again from the Testviewer directory, first start up the server then the application. 
+Again from the Testviewer directory, first start up the server then the application.
 
 ```
 node ./server/index.js
@@ -46,6 +46,8 @@ ng serve
 
 ### Ports
 
+Set `LOCAL = true` in `Testviewer/config.ts`
+
 By default, the application will run on localhost:4200, and the server will run on localhost:3000.
 
 #### Application port
@@ -54,10 +56,11 @@ To change the application port, instead of running `ng serve`, run `ng serve --p
 #### Server port
 To change the server port, first open `Testviewer/server/index.js` and change the port constant to your desired port number.
 
-Then, open `Testviewer/app/src/app/serveraction.ts` and change the port constant in that file as well.
+Then, open `Testviewer/config.ts` and change the port constant in that file as well.
 
 
-## Running Testviewer On a Docker Container
+
+## Running Testviewer On with Docker
 
 ### Prerequisites
 
@@ -72,5 +75,29 @@ Then, run `docker-compose up` to start up the app and the server.
 
 ### Ports
 
+If you are using Docker locally, make sure `LOCAL = true` in `Testviewer/config.ts`.
+
 By default, the application will run on localhost:4200, and the server will run on localhost:3000.
 Port numbers can be edited on `docker-compose.yaml`.
+
+
+## Running Testviewer On a Kubernetes Cluster
+
+Make sure your IBM Cloud CLI and Kubernetes CLI are set up. `k8fabricreport.yaml` is included in the Testviewer directory.
+
+### Deployment
+
+The app and server are hosted remotely when they are deployed with the IBM Container Service using Kubernetes. In this case, the external IP address for this cluster needs to be specified so that when a user's browser opens the application, the application knows what IP to use to reach the server.
+
+To do this, set `LOCAL = False` in `Testviewer/config.ts` and change REMOTE_IP and REMOTE_PORT as necessary.
+
+A service is necessary to expose external IPs to the public. Specifications for this service is available in `k8reportservice.yaml`. NodePorts are the ports for public access, and by default they are 30000 for server and 31000 for the app. Port numbers can be edited in the yaml file.
+
+Specifications for the deployment is available in `k8fabricreport.yaml`. Container port numbers can be specified here. By default they are 3000 for server and 4200 for the app. If you choose to change these container port numbers, make sure they are consistent with `k8reportservice.yaml` port numbers.
+
+From the `Testviewer` directory, run the following commands to launch the necessary service and deployment.
+
+```
+kubectl create -f k8reportservice.yaml
+kubectl create -f k8fabricreport.yaml
+```
