@@ -1303,9 +1303,8 @@ function eventRegisterFilteredBlock() {
                             }
                         }
                       }
-                    }
-                    else {
-                            logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] pte-exec: Failure - received filtered_block.number:%d but filtered_tx is undefined', Nid, channelName, org, pid, filtered_block.number);
+                    } else {
+                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] pte-exec: Failure - received filtered_block.number:%d but filtered_tx is undefined', Nid, channelName, org, pid, filtered_block.number);
                     }
 
                     if ( inv_m == evtRcvB  ) {
@@ -1329,7 +1328,7 @@ function eventRegisterFilteredBlock() {
                     }
                     resolve();
                 } else {
-                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] pte-exec: Failure - received block with undefined filtered_block.number',Nid, channelName, org, pid);
+                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] pte-exec: Failure - received block with undefined filtered_block.number: %j',Nid, channelName, org, pid, filtered_block);
                 }
             },
             (err) => {
@@ -1358,6 +1357,12 @@ function eventRegisterBlock() {
                         var tend = new Date().getTime();
                         latency_update(evtRcvB, tend-txidList[txid], latency_event);
                         delete txidList[txid];
+                        if (transMode == 'LATENCY') {
+                            isExecDone('Move');
+                            if ( IDone != 1 ) {
+                                invoke_move_latency();
+                            }
+                        }
                     }
                 }
 
@@ -1503,7 +1508,11 @@ function execModeLatency() {
                 freq = 0;
             }
 
-            eventRegisterFilteredBlock();
+            if (evtType == 'FILTEREDBLOCK') {
+                eventRegisterFilteredBlock();
+            } else {
+                eventRegisterBlock();
+            }
             invoke_move_latency();
         } else if ( invokeType == 'QUERY' ) {
             invoke_query_simple(0);
