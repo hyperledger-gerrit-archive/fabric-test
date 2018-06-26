@@ -28,8 +28,6 @@
 // in a happy-path scenario
 'use strict';
 
-const crypto = require('crypto');
-
 var fs = require('fs');
 var grpc = require('grpc');
 var hfc = require('fabric-client');
@@ -50,7 +48,6 @@ var tLocal;
 var i = 0;
 var inv_m = 0;    // counter of invoke move
 var inv_q = 0;    // counter of invoke query
-var n_sd = 0;     // counter of service discovery
 var evtTimeoutCnt = 0;                // counter of event timeout
 var evtType = 'FILTEREDBLOCK';        // event type: FILTEREDBLOCK|CHANNEL, default: FILTEREDBLOCK
 var evtTimeout = 120000;              // event timeout, default: 120000 ms
@@ -70,8 +67,7 @@ var eventHubs=[];
 var targets = [];
 var eventPromises = [];
 var txidList = [];
-var serviceDiscovery=false;
-var localHost=false;
+var ARGS_DIR = './ccArgumentsGenerators';
 
 var requestQueue = [];
 var maxRequestQueueLength = 100;
@@ -114,13 +110,16 @@ if ( typeof(uiContent.ccDfnPtr) === 'undefined' ) {
     logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] ccDfnPtr: %s', Nid, channelName, org, pid, uiContent.ccDfnPtr);
 }
 
+var ccType = ccDfnPtr.ccType;
+if ( !fs.existsSync(ARGS_DIR + '/' + ccType + '/ccFunctions.js') ) {
+	console.log('No chaincode payload generation files found: ', ARGS_DIR + '/' + ccType + '/ccFunctions.js');
+	process.exit(1);
+}
+var ccFunctions = require(ARGS_DIR + '/' + ccType + '/ccFunctions.js');
+
 var TLS = testUtil.setTLS(txCfgPtr);
 
 var targetPeers=txCfgPtr.targetPeers.toUpperCase();
-if ( targetPeers == 'DISCOVERY' && TLS != testUtil.TLSCLIENTAUTH ) {
-    logger.error('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] invalid configuration: targetPeers (%s) requires TLS (clientauth)', Nid, channelName, org, pid, txCfgPtr.targetPeers);
-    process.exit();
-}
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] input parameters: uiFile=%s, tStart=%d', Nid, channelName, org, pid, uiFile, tStart);
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] TLS: %s', Nid, channelName, org, pid, TLS);
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] targetPeers: %s', Nid, channelName, org, pid, targetPeers.toUpperCase());
@@ -175,11 +174,6 @@ var transType = txCfgPtr.transType.toUpperCase();
 var invokeType = txCfgPtr.invokeType.toUpperCase();
 var nRequest = parseInt(txCfgPtr.nRequest);
 
-if ( transType == 'DISCOVERY' && TLS != testUtil.TLSCLIENTAUTH ) {
-    logger.error('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] invalid configuration: transType (%s) requires mutual TLS (clientauth)', Nid, channelName, org, pid, transType);
-    process.exit();
-}
-
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] transMode: %s, transType: %s, invokeType: %s, nRequest: %d', Nid, channel.getName(), org, pid,  transMode, transType, invokeType, nRequest);
 
 //failover parameters
@@ -191,15 +185,11 @@ var peerFO = 'FALSE';
 var ordererFO = 'FALSE';
 var peerFOList = 'TARGETPEERS';
 var peerFOMethod = 'ROUNDROBIN';
-
-// failover is handled by SDK in discovery mode
-if ( targetPeers != 'DISCOVERY' ) {
-    if (typeof( txCfgPtr.peerFailover ) !== 'undefined') {
-        peerFO = txCfgPtr.peerFailover.toUpperCase();
-    }
-    if (typeof( txCfgPtr.ordererFailover ) !== 'undefined') {
-        ordererFO = txCfgPtr.ordererFailover.toUpperCase();
-    }
+if (typeof( txCfgPtr.peerFailover ) !== 'undefined') {
+    peerFO = txCfgPtr.peerFailover.toUpperCase();
+}
+if (typeof( txCfgPtr.ordererFailover ) !== 'undefined') {
+    ordererFO = txCfgPtr.ordererFailover.toUpperCase();
 }
 if ( peerFO == 'TRUE' ) {
     if (typeof( txCfgPtr.failoverOpt ) !== 'undefined') {
@@ -211,7 +201,6 @@ if ( peerFO == 'TRUE' ) {
         }
     }
 }
-
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] input parameters: peerFO=%s, ordererFO=%s, peerFOList=%s, peerFOMethod=%s', Nid, channelName, org, pid, peerFO, ordererFO, peerFOList, peerFOMethod);
 
 var runDur=0;
@@ -245,131 +234,17 @@ var latency_peer = [0, 0, 99999999, 0];
 var latency_orderer = [0, 0, 99999999, 0];
 var latency_event = [0, 0, 99999999, 0];
 
-var keyStart=0;
-var payLoadMin=0;
-var payLoadMax=0;
-var payLoadType='RANDOM'
-var arg0=0;
-var keyIdx = [];
-if (typeof( ccDfnPtr.ccOpt.keyIdx ) !== 'undefined') {
-    for (i=0; i<ccDfnPtr.ccOpt.keyIdx.length; i++) {
-        keyIdx.push(ccDfnPtr.ccOpt.keyIdx[i]);
-    }
-}
-logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] keyIdx: ', Nid, channel.getName(), org, pid, keyIdx);
-var keyPayLoad = [];
-if (typeof( ccDfnPtr.ccOpt.keyPayLoad ) !== 'undefined') {
-    for (i=0; i<ccDfnPtr.ccOpt.keyPayLoad.length; i++) {
-        keyPayLoad.push(ccDfnPtr.ccOpt.keyPayLoad[i]);
-    }
-}
-logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] keyPayLoad: ', Nid, channel.getName(), org, pid, keyPayLoad);
-
-var moveMarbleOwner='tom';
-var moveMarbleName='marble';
-var queryMarbleOwner='tom';
-var queryMarbleName='marble';
-var nOwner=100;
-var queryMarbleDocType='marble';
+// Create instance of the chaincode function argument generation class
+var ccFuncInst = new ccFunctions(ccDfnPtr, logger, Nid, channel.getName(), org, pid);
 //set transaction ID: channelName+'_'+org+'_'+Nid+'_'+pid
 var txIDVar=channelName+'_'+org+'_'+Nid+'_'+pid;
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] tx IDVar: ', Nid, channel.getName(), org, pid, txIDVar);
 
-
-var ccType = ccDfnPtr.ccType;
-if ( ccType == 'ccchecker' ) {
-    keyStart = parseInt(ccDfnPtr.ccOpt.keyStart);
-    payLoadMin = parseInt(ccDfnPtr.ccOpt.payLoadMin)/2;
-    payLoadMax = parseInt(ccDfnPtr.ccOpt.payLoadMax)/2;
-    if ( ccDfnPtr.ccOpt.payLoadType )
-        payLoadType = ccDfnPtr.ccOpt.payLoadType.toUpperCase();
-    arg0 = parseInt(keyStart);
-    logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] %s chaincode setting: keyStart=%d payLoadMin=%d payLoadMax=%d',
-                 Nid, channel.getName(), org, pid, ccType, keyStart, parseInt(ccDfnPtr.ccOpt.payLoadMin), parseInt(ccDfnPtr.ccOpt.payLoadMax));
-} else if ( (ccType == 'marblescc') || (ccType == 'marblescc_priv') ) {
-    keyStart = parseInt(ccDfnPtr.ccOpt.keyStart);
-    payLoadMin = parseInt(ccDfnPtr.ccOpt.payLoadMin);
-    payLoadMax = parseInt(ccDfnPtr.ccOpt.payLoadMax);
-    arg0 = parseInt(keyStart);
-    logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] %s chaincode setting: keyStart=%d payLoadMin=%d payLoadMax=%d',
-                 Nid, channel.getName(), org, pid, ccType, keyStart, parseInt(ccDfnPtr.ccOpt.payLoadMin), parseInt(ccDfnPtr.ccOpt.payLoadMax));
-
-    // get number of owners
-    if ( typeof( ccDfnPtr.invoke.nOwner ) !== 'undefined'  ) {
-        nOwner=parseInt(ccDfnPtr.invoke.nOwner);
-    }
-
-    // get prefix owner name
-    // moveMarbleOwner
-    // "args": ["marble", "blue","35","tom"]
-    if ( ccDfnPtr.invoke.move.fcn == 'initMarble' ) {
-        moveMarbleOwner = ccDfnPtr.invoke.move.args[3];
-    }
-    moveMarbleName=ccDfnPtr.invoke.move.args[0];
-
-    // queryMarbleByOwner
-    // "args": ["tom"]
-    //
-    // queryMarble
-    // "args": {
-    //     "selector": {
-    //         "owner":"tom",
-    //         "docType":"marble",
-    //         "color":"blue",
-    //         "size":"35",
-    //     }
-    // }
-    if ( ccDfnPtr.invoke.query.fcn == 'queryMarblesByOwner' ) {
-        queryMarbleOwner=ccDfnPtr.invoke.query.args[0];
-    } else if ( ccDfnPtr.invoke.query.fcn == 'queryMarbles' ) {
-        if ( typeof( ccDfnPtr.invoke.query.args.selector.owner ) !== 'undefined' ) {
-            queryMarbleOwner=ccDfnPtr.invoke.query.args.selector.owner;
-        }
-        if ( typeof( ccDfnPtr.invoke.query.args.selector.docType ) !== 'undefined' ) {
-            queryMarbleDocType=ccDfnPtr.invoke.query.args.selector.docType;
-        }
-    }
-    queryMarbleName=ccDfnPtr.invoke.query.args[0];
-
-}
-logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] ccType: %s, keyStart: %d', Nid, channel.getName(), org, pid, ccType, keyStart);
 //construct invoke request
-var testInvokeArgs = [];
-for (i=0; i<ccDfnPtr.invoke.move.args.length; i++) {
-    testInvokeArgs.push(ccDfnPtr.invoke.move.args[i]);
-}
-
 var request_invoke;
 function getMoveRequest() {
-    if ( ccType == 'ccchecker') {
-        arg0 ++;
-        for ( i=0; i<keyIdx.length; i++ ) {
-            testInvokeArgs[keyIdx[i]] = 'key_'+txIDVar+'_'+arg0;
-        }
-
-        // randomise length of payload
-        var rlen = Math.floor(Math.random() * (payLoadMax - payLoadMin)) + payLoadMin;
-
-        if ( payLoadType == 'RANDOM' ) {
-            var buf = crypto.randomBytes(rlen);
-            for ( i = 0; i < keyPayLoad.length; i++ ) {
-                testInvokeArgs[keyPayLoad[i]] = buf.toString('hex');
-            }
-        }
-    } else if ( (ccType == 'marblescc') || (ccType == 'marblescc_priv') ) {
-        arg0 ++;
-        for ( i=0; i<keyIdx.length; i++ ) {
-            testInvokeArgs[keyIdx[i]] = moveMarbleName+'_'+txIDVar+'_'+arg0;
-        }
-        var index=arg0%nOwner;
-        if ( ccDfnPtr.invoke.move.fcn == 'initMarble' ) {
-            testInvokeArgs[3]=moveMarbleOwner+'_'+txIDVar+'_'+index;
-        }
-        // marble size
-        for ( i=0; i<keyPayLoad.length; i++ ) {
-            testInvokeArgs[keyPayLoad[i]] = String(index);
-        }
-    }
+	// Get the invoke arguments from the appropriate payload generation files
+	ccFuncInst.getInvokeArgs(txIDVar);
 
     tx_id = client.newTransactionID();
     hfc.setConfigSetting('E2E_TX_ID', tx_id.getTransactionID());
@@ -378,7 +253,7 @@ function getMoveRequest() {
     request_invoke = {
         chaincodeId : chaincode_id,
         fcn: ccDfnPtr.invoke.move.fcn,
-        args: testInvokeArgs,
+        args: ccFuncInst.testInvokeArgs,
         txId: tx_id
     };
 
@@ -395,95 +270,17 @@ function getMoveRequest() {
 }
 
 //construct query request
-var testQueryArgs = [];
-for (i=0; i<ccDfnPtr.invoke.query.args.length; i++) {
-    testQueryArgs.push(ccDfnPtr.invoke.query.args[i]);
-}
-
-var rqSelector;
-if ( ccDfnPtr.invoke.query.fcn == 'queryMarbles' ) {
-    if ( typeof( ccDfnPtr.invoke.query.args.selector ) !== 'undefined' ) {
-        rqSelector = ccDfnPtr.invoke.query.args.selector;
-    }
-}
-
 var request_query;
 function getQueryRequest() {
-    if ( ccType == 'ccchecker') {
-        arg0 ++;
-        for ( i=0; i<keyIdx.length; i++ ) {
-            testQueryArgs[keyIdx[i]] = 'key_'+txIDVar+'_'+arg0;
-        }
-    } else if ( ccType == 'marblescc' ) {
-        arg0 ++;
-        var keyA = keyStart;
-        if ( arg0 - keyStart > 10 ) {
-            keyA = arg0 - 10;
-        }
-        if ( ccDfnPtr.invoke.query.fcn == 'getMarblesByRange' ) {
-            testQueryArgs[0] = queryMarbleName+'_'+txIDVar+'_'+keyA;
-            testQueryArgs[1] = queryMarbleName+'_'+txIDVar+'_'+arg0;
-        } else if ( ccDfnPtr.invoke.query.fcn == 'queryMarblesByOwner' ) {
-            // marbles02 rich query: queryMarblesByOwner
-            var index=arg0%nOwner;
-            testQueryArgs[0] = queryMarbleOwner+'_'+txIDVar+'_'+index;
-        } else if ( ccDfnPtr.invoke.query.fcn == 'queryMarbles' ) {
-            // marbles02 rich query: queryMarbles
-            var selector=0;
-            var index=arg0%nOwner;
-            if ( rqSelector ) {
-                testQueryArgs[0]='{\"selector\":{';
-                for ( let key in rqSelector ) {
-                    if ( selector == 1 ) {
-                        testQueryArgs[0]=testQueryArgs[0]+',';
-                    }
-
-                    if ( key == 'owner' ) {
-                        testQueryArgs[0]=testQueryArgs[0]+'\"'+key+'\":\"'+queryMarbleOwner+'_'+txIDVar+'_'+index+'\"';
-                    } else if ( key == 'size' ) {
-                        var mSize=arg0%nOwner;
-                        testQueryArgs[0]=testQueryArgs[0]+'\"'+key+'\":'+mSize;
-                    } else {
-                        testQueryArgs[0]=testQueryArgs[0]+'\"'+key+'\":\"'+rqSelector[key]+'\"';
-                    }
-
-                    if ( selector == 0 ) {
-                        selector = 1;
-                    }
-                }
-                testQueryArgs[0]=testQueryArgs[0]+'}';
-            }
-
-            testQueryArgs[0]=testQueryArgs[0]+'}';
-
-        } else {
-            for ( i=0; i<keyIdx.length; i++ ) {
-                testQueryArgs[keyIdx[i]] = queryMarbleName+'_'+txIDVar+'_'+arg0;
-            }
-        }
-    } else if ( ccType == 'marblescc_priv' ) {
-        arg0 ++;
-        var keyA = keyStart;
-        if ( arg0 - keyStart > 10 ) {
-            keyA = arg0 - 10;
-        }
-        if ( ccDfnPtr.invoke.query.fcn == 'readMarblePrivateDetails' ) {
-            for ( i=0; i<keyIdx.length; i++ ) {
-                testQueryArgs[keyIdx[i]] = queryMarbleName+'_'+txIDVar+'_'+arg0;
-            }
-        } else {
-            for ( i=0; i<keyIdx.length; i++ ) {
-                testQueryArgs[keyIdx[i]] = queryMarbleName+'_'+txIDVar+'_'+arg0;
-            }
-        }
-    }
+	// Get the query arguments from the appropriate payload generation files
+	ccFuncInst.getQueryArgs(txIDVar);
 
     tx_id = client.newTransactionID();
     request_query = {
         chaincodeId : chaincode_id,
         txId: tx_id,
         fcn: ccDfnPtr.invoke.query.fcn,
-        args: testQueryArgs
+        args: ccFuncInst.testQueryArgs
     };
 
     //logger.info('request_query: %j', request_query);
@@ -585,7 +382,7 @@ function assignPeerListFromList(channel, client, org) {
             }
         }
     }
-    //logger.info('[Nid:chan:org:id=%d:%s:%s:%d assignPeerListFromList] peerList: %j', Nid, channelName, org, pid, peerList);
+    logger.info('[Nid:chan:org:id=%d:%s:%s:%d assignPeerListFromList] peerList: %j', Nid, channelName, org, pid, peerList);
 }
 
 // assign thread peers from all org
@@ -968,66 +765,6 @@ function channelAddPeerEvent(channel, client, org) {
     }
 }
 
-function channelDiscoveryEvent(channel, client, org) {
-    logger.info('[Nid:chan:org:id=%d:%s:%s:%d channelDiscoveryEvent]', Nid, channelName, org, pid);
-    var peerTmp = channel.getPeers();
-    if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
-        for ( var u = 0; u < peerTmp.length; u++) {
-            var eh = channel.newChannelEventHub(peerTmp[u]);
-            eventHubs.push(eh);
-            if ( evtType == 'FILTEREDBLOCK' ) {
-                eh.connect();
-            } else {
-                eh.connect(true);
-            }
-        }
-    }
-    logger.info('[Nid:chan:org:id=%d:%s:%s:%d channelDiscoveryEvent] event length: %d', Nid, channelName, org, pid, eventHubs.length);
-}
-
-// add one peer to channel to perform service discovery
-function channelAdd1Peer(channel, client, org) {
-    logger.info('[Nid:chan:org:id=%d:%s:%s:%d channelAdd1Peer]', Nid, channelName, org, pid);
-    var data;
-    var peerTmp;
-    var eh;
-    for (let key in ORGS[org]) {
-        if (ORGS[org].hasOwnProperty(key)) {
-            if (key.includes('peer')) {
-                if (TLS > testUtil.TLSDISABLED) {
-                    data = testUtil.getTLSCert(org, key);
-                    if ( data !== null ) {
-                        peerTmp = client.newPeer(
-                            ORGS[org][key].requests,
-                            {
-                                pem: Buffer.from(data).toString(),
-                                'ssl-target-name-override': ORGS[org][key]['server-hostname']
-                            }
-                        );
-                        targets.push(peerTmp);
-                        channel.addPeer(peerTmp);
-
-                    }
-                } else {
-                    peerTmp = client.newPeer( ORGS[org][key].requests);
-                    targets.push(peerTmp);
-                    channel.addPeer(peerTmp);
-                }
-                if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
-                    eh = channel.newChannelEventHub(peerTmp);
-                    eventHubs.push(eh);
-                    if ( evtType == 'FILTEREDBLOCK' ) {
-                        eh.connect();
-                    } else {
-                        eh.connect(true);
-                    }
-                }
-                break;
-            }
-        }
-    }
-    logger.info('[Nid:chan:org:id=%d:%s:%s:%d channelAdd1Peer peers: %j] ', Nid, channelName, org, pid, channel.getPeers());
-}
 // update orderer
 function ordererFailover(channel, client) {
     var currId = currOrdererId;
@@ -1077,7 +814,7 @@ function assignOrdererList(channel, client) {
             }
         }
     }
-    //logger.info('[Nid:chan:org:id=%d:%s:%s:%d assignOrdererList] orderer list: %j', Nid, channelName, org, pid, ordererList);
+    logger.info('[Nid:chan:org:id=%d:%s:%s:%d assignOrdererList] orderer list: %j', Nid, channelName, org, pid, ordererList);
 }
 
 function channelAddOrderer(channel, client, org) {
@@ -1226,15 +963,14 @@ async function execTransMode() {
                     logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] Successfully loaded user \'admin\'', Nid, channelName, org, pid);
                     the_user = admin;
 
-                    if (targetPeers != 'DISCOVERY'){
-                        assignOrdererList(channel, client);
-                        channelAddOrderer(channel, client, org);
-                        setCurrOrdererId(channel, client, org);
+                    assignOrdererList(channel, client);
+                    channelAddOrderer(channel, client, org);
+                    setCurrOrdererId(channel, client, org);
 
-                        if ( peerFOList == 'ALL' ) {
-                            assignPeerList(channel, client, org);
-                        }
+                    if ( peerFOList == 'ALL' ) {
+                        assignPeerList(channel, client, org);
                     }
+                    //assignPeerListFromList(channel, client, org);
 
                     if (targetPeers == 'ORGANCHOR') {
                         assignThreadOrgAnchorPeer(channel, client, org);
@@ -1246,29 +982,14 @@ async function execTransMode() {
                         assignThreadAllPeers(channel,client, org);
                     } else if (targetPeers == 'LIST'){
                         assignThreadPeerList(channel,client,org);
-                    } else if ( (targetPeers == 'DISCOVERY') || (transType == 'DISCOVERY') ) {
-                        serviceDiscovery=true;
-                        if ((typeof(txCfgPtr.discoveryOpt) !== 'undefined')) {
-                            var discoveryOpt = txCfgPtr.discoveryOpt;
-                            logger.info('main - discoveryOpt: %j', discoveryOpt);
-                            if ((typeof( discoveryOpt.localHost ) !== 'undefined')) {
-                                if (  discoveryOpt.localHost.toUpperCase() == 'TRUE' ) {
-                                    localHost = true;
-                                }
-                            }
-                        }
-
-                        channelAdd1Peer(channel, client, org);       // add one peer to channel to perform service discovery
                     } else {
 	                logger.error('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] pte-exec:completed:error targetPeers= %s', Nid, channelName, org, pid, targetPeers);
                         process.exit(1);
                     }
 
 
-                    if (targetPeers != 'DISCOVERY'){
-                        setCurrPeerId(channel, client, org);
-                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] peerList: ' , Nid, channelName, org, pid, peerList);
-                    }
+                    setCurrPeerId(channel, client, org);
+                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] peerList: ' , Nid, channelName, org, pid, peerList);
 
                     tCurr = new Date().getTime();
                     var tSynchUp=tStart-tCurr;
@@ -1277,22 +998,10 @@ async function execTransMode() {
                     }
 	            logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] execTransMode: tCurr= %d, tStart= %d, time to wait=%d', Nid, channelName, org, pid, tCurr, tStart, tSynchUp);
                     // execute transactions
-                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] execTransMode: serviceDiscovery=%j, localHost: %j', Nid, channelName, org, pid, serviceDiscovery, localHost);
-                    channel.initialize({
-                        discover: serviceDiscovery,
-                        asLocalhost: localHost
-                    })
+                    channel.initialize()
                     .then((success) => {
-                        //logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] discovery results %j', Nid, channelName, org, pid, success);
-                        if (targetPeers === 'DISCOVERY'){
-                            channelDiscoveryEvent(channel, client, org);
-                            logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] discovery: completed events ports' , Nid, channelName, org, pid);
-                        }
                     setTimeout(function() {
-                        //logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] get peers %j', Nid, channelName, org, pid, channel.getPeers());
-                        if (transType == 'DISCOVERY') {
-                            execModeDiscovery();
-                        } else if (transMode == 'SIMPLE') {
+                        if (transMode == 'SIMPLE') {
                             execModeSimple();
                         } else if (transMode == 'CONSTANT') {
                             execModeConstant();
@@ -1356,7 +1065,7 @@ function isExecDone(trType){
                 var remain = Object.keys(txidList).length;
                 logger.info('[Nid:chan:org:id=%d:%s:%s:%d isExecDone] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d', Nid, channelName, org, pid, evtRcvB, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain);
                 if (invokeCheck == 'TRUE') {
-                    arg0 = keyStart + inv_m - 1;
+                    ccFuncInst.arg0 = ccFuncInst.keyStart + inv_m - 1;
                     inv_q = inv_m - 1;
                     invoke_query_simple(0);
                 }
@@ -1393,29 +1102,8 @@ function isExecDone(trType){
                }
            }
         }
-    } else if ( trType.toUpperCase() == 'DISCOVERY' ) {
-        if ( nRequest > 0 ) {
-           if ( (n_sd % (nRequest/10)) == 0 ) {
-              logger.info(util.format("[Nid:chan:org:id=%d:%s:%s:%d isExecDone] invokes(%s) sent: number=%d, elapsed time= %d",
-                                         Nid, channelName, org, pid, trType, n_sd, tCurr-tLocal));
-           }
-
-           if ( n_sd >= nRequest ) {
-                IDone = 1;
-           }
-        } else {
-           if ( (n_sd % 1000) == 0 ) {
-              logger.info(util.format("[Nid:chan:org:id=%d:%s:%s:%d isExecDone] invokes(%s) sent: number=%d, elapsed time= %d",
-                                         Nid, channelName, org, pid, trType, n_sd, tCurr-tLocal));
-           }
-
-           if ( runForever == 0 ) {
-               if ( tCurr > tEnd ) {
-                    IDone = 1;
-               }
-           }
-        }
     }
+
 
 }
 
@@ -1424,7 +1112,8 @@ var txRequest;
 function getTxRequest(results) {
     txRequest = {
         proposalResponses: results[0],
-        proposal: results[1]
+        proposal: results[1],
+        header: results[2]
     };
 }
 
@@ -1474,7 +1163,7 @@ function eventRegisterFilteredBlock() {
                             var remain = Object.keys(txidList).length;
                             logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d, Throughput=%d TPS', Nid, channelName, org, pid,  evtRcvB, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, (evtRcvB/(tCurr-tLocal)*1000).toFixed(2));
                             if (invokeCheck == 'TRUE') {
-                                arg0 = keyStart + inv_m - 1;
+                                ccFuncInst.arg0 = ccFuncInst.keyStart + inv_m - 1;
                                 inv_q = inv_m - 1;
                                 invoke_query_simple(0);
                             }
@@ -1533,7 +1222,7 @@ function eventRegisterBlock() {
                         var remain = Object.keys(txidList).length;
                         logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterBlock] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d, Throughput=%d TPS', Nid, channelName, org, pid,  evtRcvB, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, (evtRcvB/(tCurr-tLocal)*1000).toFixed(2));
                         if (invokeCheck == 'TRUE') {
-                            arg0 = keyStart + inv_m - 1;
+                            ccFuncInst.arg0 = ccFuncInst.keyStart + inv_m - 1;
                             inv_q = inv_m - 1;
                             invoke_query_simple(0);
                         }
@@ -1601,7 +1290,7 @@ function eventRegister(tx) {
                             var remain = Object.keys(txidList).length;
                             logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegister] pte-exec:completed  Rcvd(sent)=%d(%d) %s(%s) in %d ms, timestamp: start %d end %d, #event timeout: %d, #event unreceived: %d, Throughput=%d TPS', Nid, channelName, org, pid,  evtRcv, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr, evtTimeoutCnt, remain, (evtRcv/(tCurr-tLocal)*1000).toFixed(2));
                             if (invokeCheck == 'TRUE') {
-                                arg0 = keyStart + inv_m - 1;
+                                ccFuncInst.arg0 = ccFuncInst.keyStart + inv_m - 1;
                                 inv_q = inv_m - 1;
                                 invoke_query_simple(0);
                             }
@@ -1665,10 +1354,7 @@ function execModeLatency() {
         }
         logger.info('[Nid:chan:org:id=%d:%s:%s:%d execModeLatency] tStart %d, tLocal %d', Nid, channelName, org, pid, tStart, tLocal);
         if ( invokeType == 'MOVE' ) {
-            var freq = 20000;
-            if ( ccType == 'ccchecker' ) {
-                freq = 0;
-            }
+            var freq = ccFuncInst.getExecModeLatencyFreq();
 
             if (evtType == 'FILTEREDBLOCK') {
                 eventRegisterFilteredBlock();
@@ -1775,10 +1461,7 @@ function execModeSimple() {
         }
         logger.info('[Nid:chan:org:id=%d:%s:%s:%d execModeSimple] tStart %d, tLocal %d', Nid, channelName, org, pid, tStart, tLocal);
         if ( invokeType == 'MOVE' ) {
-            var freq = 20000;
-            if ( ccType == 'ccchecker' ) {
-                freq = 0;
-            }
+            var freq = ccFuncInst.getExecModeSimpleFreq();
             invoke_move_simple(freq);
         } else if ( invokeType == 'QUERY' ) {
             invoke_query_simple(0);
@@ -1883,9 +1566,6 @@ function invoke_move_const_evtBlock(freq) {
             latency_update(inv_m, te-ts, latency_peer);
 
             var proposalResponses = results[0];
-            //for ( var u = 0; u< results.length; u++) {
-            //   logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const_evtBlock] u %d proposal: %j ', Nid, channelName, org, pid, u, results[u]);
-            //}
 
             getTxRequest(results);
             txidList[tx_id.getTransactionID().toString()] = new Date().getTime();
@@ -2126,11 +1806,11 @@ function execModeConstant() {
         }
         logger.info('recHist: ', recHist);
 
-        if ( payLoadType == 'FIXED' ) {
-            var rlen = payLoadMin;
+        if ( ccFuncInst.payLoadType == 'FIXED' ) {
+            var rlen = ccFuncInst.payLoadMin;
             var buf = String(PTEid).repeat(rlen).substring(0, rlen);
-            for ( i = 0; i < keyPayLoad.length; i++ ) {
-                testInvokeArgs[keyPayLoad[i]] = buf;
+            for ( i = 0; i < ccFuncInst.keyPayLoad.length; i++ ) {
+                ccFuncInst.testInvokeArgs[ccFuncInst.keyPayLoad[i]] = buf;
             }
         }
 
@@ -2185,7 +1865,7 @@ function execModeConstant() {
 // mix mode
 function invoke_move_mix_go(freq) {
     setTimeout(function(){
-        arg0--;
+        ccFuncInst.arg0--;
         invoke_query_mix(freq);
     },freq);
 }
@@ -2353,10 +2033,7 @@ function execModeProposal() {
         }
         logger.info('[Nid:chan:org:id=%d:%s:%s:%d execModeProposal] tStart %d, tLocal %d', Nid, channelName, org, pid, tStart, tLocal);
         if ( invokeType == 'MOVE' ) {
-            var freq = 20000;
-            if ( ccType == 'ccchecker' ) {
-                freq = 0;
-            }
+            var freq = ccFuncInst.getExecModeProposalFreq();
             invoke_move_proposal();
         } else if ( invokeType == 'QUERY' ) {
             logger.error('[Nid:chan:org:id=%d:%s:%s:%d execModeProposal] invalid invokeType= %s', Nid, channelName, org, pid, invokeType);
@@ -2531,43 +2208,6 @@ function execModeBurst() {
         logger.error('[Nid:chan:org:id=%d:%s:%s:%d execModeBurst] invalid transType= %s', Nid, channelName, org, pid, transType);
         evtDisconnect();
     }
-}
-
-
-// discovery mode: discovery performance
-function invoke_discovery() {
-    n_sd++;
-
-    channel.initialize({
-        discover: serviceDiscovery,
-        asLocalhost: localHost
-    })
-    .then((success) => {
-        isExecDone(transType);
-        if ( IDone != 1 ) {
-            invoke_discovery();
-        } else {
-            tCurr = new Date().getTime();
-            logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_discovery] pte-exec:completed sent %d transactions (%s) in %d ms, timestamp: start %d end %d,Throughput=%d TPS', Nid, channelName, org, pid, n_sd, transType, tCurr-tLocal, tLocal, tCurr,(n_sd/(tCurr-tLocal)*1000).toFixed(2));
-            evtDisconnect();
-        }
-    },
-    function(err) {
-        logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_discovery] Failed to send service discovery due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-        return;
-    });
-
-}
-function execModeDiscovery() {
-
-    // send discovery request
-    tLocal = new Date().getTime();
-    logger.info('[Nid:chan:org:id=%d:%s:%s:%d execModeDiscovery] tStart %d, tLocal %d', Nid, channelName, org, pid, tStart, tLocal);
-    if ( runDur > 0 ) {
-        tEnd = tLocal + runDur;
-    }
-    invoke_discovery();
-
 }
 
 function sleep(ms) {
