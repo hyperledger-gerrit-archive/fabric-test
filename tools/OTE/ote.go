@@ -122,7 +122,7 @@ var optimizeClientsMode = false
 // ordStartPort (default port is 7050, but driver.sh uses 5005).
 // peerStartPort (default port is 7051, but driver.sh uses 7061).
 
-var ordStartPort uint16 = 7050
+var ordStartPort uint16 = 5005
 
 const (
         // Indicate whether a test requires counters for a Spy monitor, and when.
@@ -331,10 +331,14 @@ func startConsumer(serverAddr string, chanID string, ordererIndex int, channelIn
         myName := clientName("Consumer", ordererIndex, channelIndex)
         signer := localmsp.NewSigner()
         ordererName := strings.Trim(serverAddr, fmt.Sprintf(":%d", ordStartPort))
-        matches, _ := filepath.Glob(fmt.Sprintf("/etc/hyperledger/fabric/artifacts/ordererOrganizations/example.com/orderers/%s" + "*", ordererName))
+        fpath := fmt.Sprintf("/etc/hyperledger/fabric/artifacts/ordererOrganizations/example.com/orderers/%s" + "*", ordererName)
+        matches, err := filepath.Glob(fpath)
+        if err != nil {
+                 panic(fmt.Sprintf("cannot find %s ; err: %v", fpath, err))
+        }
         ordConf.General.BCCSP.SwOpts.FileKeystore.KeyStorePath=fmt.Sprintf("%s/msp/keystore", matches[0])
         if ordererIndex == 0 { // Loading the msp's of orderer0 for every channel is enough to create the deliver client
-                err := mspmgmt.LoadLocalMsp(fmt.Sprintf("%s/msp", matches[0]), ordConf.General.BCCSP, orgMSPID)
+                err = mspmgmt.LoadLocalMsp(fmt.Sprintf("%s/msp", matches[0]), ordConf.General.BCCSP, orgMSPID)
                 if err != nil { // Handle errors reading the config file
                         fmt.Printf("\nFailed to initialize local MSP for %s on chan %s: %s\n", myName, chanID, err)
                         os.Exit(0)
@@ -343,7 +347,6 @@ func startConsumer(serverAddr string, chanID string, ordererIndex int, channelIn
         if seek < -2 {
                 fmt.Println("Wrong seek value.")
         }
-        var err error
         var maxGrpcMsgSize int = 1000 * 1024 * 1024
         var dialOpts []grpc.DialOption
         var conntimeout time.Duration = 30 * time.Second
@@ -1385,3 +1388,4 @@ func main() {
 
         _, _ = ote( "<commandline>"+testcmd+" ote", txs, chans, orderers, ordType, kbs, -1, pPerCh, payload)
 }
+
