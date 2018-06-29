@@ -122,7 +122,7 @@ var optimizeClientsMode = false
 // ordStartPort (default port is 7050, but driver.sh uses 5005).
 // peerStartPort (default port is 7051, but driver.sh uses 7061).
 
-var ordStartPort uint16 = 7050
+var ordStartPort uint16 = 5005
 
 const (
         // Indicate whether a test requires counters for a Spy monitor, and when.
@@ -331,7 +331,11 @@ func startConsumer(serverAddr string, chanID string, ordererIndex int, channelIn
         myName := clientName("Consumer", ordererIndex, channelIndex)
         signer := localmsp.NewSigner()
         ordererName := strings.Trim(serverAddr, fmt.Sprintf(":%d", ordStartPort))
-        matches, _ := filepath.Glob(fmt.Sprintf("/etc/hyperledger/fabric/artifacts/ordererOrganizations/example.com/orderers/%s" + "*", ordererName))
+        fpath := fmt.Sprintf("/etc/hyperledger/fabric/artifacts/ordererOrganizations/example.com/orderers/%s" + "*", ordererName)
+        matches, err := filepath.Glob(fpath)
+        if (err) {
+                 panic("cannot find %s ; err: %v", fpath, err)
+        }
         ordConf.General.BCCSP.SwOpts.FileKeystore.KeyStorePath=fmt.Sprintf("%s/msp/keystore", matches[0])
         if ordererIndex == 0 { // Loading the msp's of orderer0 for every channel is enough to create the deliver client
                 err := mspmgmt.LoadLocalMsp(fmt.Sprintf("%s/msp", matches[0]), ordConf.General.BCCSP, orgMSPID)
@@ -1385,3 +1389,4 @@ func main() {
 
         _, _ = ote( "<commandline>"+testcmd+" ote", txs, chans, orderers, ordType, kbs, -1, pPerCh, payload)
 }
+
