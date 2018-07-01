@@ -72,7 +72,7 @@ echo "------------> RELEASE_COMMIT:" $RELEASE_COMMIT
 OS_VER=$(uname -s|tr '[:upper:]' '[:lower:]')
 echo
 rm -rf .build && mkdir -p .build && cd .build
-curl https://nexus.hyperledger.org/content/repositories/releases/org/hyperledger/fabric/hyperledger-fabric-$STABLE_VERSION/$OS_VER-$ARCH.$STABLE_VERSION-$RELEASE_COMMIT/hyperledger-fabric-$STABLE_VERSION-$OS_VER-$ARCH.$STABLE_VERSION-$RELEASE_COMMIT.tar.gz | tar xz
+curl https://nexus.hyperledger.org/content/repositories/releases/org/hyperledger/fabric/hyperledger-fabric-$STABLE_VERSION/$OS_VER.$STABLE_VERSION-$RELEASE_COMMIT/hyperledger-fabric-$STABLE_VERSION-$OS_VER.$STABLE_VERSION-$RELEASE_COMMIT.tar.gz | tar xz
 export PATH=$WORKSPACE/gopath/src/github.com/hyperledger/fabric/.build/bin:$PATH
 echo "Binaries fetched from Nexus"
 echo
