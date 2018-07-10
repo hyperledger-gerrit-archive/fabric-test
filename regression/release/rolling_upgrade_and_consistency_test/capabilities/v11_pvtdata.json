@@ -1,0 +1,10 @@
+{
+    "mod_policy": "Admins",
+    "value": {
+      "capabilities": {
+        "V1_1": {},
+        "V1_1_PVTDATA_EXPERIMENTAL": {}
+      }
+    },
+    "version": "0"
+}
