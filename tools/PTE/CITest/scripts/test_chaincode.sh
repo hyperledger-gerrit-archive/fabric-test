@@ -7,6 +7,51 @@
 #
 
 # PTE: create/join channel, install/instantiate chaincode
+
+
+install_cc () {
+    cd $PTEDir
+    echo "[$0] ***************************************************"
+    echo "[$0] *******   installll chaincode: $1      *******"
+    echo "[$0] ***************************************************"
+
+    runInstall=`ls CITest/$PrecfgDir/preconfig/$1/runCases*install*`
+    echo "runInstall $runInstall"
+    for ri in $runInstall; do
+       echo "./pte_driver.sh $ri"
+       ./pte_driver.sh $ri
+       sleep 60s
+    done
+}
+
+instantiate_cc () {
+    echo "[$0] ***************************************************"
+    echo "[$0] *******   instantiatell chaincode: $1  *******"
+    echo "[$0] ***************************************************"
+
+    runInstan=`ls CITest/$PrecfgDir/preconfig/$1/runCases*instantiate*`
+    echo "runInstan $runInstan"
+    for ri in $runInstan; do
+       echo "./pte_driver.sh $ri"
+       ./pte_driver.sh $ri
+       sleep 60s
+     done
+}
+
+upgrade_cc() {
+    echo "[$0] ***************************************************"
+    echo "[$0] *******   upgrade chaincode: $1  *******"
+    echo "[$0] ***************************************************"
+
+    runUpgr=`ls CITest/$PrecfgDir/preconfig/$1/runCases*upgrade*`
+    echo "runUpgr $runUpgr"
+    for ru in $runUpgr; do
+       echo "./pte_driver.sh $ru"
+       ./pte_driver.sh $ru
+       sleep 60s
+     done
+}
+
 CWD=$PWD
 
 cd ../..
@@ -15,12 +60,19 @@ echo "[$0] PTEDir= $PTEDir"
 
 cc=$1
 PrecfgDir=$2
+ifUpgrade="no"
+if [ "$3" = "doupgrade" ]; then 
+    ifUpgrade="yes"
+    echo "upgrade commanded given, changing ifUpgrade !!!"
+fi
+
 echo "[$0] chaincode: $cc, PrecfgDir: $PrecfgDir"
+
 
 cd $PTEDir
 
 cd CITest/$PrecfgDir/preconfig
-if [ $cc == "all" ]; then
+if [ "$cc" == "all" ]; then
     ccDir=`ls`
     echo "[$0] ccDir: $ccDir"
     cd $PTEDir
@@ -28,30 +80,12 @@ if [ $cc == "all" ]; then
         if [ $c1 == 'channels' ]; then
             echo "[$0] The directory [$c1] is not for chaincode!"
         else
-            echo "[$0] ***************************************************"
-            echo "[$0] *******   install chaincode: $c1      *******"
-            echo "[$0] ***************************************************"
-
-            runInstall=`ls CITest/$PrecfgDir/preconfig/$cc/runCases*install*`
-            echo "runInstall $runInstall"
-            for ri in $runInstall; do
-               echo "./pte_driver.sh $ri"
-               ./pte_driver.sh $ri
-               sleep 60s
-            done
-
-            echo "[$0] ***************************************************"
-            echo "[$0] *******   instantiate chaincode: $c1  *******"
-            echo "[$0] ***************************************************"
-
-            runInstan=`ls CITest/$PrecfgDir/preconfig/$cc/runCases*instantiate*`
-            echo "runInstan $runInstan"
-            for ri in $runInstan; do
-               echo "./pte_driver.sh $ri"
-               ./pte_driver.sh $ri
-               sleep 60s
-            done
-
+            install_cc "$c1"
+            if [ ifUpgrade = "yes" ]; then
+                upgrade_c1 "$c1"
+            else
+                instantiate_cc "$c1"
+            fi
         fi
     done
 else
@@ -59,31 +93,14 @@ else
         echo "[$0] The chaincode directory [$cc] does not exist!"
         exit
     else
-        cd $PTEDir
-        echo "[$0] ***************************************************"
-        echo "[$0] *******   install chaincode: $cc      *******"
-        echo "[$0] ***************************************************"
-
-        runInstall=`ls CITest/$PrecfgDir/preconfig/$cc/runCases*install*`
-        echo "runInstall $runInstall"
-        for ri in $runInstall; do
-           echo "./pte_driver.sh $ri"
-           ./pte_driver.sh $ri
-           sleep 60s
-        done
-
-        echo "[$0] ***************************************************"
-        echo "[$0] *******   instantiate chaincode: $cc  *******"
-        echo "[$0] ***************************************************"
-
-        runInstan=`ls CITest/$PrecfgDir/preconfig/$cc/runCases*instantiate*`
-        echo "runInstan $runInstan"
-        for ri in $runInstan; do
-           echo "./pte_driver.sh $ri"
-           ./pte_driver.sh $ri
-           sleep 60s
-        done
-
+        echo "in install, ifUpgrade is $ifUpgrade"
+        install_cc "$cc"
+        if [ "$ifUpgrade" = "yes" ]; then
+            echo "upgrade!!!"
+            upgrade_cc "$cc"
+        else
+            instantiate_cc "$cc"
+        fi
     fi
 fi
 
