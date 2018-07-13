@@ -26,6 +26,7 @@ function testDriverHelp {
    echo "    -p: preconfigure creation/join channels, default=no"
    echo "    -s: synchup peer ledgers, recommended when network brought up, default=no"
    echo "    -c: chaincode to be installed and instantiated [all|chaincode], default=no"
+   echo "    -u: chaincode to be installed and upgraded [all|chaincode], default=no"
    echo "    -t [value1 value2 value3 ...]: test cases to be executed"
    echo "    -b [value]: test cases starting time"
    echo " "
@@ -58,7 +59,7 @@ function testDriverHelp {
    exit
 }
 
-while getopts ":t:c:b:m:enps" opt; do
+while getopts ":t:c:u:b:m:enps" opt; do
   case $opt in
     # parse environment options
     e)
@@ -81,6 +82,10 @@ while getopts ":t:c:b:m:enps" opt; do
     c)
       CHAINCODE=$OPTARG
       echo "chaincode: $CHAINCODE"
+      ;;
+    u)
+      CHAINCODE_TOUPGRADE=$OPTARG
+      echo "chaincode to upgrade: $CHAINCODE_TOUPGRADE"
       ;;
     t)
       TCases+=("$OPTARG")
@@ -158,6 +163,14 @@ fi
 # channel and chaincode
 if [ $CHAINCODE != "noCC" ]; then
     ./test_chaincode.sh $CHAINCODE $PrecfgDir
+    cd $CWD
+    echo "[$0] current dir: $PWD"
+    sleep 60
+fi
+
+# channel and chaincode
+if [ ! -z "$CHAINCODE_TOUPGRADE" ]; then
+    ./test_chaincode.sh $CHAINCODE_TOUPGRADE $PrecfgDir doupgrade
     cd $CWD
     echo "[$0] current dir: $PWD"
     sleep 60
