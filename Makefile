@@ -51,7 +51,7 @@ git-latest:
 
 .PHONY: git-init
 git-init:
-	@git submodule update --init --recursive
+	@git submodule update --init --recursive --remote
 
 .PHONY: pre-setup
 pre-setup:
