@@ -8,16 +8,15 @@
     "transType": "Invoke",
     "invokeType": "Query",
     "targetPeers": "List",
-    "nProcPerOrg": "2",
-    "nRequest": "10",
+    "nProcPerOrg": "4",
+    "nRequest": "10000",
     "runDur": "0",
     "TLS": "enabled",
     "channelOpt": {
         "name": "testorgschannel1",
         "action":  "create",
         "orgName": [
-            "org1",
-            "org2"
+            "org1"
         ]
     },
     "burstOpt": {
@@ -36,10 +35,10 @@
         "devFreq": "0"
     },
     "listOpt": {
-       "org1": ["peer1"]
+        "org1": ["peer1"]
     },
     "eventOpt": {
-        "type": "Channel",
+        "type": "FilteredBlock",
         "listener": "Block",
         "timeout": "240000"
     },
@@ -52,7 +51,7 @@
         "payLoadMax": "2048"
     },
     "invoke": {
-        "nOwner":"100",
+        "nOwner":"10000",
         "query": {
             "fcn": "readMarble",
             "args": ["marble"]
@@ -63,6 +62,6 @@
         }
     },
     "SCFile": [
-		{"ServiceCredentials":"CITest/CISCFiles/config-chan1-TLS.json"}
-	]
+        {"ServiceCredentials":"CITest/CISCFiles/config-chan1-org1-TLS.json"}
+    ]
 }
