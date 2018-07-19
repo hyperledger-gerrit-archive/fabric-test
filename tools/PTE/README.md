@@ -644,10 +644,8 @@ The user input file contains configuration parameters including chaincode defini
             ]
         },
         "burstOpt": {
-            "burstFreq0":  "500",
-            "burstDur0":  "3000",
-            "burstFreq1": "2000",
-            "burstDur1": "10000"
+            "burstFreq": ["500", "200", "300", "100"],
+            "burstDur":  ["3000", "2000", "3000", "1000"]
         },
         "mixOpt": {
             "mixquery": "false",
@@ -763,10 +761,8 @@ where
             "endBlock":  "6800"
         },
         "burstOpt": {
-            "burstFreq0":  "500",
-            "burstDur0":  "3000",
-            "burstFreq1": "2000",
-            "burstDur1": "10000"
+            "burstFreq": ["500", "200", "300", "100"],
+            "burstDur":  ["3000", "2000", "3000", "1000"]
         },
         "mixOpt": {
             "mixquery": "false",
@@ -880,11 +876,9 @@ where:
     * **channelTX**: channel transaction file. If the `gopath` is defined in the service credential json, then the path is relative to `gopath/src`. Otherwise, absolute path is required.
     * **action**: channel action: create or join
     * **orgName**: name of organization for the test
-* **burstOpt**: the frequencies and duration for Burst transaction mode traffic. Currently, two transaction rates are supported. The traffic will issue one transaction every burstFreq0 ms for burstDur0 ms, then one transaction every burstFreq1 ms for burstDur1 ms, then the pattern repeats. These parameters are valid only if the transMode is set to **Burst**.
-    * **burstFreq0**: frequency in ms for the first transaction rate
-    * **burstDur0**:  duration in ms for the first transaction rate
-    * **burstFreq1**: frequency in ms for the second transaction rate
-    * **burstDur1**: duration in ms for the second transaction rate
+* **burstOpt**: the frequencies and duration for Burst transaction mode traffic. The traffic will issue transactions based on the specified frequency for the specified duration for each mode. The first burstFreq corresponds to the first burstDur, and and the second burstFreq corresponds to the second burstDur, and so on.  If the length, number of mode, of burstFreq and burstDur are not the same, then the shorter one will be used. These parameters are valid only if the transMode is set to **Burst**.
+    * **burstFreq**: list of frequencies for each mode in ms
+    * **burstDur**:  list of duration for each mode in ms
 * **mixOpt**: each invoke is followed by a query on every process. This parameter is valid only the transMode is set to **Mix**.
 * **mixFreq**: frequency in ms for the transaction rate. This value should be set based on the characteristics of the chaincode to avoid the failure of the immediate query.
 * **constantOpt**: the transactions are sent at the specified rate. This parameter is valid only the transMode is set to **Constant**.
