@@ -1,7 +1,7 @@
 {
     "logLevel": "ERROR",
     "invokeCheck": "TRUE",
-    "transMode": "Constant",
+    "transMode": "Poisson",
     "transType": "Invoke",
     "invokeType": "Move",
     "targetPeers": "OrgAnchor",
@@ -16,6 +16,10 @@
         "burstDur0":  "3000",
         "burstFreq1": "2000",
         "burstDur1": "10000"
+    },
+    "PoissonOpt": {
+        "ksamples": "100",
+        "lambda": "1"
     },
     "mixOpt": {
         "mixQuery": "false",
