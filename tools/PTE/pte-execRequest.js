@@ -70,8 +70,6 @@ var eventHubs=[];
 var targets = [];
 var eventPromises = [];
 var txidList = [];
-var initFreq=0;     // init discovery freq default = 0
-var initDiscTimer;
 var serviceDiscovery=false;
 var localHost=false;
 
@@ -1035,44 +1033,6 @@ function channelAdd1Peer(channel, client, org) {
     }
     logger.info('[Nid:chan:org:id=%d:%s:%s:%d channelAdd1Peer peers: %j] ', Nid, channelName, org, pid, channel.getPeers());
 }
-
-
-
-function clearInitDiscTimeout() {
-    if ( initFreq > 0 ) {
-        logger.info('[Nid:chan:org:id=%d:%s:%s:%d clearInitDiscTimeout] clear discovery timer.', Nid, channelName, org, pid);
-        clearTimeout(initDiscTimer);
-    }
-}
-
-
-function initDiscovery() {
-    var tmpTime = new Date().getTime();
-    logger.info('[Nid:chan:org:id=%d:%s:%s:%d initDiscovery] discovery timestamp %d', Nid, channelName, org, pid, tmpTime);
-    channel.initialize({
-        discover: serviceDiscovery,
-        asLocalhost: localHost
-    })
-    .then((success) => {
-        logger.info('[Nid:chan:org:id=%d:%s:%s:%d initDiscovery] discovery results %j', Nid, channelName, org, pid, success);
-        if (targetPeers === 'DISCOVERY'){
-            channelDiscoveryEvent(channel, client, org);
-            logger.info('[Nid:chan:org:id=%d:%s:%s:%d initDiscovery] discovery: completed events ports' , Nid, channelName, org, pid);
-        }
-    },
-    function(err) {
-        logger.error('[Nid:chan:org:id=%d:%s:%s:%d initDiscovery] Failed to wait due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-        return;
-    });
-
-    if ( initFreq > 0 ) {
-        initDiscTimer=setTimeout(function() {
-            initDiscovery();
-        }, initFreq);
-    }
-
-}
-
 // update orderer
 function ordererFailover(channel, client) {
     var currId = currOrdererId;
@@ -1301,16 +1261,9 @@ async function execTransMode() {
                                     localHost = true;
                                 }
                             }
-                            if ((typeof( discoveryOpt.initFreq ) !== 'undefined')) {
-                                initFreq = parseInt(discoveryOpt.initFreq);
-                            }
                         }
 
                         channelAdd1Peer(channel, client, org);       // add one peer to channel to perform service discovery
-                        if ( (targetPeers == 'DISCOVERY') || (transType == 'DISCOVERY') ) {
-                            logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] execTransMode: serviceDiscovery=%j, localHost: %j', Nid, channelName, org, pid, serviceDiscovery, localHost);
-                            initDiscovery();
-                        }
                     } else {
 	                logger.error('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] pte-exec:completed:error targetPeers= %s', Nid, channelName, org, pid, targetPeers);
                         process.exit(1);
@@ -1322,14 +1275,24 @@ async function execTransMode() {
                         logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] peerList: ' , Nid, channelName, org, pid, peerList);
                     }
 
-                    // execute transactions
                     tCurr = new Date().getTime();
                     var tSynchUp=tStart-tCurr;
                     if ( tSynchUp < 10000 ) {
                         tSynchUp=10000;
                     }
 	            logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] execTransMode: tCurr= %d, tStart= %d, time to wait=%d', Nid, channelName, org, pid, tCurr, tStart, tSynchUp);
-
+                    // execute transactions
+                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] execTransMode: serviceDiscovery=%j, localHost: %j', Nid, channelName, org, pid, serviceDiscovery, localHost);
+                    channel.initialize({
+                        discover: serviceDiscovery,
+                        asLocalhost: localHost
+                    })
+                    .then((success) => {
+                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] discovery results %j', Nid, channelName, org, pid, success);
+                        if (targetPeers === 'DISCOVERY'){
+                            channelDiscoveryEvent(channel, client, org);
+                            logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] discovery: completed events ports' , Nid, channelName, org, pid);
+                        }
                     setTimeout(function() {
                         //logger.info('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] get peers %j', Nid, channelName, org, pid, channel.getPeers());
                         if (transType == 'DISCOVERY') {
@@ -1352,8 +1315,13 @@ async function execTransMode() {
                             process.exit(1);
                         }
                     }, tSynchUp);
+                },
+                function(err) {
+                    logger.error('[Nid:chan:org:id=%d:%s:%s:%d execTransMode] Failed to wait due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+                    return;
                 }
-    );
+            );
+        });
 }
 
 function isExecDone(trType){
@@ -1385,7 +1353,6 @@ function isExecDone(trType){
         // If this guard timer times out, then that means at least one invoke TX did not make it,
         // and cleanup has not happened so we can finish and clean up now.
         if ( IDone == 1 ) {
-            clearInitDiscTimeout();
             tCurr = new Date().getTime();
             console.log('[Nid:chan:org:id=%d:%s:%s:%d isExecDone] setup Timeout: %d ms, curr time: %d', Nid, channelName, org, pid, evtTimeout, tCurr);
             setTimeout(function(){
@@ -1418,7 +1385,6 @@ function isExecDone(trType){
 
            if ( inv_q >= nRequest ) {
                 QDone = 1;
-                clearInitDiscTimeout();
            }
         } else {
            if ( (inv_q % 1000) == 0 ) {
@@ -1429,7 +1395,6 @@ function isExecDone(trType){
            if ( runForever == 0 ) {
                if ( tCurr > tEnd ) {
                     QDone = 1;
-                    clearInitDiscTimeout();
                }
            }
         }
@@ -1442,7 +1407,6 @@ function isExecDone(trType){
 
            if ( n_sd >= nRequest ) {
                 IDone = 1;
-                clearInitDiscTimeout();
            }
         } else {
            if ( (n_sd % 1000) == 0 ) {
@@ -1453,7 +1417,6 @@ function isExecDone(trType){
            if ( runForever == 0 ) {
                if ( tCurr > tEnd ) {
                     IDone = 1;
-                    clearInitDiscTimeout();
                }
            }
         }
@@ -1964,8 +1927,8 @@ function invoke_move_const_evtBlock(freq) {
                         invoke_move_const_go_evtBlock(t1, freq);
                     } else {
                         tCurr = new Date().getTime();
-                        var remain = Object.keys(txidList).length;
                         logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const_evtBlock] completed %d, evtTimoutCnt %d, unceived events %d, %s(%s) in %d ms, timestamp: start %d end %d', Nid, channelName, org, pid, inv_m, evtTimeoutCnt, remain, transType, invokeType, tCurr-tLocal, tLocal, tCurr);
+                        var remain = Object.keys(txidList).length;
                         if ( remain > 0 ) {
                             console.log('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_const_evtBlock] unreceived events(%d), txidList', Nid, channelName, org, pid, remain, txidList);
                         }
@@ -2409,6 +2372,187 @@ function execModeProposal() {
         evtDisconnect();
     }
 }
+
+// +++++++++++++++++++++++++++++++++++++++++++++++Poisson Mode Begin++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Poisson mode vars
+
+var lambda;
+var ksamples;
+var tscale=[];
+var tLocal;
+// poissonk contains all the k Poisson frequency rates
+var poissonk=[];
+var math=require('mathjs');
+
+
+require('fs')
+// pFreq contains the current k Poisson frequency rate chosen by getPoissonFreq()
+var pFreq;
+
+function getPoissonFreq() {
+	var tCurrR;
+
+    tCurr = new Date().getTime();
+	tCurrR = ~~((tLocal - tCurr)/1000);
+	
+	// there needs to be a condition on what happens once poissonk[] is picked out of bounds
+	
+	if (tCurrR <= ksamples) {
+		pFreq = poissonk[tCurrR];
+	} else {
+		pFreq = 0;
+	}
+		
+}
+
+function invoke_move_Poisson_go(){
+    setTimeout(function(){
+        invoke_move_Poisson();
+    },bFreq);
+}
+
+function invoke_move_Poisson() {
+    inv_m++;
+    // set up Poisson traffic duration and frequency
+    getPoissonFreq();
+
+    getMoveRequest();
+
+    channel.sendTransactionProposal(request_invoke)
+    .then((results) => {
+            var proposalResponses = results[0];
+
+            getTxRequest(results);
+            eventRegister(request_invoke.txId);
+
+            var sendPromise = channel.sendTransaction(txRequest);
+            return Promise.all([sendPromise].concat(eventPromises))
+            .then((results) => {
+
+                if ( results[0].status != 'SUCCESS' ) {
+                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_Poisson] sendTransactionProposal status: %d', Nid, channelName, org, pid, results[0]);
+                    invoke_move_Poisson_go();
+                    return;
+                }
+
+                isExecDone('Move');
+                if ( IDone != 1 ) {
+                    invoke_move_Poisson_go();
+                } else {
+                    tCurr = new Date().getTime();
+                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_Poisson] completed %d %s(%s) in %d ms, timestamp: start %d end %d', Nid, channelName, org, pid, inv_m, transType, invokeType, tCurr-tLocal, tLocal, tCurr);
+                    return;
+                }
+                //return results[0];
+
+            }).catch((err) => {
+                logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_Poisson] Failed to send transaction due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+                invoke_move_Poisson_go();
+                //evtDisconnect();
+                return;
+            })
+
+        }).catch((err) => {
+                logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_Poisson] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+
+                isExecDone('Move');
+                if ( IDone != 1 ) {
+                    invoke_move_Poisson_go();
+                }
+        });
+}
+
+function invoke_query_Poisson() {
+    inv_q++;
+
+    // set up Poisson traffic duration and frequency
+    getPoissonFreq();
+
+    getQueryRequest();
+    channel.queryByChaincode(request_query)
+    .then(
+        function(response_payloads) {
+            isExecDone('Query');
+            if ( QDone != 1 ) {
+                setTimeout(function(){
+                    invoke_query_Poisson();
+                },bFreq);
+            } else {
+                tCurr = new Date().getTime();
+                for(let j = 0; j < response_payloads.length; j++) {
+                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_Poisson] query result:', Nid, channelName, org, pid, response_payloads[j].toString('utf8'));
+                }
+
+                logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_Poisson] pte-exec:completed %d transaction %s(%s) in %d ms, timestamp: start %d end %d,Throughput=%d TPS', Nid, channelName, org, pid, inv_q, transType, invokeType, tCurr-tLocal, tLocal, tCurr,(inv_q/(tCurr-tLocal)*1000).toFixed(2));
+                //return;
+            }
+        },
+        function(err) {
+            logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_Poisson] Failed to send query due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+            evtDisconnect();
+            return;
+        })
+    .catch(
+        function(err) {
+            logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_Poisson] %s failed: ', Nid, channelName, org, pid, transType,  err.stack ? err.stack : err);
+            evtDisconnect();
+        }
+    );
+
+}
+
+function execModePoisson() {
+
+    // init Poisson varaibles
+	ksamples = parseInt(txCfgPtr.PoissonOpt.ksamples);
+	lambda = parseInt(txCfgPtr.PoissonOpt.lambda);
+	
+	//tFreq = [burstFreq0, burstFreq1];
+    //tDur  = [burstDur0, burstDur1];
+
+    logger.info('[Nid:chan:org:id=%d:%s:%s:%d execModePoisson] Poisson setting: ksamples =',Nid, channelName, org, pid, ksamples);
+    logger.info('[Nid:chan:org:id=%d:%s:%s:%d execModePoisson] Poisson setting: lambda=',Nid, channelName, org, pid, lambda);
+
+    // get time
+    tLocal = new Date().getTime();
+
+	for(var i = 0; i < ksamples ;i++){
+		tscale[i] = tLocal+(i+1)*1000;
+		poissonk[i] = math.factorial(i)*1/(math.exponential(-lambda)*math.pow(lambda, i))
+	}
+		
+		
+	// send proposal to endorser
+    if ( transType == 'INVOKE' ) {
+        tLocal = new Date().getTime();
+        if ( runDur > 0 ) {
+            tEnd = tLocal + runDur;
+        }
+        logger.info('[Nid:chan:org:id=%d:%s:%s:%d execModePoisson] tStart %d, tLocal %d', Nid, channelName, org, pid, tStart, tLocal);
+        if ( invokeType == 'MOVE' ) {
+            invoke_move_Poisson();
+        } else if ( invokeType == 'QUERY' ) {
+            invoke_query_Poisson();
+        }
+    } else {
+        logger.error('[Nid:chan:org:id=%d:%s:%s:%d execModePoisson] invalid transType= %s', Nid, channelName, org, pid, transType);
+        evtDisconnect();
+    }
+}
+
+
+// ++++++++++++++++++++++++++++++++++++++++++++++Poisson Mode End++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+
+
+
+
+
+
+
+
 
 // Burst mode vars
 var burstFreq0;
