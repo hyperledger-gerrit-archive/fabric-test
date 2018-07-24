@@ -102,6 +102,14 @@ pull-images:
 svt-daily-pte-tests: pull-images
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runPteTestSuite.sh
 
+.PHONY: ote-tests
+ote-tests: pull-images
+  cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runOteTestSuite.sh
+
+.PHONY: lte-tests
+lte-tests: pull-images
+  cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runLteTestSuite.sh
+
 .PHONY: svt-daily
 svt-daily: pull-images daily-tests
 
