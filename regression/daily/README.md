@@ -15,6 +15,14 @@ This readme explains everything there is to know about our daily regression test
 
 Everything starts with [runDailyTestSuite.sh](./runDailyTestSuite.sh), which invokes all test driver scripts, such as *systest_pte.py*, and the behave tests. Together, these driver scripts initiate all tests in the daily test suite. You can manually execute *runDailyTestSuite.sh* in its entirety, or, run one any one of the test driver scripts on the command line. Or, you may simply view the results generated daily by an automated Continuous Improvement (CI) tool which executes *runDailyTestSuite.sh*. Reports are displayed on the [Daily Test Suite Results Page](https://jenkins.hyperledger.org/view/fabric-test/job/fabric-test-daily-x86_64/test_results_analyzer/). When you look at the reports; click the *Expand All* button or click the buttons in the **'See children'** column to see the results breakdown by component and by individual tests.
 
+## LTE and OTE daily Tests
+
+In previous configurations, the Daily Test Suite ran LTE and OTE tests. We have
+separated out the LTE and OTE daily tests from the [runDailyTestSuite.sh](./runDailyTestSuite.sh)
+daily test suite script. Both the [runLteTestSuite.sh](./runLteTestSuite.sh) and
+[runOteTestSuite.sh](./runLteTestSuite.sh) scripts run the LTE and OTE independently
+from test driver and behave tests.
+
 #### Where to Find Existing Tests
 
 Examine the driver scripts to find the individual tests, which are actually stored in several locations under */path/to/fabric-test/*. Some tests are located in test suite subdirectories such as
