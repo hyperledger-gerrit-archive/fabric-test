@@ -8,6 +8,7 @@ import os
 import subprocess
 import shutil
 import gc
+import psutil
 from steps.endorser_util import CLIInterface, ToolInterface
 
 
@@ -63,6 +64,12 @@ def after_scenario(context, scenario):
     elif hasattr(context, 'projectName'):
         shutil.rmtree("configs/%s" % context.projectName)
 
+    # Print memory information after every scenario
+    memory = subprocess.check_output(["df", "-h"], shell=True)
+    print("\nMemory Usage Info:\n{}\n".format(memory))
+    mem = psutil.virtual_memory()
+    print("*** Memory Info:\n\tFree: {}\n\tUsed: {}\n\tPercentage: {}\n".format(mem.free, mem.used, mem.percent))
+
     # Clean up memory in between scenarios, just in case
     if hasattr(context, "random_key"):
         del context.random_key
@@ -77,6 +84,9 @@ def before_all(context):
         context.remote = True
         context.interface = ToolInterface(context)
 
-# stop any running peer that could get in the way before starting the tests
+    mem = psutil.virtual_memory()
+    print("Starting Memory Info:\n\tFree: {}\n\tUsed: {}\n\tPercentage: {}\n".format(mem.free, mem.used, mem.percent))
+
 def after_all(context):
-    print("context.failed = {0}".format(context.failed))
+    mem = psutil.virtual_memory()
+    print("Ending Memory Info:\n\tFree: {}\n\tUsed: {}\n\tPercentage: {}\n".format(mem.free, mem.used, mem.percent))
