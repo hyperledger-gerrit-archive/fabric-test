@@ -86,6 +86,8 @@ The command is located in `PTE/CITest/scripts`
         FAB-8208-64i: samplecc chaincode, 32 processes invokes longrun, TLS, levelDB, 32 org, 8 channel, filtered block event service
         FAB-8208-64q: ledger synchronization for FAB-8208-64i, samplecc chaincode, 32 processes X 100 queries, TLS, levelDB, 32 org, 8 channel
         FAB-6813-4i: marbles02 GO chaincode, 4 processes X 1000 invokes, TLS, CouchDB with indexing, 2 channel, channel event service with block listener
+        FAB-8251: marbles02 GO chaincode, 4 processes X 250000 invokes, TLS, CouchDB with indexing, 2 channel, channel event service with block listener, simultaneous operation of 1) chaincode upgrade with index rebuild, 2) 4 processes X 250000 rich queries with 2-field selector 3) 4 processes X 250000 invokes
+        FAB-8252: marbles02 GO chaincode, 4 processes X 250000 invokes, TLS, CouchDB with indexing, 2 channel, channel event service with block listener, simultaneous operation of 1) chaincode upgrade with index rebuild, 2) 4 processes X 250000 rich queries with 4-field selector 3) 4 processes X 250000 invokes
         FAB-8694-4i: marbles02 GO chaincode, 4 processes X 250000 invokes, TLS, CouchDB, 2 channel, filtered block event service with block listener
         FAB-8695-4q: marbles02 GO chaincode, 4 processes X 250000 rich queries with 2-field selector, TLS, CouchDB, 2 channels
         FAB-8696-4q: marbles02 GO chaincode, 4 processes X 250000 rich queries with 4-field selector, TLS, CouchDB, 2 channels
