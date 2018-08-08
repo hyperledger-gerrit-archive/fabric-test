@@ -9,7 +9,7 @@
 #                and executes smoke tests.
 #   - ci-daily - update submodules, clone fabric & fabric-ca, build docker images
 #                and executes daily test suite.
-#   - svt-daily     - pulls the images, binaries from Nexus and runs the daily test suite.
+#   - svt-daily     - pulls the images, binaries from Nexus and runs the daily test suite that executes Behave feature tests.
 #   - svt-smoke     - pulls the images, binaries from Nexus and runs the smoke tests.
 #   - docker-images - builds fabric & ca docker images.
 #   - fabric        - clones fabric repository.
@@ -19,6 +19,7 @@
 #   - svt-daily-pte-tests - pulls the images, binaries from Nexus and runs the PTE Performance tests.
 #   - svt-daily-ote-tests - pulls the images, runs the OTE test suite.
 #   - svt-daily-lte-tests - pulls the images, runs the LTE test suite.
+#   - svt-daily-ca-tests - pulls the images, runs the CA test suite.
 #   - git-latest    - init git submodules to latest available commit.
 #   - git-init      - init git submodules.
 #   - pre-setup     - installs node, govendor and behave pre-requisites.
@@ -114,6 +115,10 @@ svt-daily-ote-tests: pull-images
 .PHONY: svt-daily-lte-tests
 svt-daily-lte-tests: pull-images
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runLteTestSuite.sh
+
+.PHONY: svt-daily-ca-tests
+svt-daily-ca-tests: pull-images
+	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runCATestSuite.sh
 
 .PHONY: svt-daily
 svt-daily: pull-images daily-tests
