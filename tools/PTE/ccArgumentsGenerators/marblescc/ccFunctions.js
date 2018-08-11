@@ -159,6 +159,13 @@ class ccFunctions extends ccFunctionsBase {
 	getExecModeProposalFreq() {
 		return 20000;
 	}
+
+    getAccessControlPolicyMap() {
+        return {
+            "initMarble": ["org1", "org2"],
+            "readMarble": []
+        };
+    }
 }
 
 module.exports = ccFunctions;
