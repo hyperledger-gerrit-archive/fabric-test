@@ -82,6 +82,20 @@ class ccFunctions extends ccFunctionsBase {
 	getExecModeProposalFreq() {
 		return 0;
 	}
+
+    // This is an OPTIONAL function
+    // Returns organization names allowed to invoke/query functions
+	// - <function name> --> <array of organization names>
+    // Default access policy: any organization is allowed to call the function
+    // - If 'getAccessControlPolicyMap' is not defined
+    // - If the return value is an empty JSON: {}
+    // - If the invoke/query function is not a key in the returned JSON
+    // - If the value corresponding to an invoke/query function is an empty array
+    getAccessControlPolicyMap() {
+        return {
+            "invoke": []
+        };
+    }
 }
 
 module.exports = ccFunctions;

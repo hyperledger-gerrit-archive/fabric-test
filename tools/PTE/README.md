@@ -498,44 +498,60 @@ The logic for `<ccType>` should be specified in `ccArgumentsGenerators/<ccType>/
 The `ccFunctions` interface that should be implemented is described below. (_Note_: The functions in these interface will be called by `pte-execRequest.js`, so please ensure that they are defined and return a value of an appropriate type.)
 ```
 class ccFunctions extends ccFunctionsBase {
-	constructor(ccDfnPtr, logger, Nid, channelName, org, pid) {
-		super(ccDfnPtr, logger, Nid, channelName, org, pid);
-		// ADD INITIALIZATION LOGIC HERE
-	}
+    constructor(ccDfnPtr, logger, Nid, channelName, org, pid) {
+        super(ccDfnPtr, logger, Nid, channelName, org, pid);
+        // ADD INITIALIZATION LOGIC HERE
+    }
 
-	getInvokeArgs(txIDVar) {
-		// ADD LOGIC TO COMPUTE CHAINCODE INVOCATION ARGUMENTS (EXCLUDING THE FUNCTION NAME)
+    getInvokeArgs(txIDVar) {
+        // ADD LOGIC TO COMPUTE CHAINCODE INVOCATION ARGUMENTS (EXCLUDING THE FUNCTION NAME)
 
-		// POPULATE THE 'this.testInvokeArgs[]' ARRAY WITH THE COMPUTED ARGUMENTS' LIST
+        // POPULATE THE 'this.testInvokeArgs[]' ARRAY WITH THE COMPUTED ARGUMENTS' LIST
 
-		// THIS ARRAY WILL BE READ IN 'pte-execRequest.js:getMoveRequest()'
-	}
+        // THIS ARRAY WILL BE READ IN 'pte-execRequest.js:getMoveRequest()'
+    }
 
-	getQueryArgs(txIDVar) {
-		// ADD LOGIC TO COMPUTE CHAINCODE QUERY ARGUMENTS (EXCLUDING THE FUNCTION NAME)
+    getQueryArgs(txIDVar) {
+        // ADD LOGIC TO COMPUTE CHAINCODE QUERY ARGUMENTS (EXCLUDING THE FUNCTION NAME)
 
-		// POPULATE THE 'this.testQueryArgs[]' ARRAY WITH THE COMPUTED ARGUMENTS' LIST
+        // POPULATE THE 'this.testQueryArgs[]' ARRAY WITH THE COMPUTED ARGUMENTS' LIST
 
-		// THIS ARRAY WILL BE READ IN 'pte-execRequest.js:getQueryRequest()'
-	}
+        // THIS ARRAY WILL BE READ IN 'pte-execRequest.js:getQueryRequest()'
+    }
 
-	getExecModeLatencyFreq() {
-		return 0;	// RETURN APPROPRIATE INTEGER VALUE
+    getExecModeLatencyFreq() {
+        'return 0;	// RETURN APPROPRIATE INTEGER VALUE
 
-		// THIS VALUE WILL BE USED IN 'pte-execRequest.js:execModeLatency()'
-	}
+        // THIS VALUE WILL BE USED IN 'pte-execRequest.js:execModeLatency()'
+    }
 
-	getExecModeSimpleFreq() {
-		return 0;	// RETURN APPROPRIATE INTEGER VALUE
+    getExecModeSimpleFreq() {
+        return 0;	// RETURN APPROPRIATE INTEGER VALUE
 
-		// THIS VALUE WILL BE USED IN 'pte-execRequest.js:execModeSimple()'
-	}
+        // THIS VALUE WILL BE USED IN 'pte-execRequest.js:execModeSimple()'
+    }
 
 	getExecModeProposalFreq() {
-		return 0;	// RETURN APPROPRIATE INTEGER VALUE
+    return 0;	// RETURN APPROPRIATE INTEGER VALUE
 
-		// THIS VALUE WILL BE USED IN 'pte-execRequest.js:execModeProposal()'
-	}
+        // THIS VALUE WILL BE USED IN 'pte-execRequest.js:execModeProposal()'
+    }
+
+    // This is an OPTIONAL function
+    // Returns organization names allowed to invoke/query functions
+    // - <function name> --> <array of organization names>
+    // Default access policy: any organization is allowed to call the function
+    // - If 'getAccessControlPolicyMap' is not defined
+    // - If the return value is an empty JSON: {}
+    // - If the invoke/query function is not a key in the returned JSON
+    // - If the value corresponding to an invoke/query function is an empty array
+    getAccessControlPolicyMap() {
+        return {
+            // JSON key-value mappings: <string> --> <array of strings>
+        };
+
+        // THIS VALUE WILL BE USED IN 'pte-execRequest.js:getMoveRequest()' and 'pte-execRequest.js:getQueryRequest()'
+    }
 }
 ```
 For examples, see:
