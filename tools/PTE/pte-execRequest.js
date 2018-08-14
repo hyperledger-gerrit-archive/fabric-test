@@ -354,6 +354,7 @@ function peerFailover(channel, client) {
         currPeerId = currPeerId + 1;
     }
     currPeerId = currPeerId%peerList.length;
+    channel.removePeer(peerList[currPeerId]);
     channel.addPeer(peerList[currPeerId]);
 
     //handle channel eventHubs if evtType == CHANNEL
@@ -493,6 +494,7 @@ function assignThreadAllPeers(channel, client, org) {
                             }
                         );
                         targets.push(peerTmp);
+                        channel.removePeer(peerTmp);
                         channel.addPeer(peerTmp);
                         if ( peerFOList == 'TARGETPEERS' ) {
                             peerList.push(peerTmp);
@@ -511,6 +513,7 @@ function assignThreadAllPeers(channel, client, org) {
                 } else {
                     peerTmp = client.newPeer( ORGS[key1][key].requests);
                     targets.push(peerTmp);
+                    channel.removePeer(peerTmp);
                     channel.addPeer(peerTmp);
                     if ( peerFOList == 'TARGETPEERS' ) {
                         peerList.push(peerTmp);
@@ -556,6 +559,7 @@ function assignThreadAllAnchorPeers(channel, client, org) {
                             }
                         );
                         targets.push(peerTmp);
+                        channel.removePeer(peerTmp);
                         channel.addPeer(peerTmp);
                         if ( peerFOList == 'TARGETPEERS' ) {
                             peerList.push(peerTmp);
@@ -575,6 +579,7 @@ function assignThreadAllAnchorPeers(channel, client, org) {
                 } else {
                     peerTmp = client.newPeer( ORGS[key1][key].requests);
                     targets.push(peerTmp);
+                    channel.removePeer(peerTmp);
                     channel.addPeer(peerTmp);
                     if ( peerFOList == 'TARGETPEERS' ) {
                         peerList.push(peerTmp);
@@ -623,6 +628,7 @@ function assignThreadOrgPeer(channel, client, org) {
                             }
                         );
                         targets.push(peerTmp);
+                        channel.removePeer(peerTmp);
                         channel.addPeer(peerTmp);
                         if ( peerFOList == 'TARGETPEERS' ) {
                             peerList.push(peerTmp);
@@ -640,6 +646,7 @@ function assignThreadOrgPeer(channel, client, org) {
                     }
                 } else {
                     peerTmp = client.newPeer( ORGS[org][key].requests);
+                    channel.removePeer(peerTmp);
                     channel.addPeer(peerTmp);
                     if ( peerFOList == 'TARGETPEERS' ) {
                         peerList.push(peerTmp);
@@ -687,6 +694,7 @@ function assignThreadPeerList(channel, client, org) {
                                 }
                             );
                             targets.push(peerTmp);
+                            channel.removePeer(peerTmp);
                             channel.addPeer(peerTmp);
                             if ( peerFOList == 'TARGETPEERS' ) {
                                 peerList.push(peerTmp);
@@ -704,6 +712,7 @@ function assignThreadPeerList(channel, client, org) {
                         }
                     } else {
                         peerTmp = client.newPeer(ORGS[key][peername].requests);
+                        channel.removePeer(peerTmp);
                         channel.addPeer(peerTmp);
                         if ( peerFOList == 'TARGETPEERS' ) {
                             peerList.push(peerTmp);
@@ -744,6 +753,7 @@ function channelAddPeer(channel, client, org) {
                             }
                         );
                         targets.push(peerTmp);
+                        channel.removePeer(peerTmp);
                         channel.addPeer(peerTmp);
 
                         if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
@@ -759,6 +769,7 @@ function channelAddPeer(channel, client, org) {
                 } else {
                     peerTmp = client.newPeer( ORGS[org][key].requests);
                     targets.push(peerTmp);
+                    channel.removePeer(peerTmp);
                     channel.addPeer(peerTmp);
                     if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
                         eh = channel.newChannelEventHub(peerTmp);
@@ -802,6 +813,7 @@ function channelAddPeerEvent(channel, client, org) {
                     logger.info('[Nid:chan:org:id=%d:%s:%s:%d channelAddPeerEvent] peer: ', Nid, channelName, org, pid, ORGS[org][key].requests);
                 }
                 targets.push(peerTmp);
+                channel.removePeer(peerTmp);
                 channel.addPeer(peerTmp);
                 if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
                     eh = channel.newChannelEventHub(peerTmp);
@@ -855,12 +867,14 @@ function channelAdd1Peer(channel, client, org) {
                             }
                         );
                         targets.push(peerTmp);
+                        channel.removePeer(peerTmp);
                         channel.addPeer(peerTmp);
 
                     }
                 } else {
                     peerTmp = client.newPeer( ORGS[org][key].requests);
                     targets.push(peerTmp);
+                    channel.removePeer(peerTmp);
                     channel.addPeer(peerTmp);
                 }
                 if ( ((evtType == 'CHANNEL') || (evtType == 'FILTEREDBLOCK')) && (invokeType == 'MOVE') ) {
@@ -1017,6 +1031,7 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
                             }
                         );
                         targets.push(peerTmp);
+                        channel.removePeer(peerTmp);
                         channel.addPeer(peerTmp);
                         if ( peerFOList == 'TARGETPEERS' ) {
                             peerList.push(peerTmp);
@@ -1037,6 +1052,7 @@ function assignThreadOrgAnchorPeer(channel, client, org) {
                     logger.info('[Nid:chan:org:id=%d:%s:%s:%d assignThreadOrgAnchorPeer] key: %s, subkey: %s', Nid, channelName, org, pid, key, ORGS[org][subkey].requests);
                     peerTmp = client.newPeer( ORGS[key][subkey].requests);
                     targets.push(peerTmp);
+                    channel.removePeer(peerTmp);
                     channel.addPeer(peerTmp);
                     if ( peerFOList == 'TARGETPEERS' ) {
                         peerList.push(peerTmp);
