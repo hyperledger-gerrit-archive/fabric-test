@@ -4,6 +4,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+echo "======== Performance Test using PTE and NL tools...========"
+cd $GOPATH/src/github.com/hyperledger/fabric-test/tools/PTE
+npm config set prefix ~/npm
+npm install
+  if [ $? != 0 ]; then
+     echo "FAILED: Failed to install npm. Cannot run pte test suite."
+     # Don't exit.. Continue to test PTE to show the PTE failure result"
+  else
+     echo "Successfully installed npm."
+  fi
+cd "$GOPATH/src/github.com/hyperledger/fabric-test/regression/daily"
+py.test -v --junitxml results_systest_pte.xml systest_pte.py
+exit 0
+
+
 SMOKEDIR="$GOPATH/src/github.com/hyperledger/fabric-test/regression/smoke"
 cd $SMOKEDIR
 
