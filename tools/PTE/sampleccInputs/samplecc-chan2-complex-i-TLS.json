@@ -33,6 +33,9 @@
         "constFreq": "400",
         "devFreq": "100"
     },
+    "poissonOpt": {
+        "lambda": "100"
+    },
     "listOpt": {
         "org1": ["peer1"],
         "org2": ["peer1"]

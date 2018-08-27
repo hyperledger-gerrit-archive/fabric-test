@@ -1,7 +1,7 @@
 {
     "logLevel": "ERROR",
     "invokeCheck": "TRUE",
-    "transMode": "Constant",
+    "transMode": "Poisson",
     "transType": "Invoke",
     "invokeType": "Move",
     "targetPeers": "OrgAnchor",
@@ -23,6 +23,9 @@
         "recHist": "HIST",
         "constFreq": "0",
         "devFreq": "0"
+    },
+    "poissonOpt": {
+        "lambda": "100"
     },
     "listOpt": {
         "org1": ["peer1", "peer2"],
