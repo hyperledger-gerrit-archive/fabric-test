@@ -12,7 +12,12 @@
         starttime: "{{ ansible_date_time }}"
 
 - name: Run the plays
-  include: "roles/tool_{{ tool_type | default('pte') }}/plays.yml"
+  vars:
+    env: "bc1st"
+    deploy_type: "compose"
+    pjroot: "{{ playbook_dir }}/../../../../cello/src/agent/ansible/"
+  import_playbook: "roles/tool_{{ tool_type | default('pte') }}/plays.yml"
+  
 
 - name: inform the installer
   hosts: cloud
