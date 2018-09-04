@@ -160,25 +160,25 @@ for(i in array) {
         fs.appendFileSync(pteReport, buff);
 
     if ( transType == 'INVOKE' ) {
-        buff = '\tOverall transactions: sent '+sentTx+'   received '+receivedTx+'\n';
+        buff = '\tOverall transactions: sent '+sentTx+' received '+receivedTx+'\n';
         fs.appendFileSync(pteReport, buff);
 
-        buff = '\tOverall failures: proposal '+proposalFailed+'    transactions '+txFailed+'\n';
+        buff = '\tOverall failures: proposal '+proposalFailed+' transactions '+txFailed+'\n';
         fs.appendFileSync(pteReport, buff);
 
-        buff = '\tOverall event: received '+evtReceived+'   timeout '+evtTimeout+'   unreceived '+evtUnreceived+'\n';
+        buff = '\tOverall event: received '+evtReceived+' timeout '+evtTimeout+' unreceived '+evtUnreceived+'\n';
         fs.appendFileSync(pteReport, buff);
 
         var duration = endTime - startTime;
-        buff = '\tOverall time: start '+startTime+'   end '+endTime+'   duration '+duration+'\n';
+        buff = '\tOverall time: start '+startTime+' end '+endTime+' duration '+duration+'\n';
         fs.appendFileSync(pteReport, buff);
 
         if ( transMode == 'LATENCY' ) {
             var tLatency=duration/receivedTx;
-            buff = '\tOverall '+transMode+' '+transType+' LATENCY: '+tLatency.toFixed(2)+'\n';
+            buff = '\tOverall '+transMode+' '+transType+' LATENCY '+tLatency.toFixed(2)+'\n';
         } else {
             var tTPS=1000*receivedTx/duration;
-            buff = '\tOverall '+transMode+' '+transType+' TPS: '+tTPS.toFixed(2)+'\n';
+            buff = '\tOverall '+transMode+' '+transType+' TPS '+tTPS.toFixed(2)+'\n';
         }
         fs.appendFileSync(pteReport, buff);
 
@@ -186,21 +186,21 @@ for(i in array) {
         fs.appendFileSync(pteReport, buff);
 
         var avg=peerLatency[1]/peerLatency[0];
-        buff = '\t\tOverall proposals '+peerLatency[0]+'\tmin '+peerLatency[2]+' ms\tmax '+peerLatency[3]+'ms\tavg '+avg.toFixed(2)+' ms\n';
+        buff = '\t\tOverall proposals '+peerLatency[0]+' min '+peerLatency[2]+' ms max '+peerLatency[3]+'ms avg '+avg.toFixed(2)+' ms\n';
         fs.appendFileSync(pteReport, buff);
 
         avg=ordererLatency[1]/ordererLatency[0];
-        buff = '\t\tOverall transactions '+ordererLatency[0]+'\tmin '+ordererLatency[2]+' ms\tmax '+ordererLatency[3]+' ms\tavg '+avg.toFixed(2)+' ms\n';
+        buff = '\t\tOverall transactions '+ordererLatency[0]+' min '+ordererLatency[2]+' ms max '+ordererLatency[3]+' ms avg '+avg.toFixed(2)+' ms\n';
         fs.appendFileSync(pteReport, buff);
         avg=eventLatency[1]/eventLatency[0];
-        buff = '\t\tOverall events '+eventLatency[0]+'\tmin '+eventLatency[2]+' ms\tmax '+eventLatency[3]+' ms\tavg '+avg.toFixed(2)+' ms\n';
+        buff = '\t\tOverall events '+eventLatency[0]+' min '+eventLatency[2]+' ms max '+eventLatency[3]+' ms avg '+avg.toFixed(2)+' ms\n';
         fs.appendFileSync(pteReport, buff);
     } else if ( transType == 'QUERY' ) {
-        buff = '\tOverall transactions: sent '+sentTx+'   received '+receivedTx+'\n';
+        buff = '\tOverall transactions: sent '+sentTx+' received '+receivedTx+'\n';
         fs.appendFileSync(pteReport, buff);
 
         var duration = endTime - startTime;
-        buff = '\tOverall time: start '+startTime+'   end '+endTime+'   duration '+duration+'\n';
+        buff = '\tOverall time: start '+startTime+' end '+endTime+' duration '+duration+'\n';
         fs.appendFileSync(pteReport, buff);
 
         if ( transMode == 'LATENCY' ) {
@@ -214,11 +214,11 @@ for(i in array) {
     } else if ( transMode == 'MIX' ) {
         var sentInvoke=sentTx/2;
         var sentQuery=sentTx/2;
-        buff = '\tOverall transactions: total sent '+sentTx+'   INVOKE '+sentInvoke+'   QUERY '+sentQuery+'\n';
+        buff = '\tOverall transactions: total sent '+sentTx+' INVOKE '+sentInvoke+' QUERY '+sentQuery+'\n';
         fs.appendFileSync(pteReport, buff);
 
         var duration = endTime - startTime;
-        buff = '\tOverall time: start '+startTime+'   end '+endTime+'   duration '+duration+'\n';
+        buff = '\tOverall time: start '+startTime+' end '+endTime+' duration '+duration+'\n';
         fs.appendFileSync(pteReport, buff);
 
         var tTPS=1000*sentTx/duration;
