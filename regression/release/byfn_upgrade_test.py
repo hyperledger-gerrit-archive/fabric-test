@@ -11,19 +11,21 @@
 import unittest
 import subprocess
 
-class make_targets(unittest.TestCase):
-    def test_makeVersion(self):
-        '''
-         In this make targets test, we execute version check to make sure binaries version
-         is correct.
+class byfn_cli_release_tests(unittest.TestCase):
 
-         Passing criteria: make version test completed successfully with
+    def test_byfn_cli_upgrade(self):
+        '''
+         In this cli test, we execute the byfn upgrade command to determine
+         if byfn is successfully updated to the latest version
+
+         Passing criteria: byfn upgrade completes successfully with
          exit code 0
         '''
-        logfile = open("output_make_version_release_tests.log", "w")
+        logfile = open("output_byfn_cli_upgrade.log", "w")
         returncode = subprocess.call(
-                "./run_make_targets.sh makeVersion",
+                "./run_byfn_upgrade_release_test.sh",
                 shell=True, stderr=subprocess.STDOUT, stdout=logfile)
         logfile.close()
-        self.assertEqual(returncode, 0, msg="Run make version target "
-                "make version target tests failed. \nPlease check the logfile ")
+        self.assertEqual(returncode, 0, msg="test_byfn_cli_upgrade "
+                "tests are failed. \nPlease check the logfile "
+                +logfile.name+" for more details.")
