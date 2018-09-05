@@ -1,7 +1,18 @@
 #!/bin/bash -e
+#
+# SPDX-License-Identifier: Apache-2.0
+##############################################################################
+# Copyright (c) 2018 IBM Corporation, The Linux Foundation and others.
+#
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the Apache License 2.0
+# which accompanies this distribution, and is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+##############################################################################
 set -o pipefail
 
 # Install nvm to install multi node versions;
+
 #neet to match the pathspec below the same as in ./fabric/devenv/install_nvm.sh.
 wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | bash
 # shellcheck source=/dev/null
