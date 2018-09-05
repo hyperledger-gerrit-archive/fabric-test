@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ue
 #
 # SPDX-License-Identifier: Apache-2.0
 ##############################################################################
@@ -9,60 +9,31 @@
 # which accompanies this distribution, and is available at
 # https://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
-export WD="${WORKSPACE}/src/github.com/hyperledger/fabric-sdk-node"
-export SDK_REPO_NAME=fabric-sdk-node
+export REPO_NAME=fabric-samples
+export WD="${WORKSPACE}/src/github.com/hyperledger/${REPO_NAME}"
 
 clean_directory() {
   rm -rf $WD
 }
 
 clone_repo() {
-  git clone https://github.com/hyperledger/$SDK_REPO_NAME $WD
+
+  git clone --single-branch -b $GERRIT_BRANCH \
+  git://cloud.hyperledger.org/mirror/$REPO_NAME $WD
+
   pushd $WD
-  git checkout $GERRIT_BRANCH
-  git checkout $FABRIC_SDK_NOD_REL_COMMIT
-  popd
+  git checkout $FAB_SAMPLES_REL_COMMIT
+
 }
 
-# pull_build_artifacts() {
-#   docker pull hyperledger/fabric-javaenv:$FABRIC_TAG
-#   docker tag hyperledger/fabric-javaenv:$FABRIC_TAG hyperledger/fabric-javaenv:$FABRIC_TAG
-# }
+run_tests() {
 
-run_gulp_tests() {
-  pushd $WD
-  wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | bash
-  # shellcheck source=/dev/null
-  export NVM_DIR="$HOME/.nvm"
-  # shellcheck source=/dev/null
-  [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
+  pushd $WD/balance-transfer
 
-  # Install nodejs version 8.11.3
-  nvm install 8.11.3
+  echo "############## BALANCE TRANSFER TEST ###########"
+  echo "################################################"
 
-  # use nodejs 8.11.3 version
-  nvm use --delete-prefix v8.11.3 --silent
-
-  echo "npm version ======>"
-  npm -v
-  echo "node version =======>"
-  node -v
-
-  pushd $WD/test/fixtures
-  cat docker-compose.yaml > docker-compose.log
-  docker-compose up >> dockerlogfile.log 2>&1 &
-  sleep 10
-  docker ps -a
-  pushd ../..
-  npm install
-  npm config set prefix ~/npm
-  npm install -g gulp
-  npm install -g istanbul
-  gulp
-  gulp ca
-  rm -rf node_modules/fabric-ca-client
-  npm install
-  istanbul cover --report cobertura test/integration/e2e.js
+  echo y | ./runApp.sh
 
   popd
 }
@@ -93,10 +64,13 @@ function removeUnwantedImages() {
   fi
 }
 
-function main() {
+main() {
   clean_directory
   clone_repo
-  run_gulp_tests
+  cd $WD
+  # Copy the binaries from fabric-test
+  cp -r ${WORKSPACE}/gopath/src/github.com/hyperledger/fabric-test/regression/release/fabric-samples/bin/ .
+  run_tests
   clearContainers
   removeUnwantedImages
 }
