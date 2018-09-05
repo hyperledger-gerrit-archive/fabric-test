@@ -9,6 +9,8 @@
 #                and executes smoke tests.
 #   - ci-daily - update submodules, clone fabric & fabric-ca, build docker images
 #                and executes daily test suite.
+#   - ci-release-tests - runs byfn, sdk tests and make targets on released images
+#                and binaries.
 #   - svt-daily     - pulls the images, binaries from Nexus and runs the daily test suite.
 #   - svt-smoke     - pulls the images, binaries from Nexus and runs the smoke tests.
 #   - build-docker-images - builds fabric & ca docker images.
@@ -25,6 +27,7 @@
 #   - svt-daily-ote-tests - pulls the images, runs the OTE test suite.
 #   - svt-daily-lte-tests - pulls the images, runs the LTE test suite.
 #   - svt-daily-ca-tests - pulls the images, runs the CA test suite.
+#   - svt-release-tests - pulls the images, runs byfn, sdk tests
 #   - svt-weekly-pte-12hr-test - pulls the images, binaries from Nexus and runs the weekly 12hr PTE test.
 #   - git-latest    - init git submodules to latest available commit.
 #   - git-init      - init git submodules.
@@ -35,7 +38,13 @@
 #
 # ------------------------------------------------------------------
 
-BASE_VERSION = 1.2.0
+FABRIC_BASE_VERSION = $(shell curl \
+https://raw.githubusercontent.com/hyperledger/fabric/master/Makefile \
+| grep BASE_VERSION | head -1 | cut -d= -f2 | sed -e 's/^[ \t]*//')
+FABRIC_PREVIOUS_VERSION = $(shell curl \
+https://raw.githubusercontent.com/hyperledger/fabric/master/Makefile \
+| grep PREV_VERSION | head -1 | cut -d= -f2 | sed -e 's/^[ \t]*//')
+RELEASE_VERSION = $(FABRIC_BASE_VERSION)
 DOCKER_NS = hyperledger
 EXTRA_VERSION ?= $(shell git rev-parse --short HEAD)
 PROJECT_VERSION = $(BASE_VERSION)-$(EXTRA_VERSION)
@@ -188,6 +197,13 @@ interop-fabric-sdk-java: pull-thirdparty-images pull-binaries pull-fabric-ca pul
 .PHONY: interop-fabric-javaenv
 interop-fabric-javaenv: pull-thirdparty-images pull-binaries pull-fabric-ca javaenv interop-tests
 
+.PHONY: ci-release-tests
+ci-release-tests: pre-setup
+	cd $(HYPERLEDGER_DIR)/fabric-test/regression/release && ./runReleaseTestSuite.sh
+
+.PHONY: svt-release-tests
+svt-release-tests: pull-images ci-release-tests
+
 .PHONY: svt-daily-behave-tests
 svt-daily-behave-tests: pull-images pull-binaries pull-thirdparty-images
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runBehaveTestSuite.sh
@@ -222,6 +238,10 @@ svt-smoke: pull-binaries pull-images smoke-tests
 pte:
 	docker build -t $(PTE_IMAGE) images/PTE
 	docker tag $(PTE_IMAGE) $(PTE_IMAGE):$(PROJECT_VERSION)
+
+.PHONY: release-tests
+release-tests:
+	cd $(HYPERLEDGER_DIR)/fabric-test/regression/release && ./runReleaseTestSuite.sh
 
 .PHONY: test-viewer
 test-viewer:
