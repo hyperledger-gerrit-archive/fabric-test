@@ -11,22 +11,19 @@
 import unittest
 import subprocess
 
-class byfn_cli_release_tests(unittest.TestCase):
-
-    def test_byfn_cli_default_channel(self):
+class verify_versions(unittest.TestCase):
+    def test_verifyVersion(self):
         '''
-         In this cli test, we execute the byfn_cli tests on published release
-         docker images and pull published fabric binaries and perform tests on
-         fabric-samples repository.
+         In this make targets test, we execute version check to make sure binaries version
+         is correct.
 
-         Passing criteria: byfn_cli test completed successfully with
+         Passing criteria: make version test completed successfully with
          exit code 0
         '''
-        logfile = open("output_byfn_cli_default_channel.log", "w")
+        logfile = open("output_verify_version_release_tests.log", "w")
         returncode = subprocess.call(
-                "./run_byfn_cli_release_tests.sh",
+                "./run_verify_versions.sh",
                 shell=True, stderr=subprocess.STDOUT, stdout=logfile)
         logfile.close()
-        self.assertEqual(returncode, 0, msg="test_byfn_cli_default_channel "
-                "tests are failed. \nPlease check the logfile "
-                +logfile.name+" for more details.")
+        self.assertEqual(returncode, 0, msg="Run make version target "
+                "verify versions tests failed. \nPlease check the logfile ")
