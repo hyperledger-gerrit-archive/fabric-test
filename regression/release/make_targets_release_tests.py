@@ -1,8 +1,13 @@
-# Copyright IBM Corp. All Rights Reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
+##############################################################################
+# Copyright (c) 2018 IBM Corporation, The Linux Foundation and others.
 #
-
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the Apache License 2.0
+# which accompanies this distribution, and is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+##############################################################################
 import unittest
 import subprocess
 
@@ -58,23 +63,6 @@ class make_targets(unittest.TestCase):
         logfile.close()
         self.assertEqual(returncode, 0, msg="Run make dist-all target "
                 "make dist-all target tests failed. \nPlease check the logfile ")
-
-
-    def test_makeDocker(self):
-        '''
-         In this make targets test, we execute make docker target to make sure docker target
-         is working without any issues.
-
-         Passing criteria: make docker test completed successfully with
-         exit code 0
-        '''
-        logfile = open("output_make_docker_release_tests.log", "w")
-        returncode = subprocess.call(
-                "./run_make_targets.sh makeDocker",
-                shell=True, stderr=subprocess.STDOUT, stdout=logfile)
-        logfile.close()
-        self.assertEqual(returncode, 0, msg="Run make Docker target "
-                "make Docker target tests failed. \nPlease check the logfile ")
 
     def test_makeVersion(self):
         '''
