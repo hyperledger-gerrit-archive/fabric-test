@@ -1,54 +1,43 @@
 #!/bin/bash
 #
-# Copyright IBM Corp. All Rights Reserved.
-#
 # SPDX-License-Identifier: Apache-2.0
+##############################################################################
+# Copyright (c) 2018 IBM Corporation, The Linux Foundation and others.
 #
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the Apache License 2.0
+# which accompanies this distribution, and is available at
+# https://www.apache.org/licenses/LICENSE-2.0
+##############################################################################
 
-DAILYDIR="$GOPATH/src/github.com/hyperledger/fabric/test/regression/daily"
-RELEASEDIR="$GOPATH/src/github.com/hyperledger/fabric/test/regression/release"
+pull_build_artifacts() {
+  curl -sSL http://bit.ly/2ysbOFE | bash -s $FAB_VER $CA_VER $BASE_VER
+  docker pull hyperledger/fabric-javaenv:$FAB_VER
+  docker tag hyperledger/fabric-javaenv:$FAB_VER hyperledger/fabric-javaenv:$FAB_VER
+  echo "XXXXXXXXXXXXXXXXXXXXXX"
+  pwd
+  ls -l fabric-samples/
+}
 
-export FABRIC_ROOT_DIR=$GOPATH/src/github.com/hyperledger/fabric
+run_release_tests() {
 
-cd $FABRIC_ROOT_DIR || exit
+  docker rm -f $(docker ps -aq) || true
+  echo "=======> Verify Pull Versions"
+  py.test -v --junitxml results_make_targets.xml verify_versions_release_tests.py
 
-IS_RELEASE=`cat Makefile | grep IS_RELEASE | awk '{print $3}'`
-echo "=======>" $IS_RELEASE
+  docker rm -f $(docker ps -aq) || true
+  echo "=======> Execute SDK tests..."
+  py.test -v --junitxml results_e2e_sdk.xml e2e_sdk_release_tests.py
 
-# IS_RELEASE=True specify the Release check. Trigger Release tests only
-# if IS_RELEASE=TRUE
+  docker rm -f $(docker ps -aq) || true
+  echo "=======> Execute byfn tests..."
+  py.test -v --junitxml results_byfn_cli.xml byfn_release_tests.py
 
-if [ $IS_RELEASE != "true" ]; then
-echo "=======> TRIGGER ONLY on RELEASE !!!!!"
-exit 0
-else
+}
 
-cd $RELEASEDIR
+main() {
+  pull_build_artifacts
+  run_release_tests
+}
 
-docker rm -f $(docker ps -aq) || true
-echo "=======> Execute make targets"
-chmod +x run_make_targets.sh
-py.test -v --junitxml results_make_targets.xml make_targets_release_tests.py
-
-echo "=======> Execute SDK tests..."
-chmod +x run_e2e_node_sdk.sh
-chmod +x run_e2e_java_sdk.sh
-py.test -v --junitxml results_e2e_sdk.xml e2e_sdk_release_tests.py
-
-docker rm -f $(docker ps -aq) || true
-echo "=======> Execute byfn tests..."
-chmod +x run_byfn_cli_release_tests.sh
-chmod +x run_node_sdk_byfn.sh
-py.test -v --junitxml results_byfn_cli.xml byfn_release_tests.py
-
-cd $DAILYDIR
-
-docker rm -f $(docker ps -aq) || true
-echo "=======> Ledger component performance tests..."
-py.test -v --junitxml results_ledger_lte.xml ledger_lte.py
-
-docker rm -f $(docker ps -aq) || true
-echo "=======> Test Auction Chaincode ..."
-py.test -v --junitxml results_auction_daily.xml testAuctionChaincode.py
-
-fi
+main
