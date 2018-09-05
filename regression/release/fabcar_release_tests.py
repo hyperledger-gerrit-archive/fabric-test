@@ -11,22 +11,22 @@
 import unittest
 import subprocess
 
-class byfn_cli_release_tests(unittest.TestCase):
+class fabcar_release_tests(unittest.TestCase):
 
-    def test_byfn_cli_default_channel(self):
+    def test_fabcar(self):
         '''
-         In this cli test, we execute the byfn_cli tests on published release
+         In this cli test, we execute the fabcar example on published release
          docker images and pull published fabric binaries and perform tests on
          fabric-samples repository.
 
-         Passing criteria: byfn_cli test completed successfully with
+         Passing criteria: fabcar release test completed successfully with
          exit code 0
         '''
-        logfile = open("output_byfn_cli_default_channel.log", "w")
+        logfile = open("output_fabcar_release_test.log", "w")
         returncode = subprocess.call(
-                "./run_byfn_cli_release_tests.sh",
+                "./run_fabcar_release_tests.sh",
                 shell=True, stderr=subprocess.STDOUT, stdout=logfile)
         logfile.close()
-        self.assertEqual(returncode, 0, msg="test_byfn_cli_default_channel "
+        self.assertEqual(returncode, 0, msg="test_fabcar "
                 "tests are failed. \nPlease check the logfile "
                 +logfile.name+" for more details.")
