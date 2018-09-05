@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -ue
 #
 # Copyright IBM Corp. All Rights Reserved.
 #
@@ -7,35 +7,75 @@
 
 # RUN BYFN Test
 #####################
-
-CH_NAME="$1"
-rm -rf ${GOPATH}/src/github.com/hyperledger/fabric-samples
-
 WD="${GOPATH}/src/github.com/hyperledger/fabric-samples"
 REPO_NAME=fabric-samples
 
-git clone ssh://hyperledger-jobbuilder@gerrit.hyperledger.org:29418/$REPO_NAME $WD
-cd $WD
+#CH_NAME="$1"
+clean_directory() {
+  rm -rf ${GOPATH}/src/github.com/hyperledger/fabric-samples
+}
 
-curl -L https://raw.githubusercontent.com/hyperledger/fabric/master/scripts/bootstrap-1.0.0.sh -o bootstrap-1.0.0.sh
-chmod +x bootstrap-1.0.0.sh
-./bootstrap-1.0.0.sh
+clone_repo() {
+  git clone ssh://hyperledger-jobbuilder@gerrit.hyperledger.org:29418/$REPO_NAME \
+  $WD
+  cd $WD
 
-cd $WD/first-network
-export PATH=$WD/bin:$PATH
-echo y | ./byfn.sh -m down
+  # Display the RELEASE_VERSION to indicate the RELEASE being tested.
+  echo "--------> RELEASE_VERSION : $RELEASE_VERSION"
+}
 
-     if [ -z "${CH_NAME}" ]; then
-          echo "Generating artifacts for default channel"
-          echo y | ./byfn.sh -m generate
-	  echo "setting to default channel 'mychannel'"
-          echo y | ./byfn.sh -m up -t 10
-          echo
-      else
-          echo "Generate artifacts for custom Channel"
-          echo y | ./byfn.sh -m generate -c $CH_NAME
-          echo "Setting to non-default channel $CH_NAME"
-          echo y | ./byfn.sh -m up -c $CH_NAME -t 10
-          echo
-     fi
-echo y | ./byfn.sh -m down
+run_bootstrap() {
+  # Run the environment bootstrap script, passing in the RELEASE_VERSION to
+  # ensure that the correct project versions are used.
+  curl -sSL https://goo.gl/6wtTN5 | bash -s $RELEASE_VERSION
+}
+
+run_tests() {
+  cd $WD/first-network
+
+  echo "############## BYFN,EYFN DEFAULT CHANNEL TEST#############"
+  echo "#########################################################"
+  echo y | ./byfn.sh -m down
+  echo y | ./byfn.sh -m generate
+  echo y | ./byfn.sh -m up -t 60
+  echo y | ./eyfn.sh -m up
+  echo y | ./eyfn.sh -m down
+  echo
+  echo "############## BYFN,EYFN CUSTOM CHANNEL TEST#############"
+  echo "#########################################################"
+
+  echo y | ./byfn.sh -m generate -c fabricrelease
+  echo y | ./byfn.sh -m up -c fabricrelease -t 60
+  echo y | ./eyfn.sh -m up -c fabricrelease -t 60
+  echo y | ./eyfn.sh -m down
+  echo
+  echo "############### BYFN,EYFN COUCHDB TEST #############"
+  echo "####################################################"
+
+  echo y | ./byfn.sh -m generate -c couchdbtest
+  echo y | ./byfn.sh -m up -c couchdbtest -s couchdb -t 60
+  echo y | ./eyfn.sh -m up -c couchdbtest -s couchdb -t 60
+  echo y | ./eyfn.sh -m down
+  echo
+  echo "############### BYFN,EYFN NODE TEST ################"
+  echo "####################################################"
+
+  echo y | ./byfn.sh -m up -l node -t 60
+  echo y | ./eyfn.sh -m up -l node -t 60
+  echo y | ./eyfn.sh -m down
+
+
+  echo "############### FABRIC-CA SAMPLES TEST ########################"
+  echo "###############################################################"
+  cd ${WORKSPACE}/gopath/src/github.com/hyperledger/fabric-samples/fabric-ca
+  ./start.sh && ./stop.sh
+}
+
+main() {
+  clean_directory
+  clone_repo
+  run_bootstrap
+  run_tests
+}
+
+main
