@@ -36,7 +36,13 @@
 #
 # ------------------------------------------------------------------
 
-BASE_VERSION = 1.2.0
+FABRIC_BASE_VERSION = $(shell curl \
+https://raw.githubusercontent.com/hyperledger/fabric/master/Makefile \
+| grep BASE_VERSION | head -1 | cut -d= -f2 | sed -e 's/^[ \t]*//')
+FABRIC_PREVIOUS_VERSION = $(shell curl \
+https://raw.githubusercontent.com/hyperledger/fabric/master/Makefile \
+| grep PREV_VERSION | head -1 | cut -d= -f2 | sed -e 's/^[ \t]*//')
+RELEASE_VERSION = $(FABRIC_BASE_VERSION)
 DOCKER_NS = hyperledger
 EXTRA_VERSION ?= $(shell git rev-parse --short HEAD)
 PROJECT_VERSION = $(BASE_VERSION)-$(EXTRA_VERSION)
@@ -188,6 +194,13 @@ interop-fabric-sdk-java: pull-thirdparty-images pull-binaries pull-fabric-ca pul
 
 .PHONY: interop-fabric-javaenv
 interop-fabric-javaenv: pull-thirdparty-images pull-binaries pull-fabric-ca javaenv interop-tests
+
+.PHONY: ci-release-tests
+ci-release-tests:
+	cd $(HYPERLEDGER_DIR)/fabric-test/regression/release && ./runReleaseTestSuite.sh
+
+.PHONY: svt-release-tests
+svt-release-tests: pull-images ci-release-tests
 
 .PHONY: svt-daily-behave-tests
 svt-daily-behave-tests: pull-images pull-binaries pull-thirdparty-images
