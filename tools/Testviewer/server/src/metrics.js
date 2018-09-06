@@ -81,7 +81,7 @@ const getPTE = (req,res) => {
 	// ////
 
 
-	const url_pte= `https://jenkins.hyperledger.org/view/fabric-test/job/fabric-test-daily-pte-master-x86_64/${buildnum}/artifact/gopath/src/github.com/hyperledger/fabric-test/tools/PTE/CITest/scenarios/result_${fab}.log`
+	const url_pte= `https://logs.hyperledger.org/production/vex-yul-hyp-jenkins-3/fabric-test-daily-pte-master-x86_64/${buildnum}/PTE_Test_Logs/result_${fab}.log`
 	request(url_pte, { json: false }, (err, response, body) => {
 	  if (err) { res.send({"success":false}); return console.log(err);}
 
@@ -188,7 +188,7 @@ const getOTE = (req,res) => {
 	// return
 	// ////
 
-	const url_ote = `https://jenkins.hyperledger.org/view/fabric-test/job/fabric-test-daily-ote-master-x86_64/${buildnum}/artifact/gopath/src/github.com/hyperledger/fabric-test/regression/daily/ote_logs/ote_${fab}.log`
+	const url_ote = `https://logs.hyperledger.org/production/vex-yul-hyp-jenkins-3/fabric-test-daily-ote-master-x86_64/${buildnum}/OTE_Test_Logs/ote_${fab}.log`
 	request(url_ote, { json: false }, (err, response, body) => {
 	  if (err) { res.send({"success":false}); return console.log(err);}
 	  // Page must contain a line containing "RESULT=" since that's where the relevant data is
