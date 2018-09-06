@@ -13,9 +13,11 @@ if [ ! -z $GERRIT_BRANCH ] && [ ! -z $WORKSPACE ]; then
     echo "------> Archiving generated logs"
     rm -rf $WORKSPACE/archives
     mkdir -p $WORKSPACE/archives/LTE_Test_Logs
-    cp -r $GOPATH/src/github.com/hyperledger/fabric-test/regression/daily/*.log $WORKSPACE/archives/LTE_Test_Logs/
+    cp $GOPATH/src/github.com/hyperledger/fabric-test/regression/daily/*.log $WORKSPACE/archives/LTE_Test_Logs/
+    cp $GOPATH/src/github.com/hyperledger/fabric-test/regression/daily/results.csv $WORKSPACE/archives/LTE_Test_Logs/ && echo "found results.csv in daily"
+    cp $GOPATH/src/github.com/hyperledger/fabric-test/tools/LTE/TestResults/experiments/BenchmarkReadWriteTxs/results.csv $WORKSPACE/archives/LTE_Test_Logs/ && echo "found results.csv in experiments/..."
     mkdir -p $WORKSPACE/archives/LTE_Test_XML
-    cp -r $GOPATH/src/github.com/hyperledger/fabric-test/regression/daily/*.xml $WORKSPACE/archives/LTE_Test_XML/
+    cp $GOPATH/src/github.com/hyperledger/fabric-test/regression/daily/*.xml $WORKSPACE/archives/LTE_Test_XML/
 fi
 }
 
