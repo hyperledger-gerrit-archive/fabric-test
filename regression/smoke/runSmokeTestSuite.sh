@@ -4,6 +4,13 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+cd $GOPATH/src/github.com/hyperledger/fabric-test/regression/daily
+./runLteTestSuite.sh
+./runOteTestSuite.sh
+./runPteTestSuite.sh
+exit 0
+
+
 SMOKEDIR="$GOPATH/src/github.com/hyperledger/fabric-test/regression/smoke"
 cd $SMOKEDIR
 
