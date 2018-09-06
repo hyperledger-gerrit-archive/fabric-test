@@ -9,14 +9,14 @@ cd $SMOKEDIR
 
 echo "======== Behave feature and system tests ========"
 cd ../../feature
-behave --junit --junit-directory ../regression/smoke/. --tags=-skip --tags=smoke -k -D logs=y
+###behave --junit --junit-directory ../regression/smoke/. --tags=-skip --tags=smoke -k -D logs=y
 cd -
 
 echo "======== Ledger component performance tests using LTE ========"
-py.test -v --junitxml results_ledger_lte_smoke.xml ledger_lte_smoke.py
+###py.test -v --junitxml results_ledger_lte_smoke.xml ledger_lte_smoke.py
 
 echo "======== Orderer component test using OTE and NL tools ========"
-py.test -v --junitxml results_orderer_ote.xml orderer_ote.py
+###py.test -v --junitxml results_orderer_ote.xml orderer_ote.py
 
 echo "======== Performance Test using PTE and NL tools ========"
 cd $GOPATH/src/github.com/hyperledger/fabric-test/tools/PTE
