@@ -104,6 +104,7 @@ echo "[$0] network=$network priming=$priming invokes=$invokes queries=$queries"
 echo "[$0] TESTCASE=$TESTCASE"
 
 LOGDIR="../Logs"
+mkdir -p $LOGDIR
 
 pteReport="../../pteReport.txt"
 # remove existing pteReport
@@ -113,7 +114,9 @@ if [ -e $pteReport ]; then
 fi
 
 CIpteReport=$LOGDIR"/"$TESTCASE"-pteReport.txt"
+# remove existing CIpteReport
 if [ -e $CIpteReport ]; then
+    echo "[$0] remove $CIpteReport"
     rm -f $CIpteReport
 fi
 # print testcase name at the top of CIpteReport file
