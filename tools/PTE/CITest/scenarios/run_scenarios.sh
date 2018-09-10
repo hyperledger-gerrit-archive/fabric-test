@@ -104,6 +104,7 @@ echo "[$0] network=$network priming=$priming invokes=$invokes queries=$queries"
 echo "[$0] TESTCASE=$TESTCASE"
 
 LOGDIR="../Logs"
+mkdir -p $LOGDIR
 
 pteReport="../../pteReport.txt"
 # remove existing pteReport
@@ -129,8 +130,8 @@ fi
 
 #### pre-configuration: create/join channel, install/instantiate chaincode
 if [ $application != "none" ]; then
-    echo "[$0] ./test_driver.sh -p -c $application"
-    ./test_driver.sh -p -c $application
+    echo "[$0] ./test_driver.sh -m $network -p -c $application"
+    ./test_driver.sh -m $network -p -c $application
 fi
 
 #### ledger priming
