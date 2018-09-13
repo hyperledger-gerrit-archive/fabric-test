@@ -166,11 +166,11 @@ Examples:
     Then a user receives a response containing "owner":"matt"
     When a user queries on the channel "mychannel2" using chaincode named "mycc2" with args ["queryMarbles", "{\\"selector\\":{\\"docType\\":\\"marble\\",\\"owner\\":\\"alex\\", \\"color\\":\\"yellow\\"}, \\"use_index\\":[\\"_design/indexdoc_behave_test\\", \\"index_behave_test\\"]}"] on "peer0.org1.example.com"
     Then a user receives a response containing "owner":"alex"
-    When a user queries on the channel "mychannel2" using chaincode named "mycc2" with args ["queryMarbles", "{\\"selector\\":{\\"owner\\":\\"alex\\"}, \\"use_index\\":[\\"_design/indexdoc_behave_test_v1\\", \\"index_behave_test_v1\\"]}"] on "peer0.org1.example.com"
+    When a user queries on the channel "mychannel2" using chaincode named "mycc2" with args ["queryMarbles", "{\\"selector\\":{\\"owner\\":\\"alex\\"}, \\"use_index\\":[\\"_design/wrong_index\\", \\"index_behave_test_v1\\"]}"] on "peer0.org1.example.com"
     Then a user receives a response containing no_usable_index
     When a user queries on the channel "mychannel3" using chaincode named "mycc3" with args ["queryMarbles", "{\\"selector\\":{\\"docType\\":\\"marble\\",\\"owner\\":\\"jose\\", \\"color\\":\\"red\\"}, \\"use_index\\":[\\"_design/indexdoc_behave_test\\", \\"index_behave_test\\"]}"] on "peer0.org1.example.com"
     Then a user receives a response containing "owner":"jose"
-    When a user queries on the channel "mychannel3" using chaincode named "mycc3" with args ["queryMarbles", "{\\"selector\\":{\\"owner\\":\\"jose\\"}, \\"use_index\\":[\\"_design/indexdoc_behave_test_v1\\", \\"index_behave_test_v1\\"]}"] on "peer0.org1.example.com"
+    When a user queries on the channel "mychannel3" using chaincode named "mycc3" with args ["queryMarbles", "{\\"selector\\":{\\"owner\\":\\"jose\\"}, \\"use_index\\":[\\"_design/wrong_index\\", \\"index_behave_test_v1\\"]}"] on "peer0.org1.example.com"
     Then a user receives a response containing no_usable_index
 
 Examples:
