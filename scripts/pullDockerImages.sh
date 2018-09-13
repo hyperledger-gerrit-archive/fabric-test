@@ -60,6 +60,25 @@ echo
 docker images | grep "hyperledger*"
 echo
 
+#####################################################
+# Pull the fabric-chaincode-javaenv image from Nexus
+#####################################################
+if [ "$GERRIT_BRANCH" != "master" ]; then
+       echo "========> SKIP: javaenv image is not available on $GERRIT_BRANCH"
+else
+       NEXUS_URL=nexus3.hyperledger.org:10001
+       ORG_NAME="hyperledger/fabric"
+       IMAGE=javaenv
+       : ${STABLE_VERSION:=amd64-latest}
+       docker pull $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION
+       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE
+       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE:amd64-1.3.0
+       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE:amd64-latest
+       ######################################
+       docker images | grep hyperledger/fabric-javaenv || true
+fi
+echo
+
 echo "======== PULL FABRIC BINARIES ========"
 echo "------------> RELEASE_COMMIT:" $RELEASE_COMMIT
 RELEASE_COMMIT=${RELEASE_COMMIT:0:7}
