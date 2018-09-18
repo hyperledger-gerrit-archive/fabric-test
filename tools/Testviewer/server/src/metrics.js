@@ -90,6 +90,45 @@ const getPTE = (req,res) => {
 	    return /[\S]/.test(str);
 	  });
 
+// INVOKE DATA OLD FORMAT CHANGED FROM:
+// Peer Log Data Summary Report
+//
+// Peer: peer0.org1.example.com
+// 	Channel: all, start time: 04:05:52:237, end time: 04:12:07:138, total time: 374901 ms
+// 	Channel: all, blk Num: 212, BPS: 0.57
+// 	Channel: all, tx Num: 20000, TPS: 53.35
+//
+// Peer: peer0.org1.example.com
+// 	Channel: testorgschannel1, start time: 04:05:52:237, end time: 04:12:07:138, total time: 374901 ms
+// 	Channel: testorgschannel1, blk Num: 212, BPS: 0.57
+// 	Channel: testorgschannel1, tx Num: 20000, TPS: 53.35
+//
+// Peer: peer0.org2.example.com
+// 	Channel: all, start time: 04:05:52:174, end time: 04:12:07:162, total time: 374988 ms
+// 	Channel: all, blk Num: 212, BPS: 0.57
+// 	Channel: all, tx Num: 20000, TPS: 53.34
+//
+// Peer: peer0.org2.example.com
+// 	Channel: testorgschannel1, start time: 04:05:52:174, end time: 04:12:07:162, total time: 374988 ms
+// 	Channel: testorgschannel1, blk Num: 212, BPS: 0.57
+// 	Channel: testorgschannel1, tx Num: 20000, TPS: 53.34
+//
+// TO INVOKE DATA NEW FORMAT:
+//
+// =======  CONSTANT INVOKE Overall Performance Summary  =======
+//     CONSTANT INVOKE Overall number of PTE: 2
+//     CONSTANT INVOKE Overall processes: 2
+//     CONSTANT INVOKE Overall transactions: sent 20000 received 20000
+//     CONSTANT INVOKE Overall failures: proposal 0 transactions 0
+//     CONSTANT INVOKE Overall event: received 20000 timeout 0 unreceived 0
+//     CONSTANT INVOKE Overall time: start 1537244873167 end 1537245320087 duration 446920
+//     CONSTANT INVOKE Overall CONSTANT INVOKE TPS 44.75
+//     CONSTANT INVOKE Overall latency summary
+//         CONSTANT INVOKE Overall proposals latency 20000 min 6 ms max 2395 ms avg 26.37 ms
+//         CONSTANT INVOKE Overall transactions latency 20000 min 5 ms max 1262 ms avg 10.21 ms
+//         CONSTANT INVOKE Overall events latency 20000 min 1592 ms max 95590 ms avg 53561.88 ms
+
+
 	  // Split the log file into 2 sections -- invoke test results and query test results
 	  let invoke_result = null
 	  let query_result = null
@@ -137,6 +176,23 @@ const getPTE = (req,res) => {
 	  		invoke_data["tps"] = invoke_summary_array[l+1]
 	  	}
 	  }
+
+// QUERY DATA OLD FORMAT CHANGED FROM:
+// [PTE 0 main]: Test Summary[0]: [Nid:chan:org:id=0:testorgschannel1:org1:0 invoke_query_const] pte-exec:completed 10000 transaction INVOKE(QUERY) in 256467 ms, timestamp: start 1536725678072 end 1536725934539,Throughput=38.99 TPS
+// [PTE 0 main]: Test Summary (sample_cc_ch1):Total  QUERY transaction=10000, the Min duration is 256467 ms,the Max duration is 256467 ms,Avg duration=256467 ms, total throughput=38.99 TPS
+// [PTE 0 main]: Aggregate Test Summary (sample_cc_ch1):Total QUERY transaction 10000, start 1536725678072 end 1536725934539 duration is 256467 ms, TPS 38.99
+// [PTE 1 main]: Test Summary[0]: [Nid:chan:org:id=0:testorgschannel1:org2:0 invoke_query_const] pte-exec:completed 10000 transaction INVOKE(QUERY) in 257367 ms, timestamp: start 1536725678072 end 1536725935439,Throughput=38.86 TPS
+// [PTE 1 main]: Test Summary (sample_cc_ch1):Total  QUERY transaction=10000, the Min duration is 257367 ms,the Max duration is 257367 ms,Avg duration=257367 ms, total throughput=38.86 TPS
+// [PTE 1 main]: Aggregate Test Summary (sample_cc_ch1):Total QUERY transaction 10000, start 1536725678072 end 1536725935439 duration is 257367 ms, TPS 38.86
+//
+// TO QUERY DATA NEW FORMAT:
+// =======  CONSTANT QUERY Overall Performance Summary  =======
+//     CONSTANT QUERY Overall number of PTE: 2
+//     CONSTANT QUERY Overall processes: 2
+//     CONSTANT QUERY Overall transactions: sent 20000 received 20000
+//     CONSTANT QUERY Overall time: start 1537245458359 end 1537245630506 duration 172147
+//     CONSTANT QUERY Overall CONSTANT QUERY TPS 116.18
+
 
 	  // Pull data from query summary by looking for first instance of line that begins with "Aggregate Test Summary"
 	  query_summaries = []
@@ -226,9 +282,9 @@ const getLTE = (req,res) => {
 		return
 	}
 
-        # Retrieve the artifacts. Script fabric-test/regression/daily/runLteTestSuite.sh archives the LTE artifacts from
-        #    $GOPATH/src/github.com/hyperledger/fabric-test/tools/LTE/TestResults/experiments/BenchmarkReadWriteTxs/results.csv
-        # to $WORKSPACE/archives/LTE_Test_Results/experiments/BenchmarkReadWriteTxs
+        // Retrieve the artifacts. Script fabric-test/regression/daily/runLteTestSuite.sh archives the LTE artifacts from
+        //    $GOPATH/src/github.com/hyperledger/fabric-test/tools/LTE/TestResults/experiments/BenchmarkReadWriteTxs/results.csv
+        // to $WORKSPACE/archives/LTE_Test_Results/experiments/BenchmarkReadWriteTxs
 	const url_lte = `https://logs.hyperledger.org/production/vex-yul-hyp-jenkins-3/fabric-test-daily-lte-master-x86_64/${buildnum}/LTE_Test_Results/experiments/BenchmarkReadWriteTxs/results.csv`
 	// fabs taken from script at https://github.com/hyperledger/fabric-test/blob/master/regression/daily/ledger_lte.py
 	const fabs = ['FAB-3790','FAB-3795','FAB-3798','FAB-3799','FAB-3801','FAB-3802','FAB-3800','FAB-3803','FAB-3870','FAB-3871','FAB-3872','FAB-3873','FAB-3874','FAB-3875','FAB-3876','FAB-3877']
