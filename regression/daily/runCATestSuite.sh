@@ -19,8 +19,9 @@ if [ ! -z $GERRIT_BRANCH ] && [ ! -z $WORKSPACE ]; then
 fi
 }
 
-echo "======== Fabric-CA ACL smoke test... ========"
-py.test -v --junitxml results_acl.xml acl_happy_path.py && echo "------> Fabric-CA ACL smoke-test completed."
+# FABCI-103 remove the ca smoke test until it can be refactored as a real test (not sample)
+#echo "======== Fabric-CA ACL smoke test... ========"
+#py.test -v --junitxml results_acl.xml acl_happy_path.py && echo "------> Fabric-CA ACL smoke-test completed."
 
 echo "======== Fabric-CA tests...========"
 py.test -v --junitxml results_fabric-ca_tests.xml ca_tests.py && echo "------> Fabric-CA tests completed."
