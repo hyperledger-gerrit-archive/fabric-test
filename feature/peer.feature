@@ -49,13 +49,28 @@ Scenario Outline: FAB-1440, FAB-3861: Basic Chaincode Execution - <type> orderer
 Examples:
     | type  | database |  security   |
     | solo  | leveldb  |  with tls   |
+    | kafka | couchdb  | without tls |
+
+
+@daily
+Scenario Outline: FAB-1440, FAB-3861: Basic Chaincode Execution - <type> orderer type, using <database>, <security>
+    Given I have a bootstrapped fabric network of type <type> using state-database <database> <security>
+    When an admin sets up a channel
+    And an admin deploys chaincode
+    When a user queries on the chaincode
+    Then a user receives a success response of 100
+    When a user invokes on the chaincode
+    And I wait "5" seconds
+    And a user queries on the chaincode
+    Then a user receives a success response of 95
+Examples:
+    | type  | database |  security   |
     | solo  | leveldb  | without tls |
     | solo  | couchdb  |  with tls   |
     | solo  | couchdb  | without tls |
     | kafka | leveldb  |  with tls   |
     | kafka | leveldb  | without tls |
     | kafka | couchdb  |  with tls   |
-    | kafka | couchdb  | without tls |
 
 
 @daily
