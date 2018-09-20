@@ -39,6 +39,24 @@
         "chaincodePath": "github.com/hyperledger/fabric-test/fabric/examples/chaincode/go/marbles02",
 {% endif %}
         "fcn": "init",
+{% if chaincode != "marbles02_private" %}
+        "endorsement": {
+           "identities": [
+{% for org in identities[0].orgs if org in item.orgs %}
+               {
+                   "role": { "name": "{{ identities[0].roles }}", "mspId": "{{ org }}" }
+{% if not loop.last %}
+               },
+{% else %}
+               }
+{% endif %}
+{% endfor %}
+            ],
+            "policy": {
+                {{ policy }}
+            }
+         },
+{% endif %}
         "args": []
     },
     "SCFile": [

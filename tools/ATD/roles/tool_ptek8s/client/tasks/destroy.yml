@@ -11,7 +11,7 @@
 
 - name: Delete configMap
   command: >-
-    ./kubectl --kubeconfig kubeconfig delete configmap client
+    ./kubectl --kubeconfig kubeconfig delete configmap client{{ pteenv }}{{ chaincode | replace('_', '') }}
   args:
     chdir: "{{ playbook_dir }}/../../../../cello/src/agent/ansible/vars/"
   tags: "clientconfig"

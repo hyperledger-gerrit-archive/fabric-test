@@ -2,10 +2,11 @@
  {
          "name": "collectionMarbles",
          "policy": {
-             "identities": [{
-{% for peerorg in item.0.orgs if peerorg in peerorgs %}
+             "identities": [
+{% for peerorg in peerorgs if peerorg in item.orgs %}
+               {
                  "role": {
-                   "name": "member",
+                   "name": "peer",
                    "mspId": "{{ peerorg }}"
                  }
 {%  if not loop.last %}
@@ -26,17 +27,18 @@
                ]
              }
          },
-         "requiredPeerCount": 0,
-         "maxPeerCount": 0,
+         "requiredPeerCount": 1,
+         "maxPeerCount": 2,
          "blockToLive": 1000000
  },
  {
          "name": "collectionMarblePrivateDetails",
          "policy": {
-             "identities": [{
-{% for peerorg in item.0.orgs if peerorg in peerorgs %}
+             "identities": [
+{% for peerorg in peerorgs if peerorg in item.orgs %}
+               {
                  "role": {
-                   "name": "member",
+                   "name": "peer",
                    "mspId": "{{ peerorg }}"
                  }
 {%  if not loop.last %}
@@ -57,8 +59,8 @@
                ]
              }
          },
-         "requiredPeerCount": 0,
-         "maxPeerCount": 0,
+         "requiredPeerCount": 1,
+         "maxPeerCount": 2,
          "blockToLive": 1000000
  }
 ]

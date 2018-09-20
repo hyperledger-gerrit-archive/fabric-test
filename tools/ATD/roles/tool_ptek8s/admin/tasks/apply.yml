@@ -31,6 +31,27 @@
   with_sequence: start=1 end={{ (endlist|int) }}
   when: testcase == "multihost"
 
+- name: Create samplecc-update file
+  template:
+    src: "{{ playbook_dir }}/admin/templates/samplecc-chan-update-TLS.j2"
+    dest: "{{ testdir }}/{{ testcase }}/preconfig/channels/chan{{ item.0.channelnum }}-update-{{ item.1 }}-TLS.json"
+  with_nested:
+    - "{{ channellists }}"
+    - "{{ peerorgs }}"
+#    - "{{ lookup('sequence','start=1 end='+channellists[0].nOrgs|string,wantlist=True) }}"
+#    - "{{ range(1, channellists[0].nOrgs) }}"
+  when: testcase == "multihost" and item.1 in item.0.orgs
+  tags: "update"
+
+- name: Create runCases-update.txt file
+  template:
+    src: "{{ playbook_dir }}/admin/templates/runCases-chan-update.j2"
+    dest: "{{ testdir }}/{{ testcase }}/preconfig/channels/runCases-chan-update{{ item.channelnum }}-TLS.txt"
+  with_items: 
+    - "{{ channellists }}"
+  when: testcase == "multihost" 
+  tags: "update"
+
 - name: Create samplecc-install file
   template:
     src: "{{ playbook_dir }}/admin/templates/samplecc-chan-install-TLS.j2"
@@ -57,7 +78,7 @@
     src: "{{ playbook_dir }}/admin/templates/collections-config.j2"
     dest: "{{ testdir }}/{{ testcase }}/preconfig/{{ chaincode }}/collections_config-chan{{ item.channelnum }}.json"
   with_items: "{{ channellists }}"
-  when: chaincode == "marbles02_private"
+  when: chaincode == "marbles02_private" and testcase == "multihost"
 
 - name: Create runCases-instantiate.txt file
   template:
@@ -114,7 +135,7 @@
 
 - name: Create configmaps for admin file
   command: >-
-    ./kubectl --kubeconfig kubeconfig create configmap admin --from-file={{ testdir }}/admin.sh
+    ./kubectl --kubeconfig kubeconfig create configmap admin{{ pteenv }}{{ chaincode | replace('_', '') }} --from-file={{ testdir }}/admin.sh
   args:
     chdir: "{{ playbook_dir }}/../../../../cello/src/agent/ansible/vars/"
 
@@ -126,7 +147,7 @@
 
 - name: Wait for PTE admin pod to come up
   command: >-
-    ./kubectl --kubeconfig kubeconfig get -o=custom-columns=STATUS:.status.containerStatuses[].ready pods pteadmin
+    ./kubectl --kubeconfig kubeconfig get -o=custom-columns=STATUS:.status.containerStatuses[].ready pods pteadmin{{ pteenv }}{{ chaincode | replace('_', '') }}
   args:
     chdir: "{{ playbook_dir }}/../../../../cello/src/agent/ansible/vars/"
   register: pteadminstatus
@@ -137,14 +158,14 @@
 
 - name: Copy config zip file onto the PTE admin pod
   command: >-
-    ./kubectl --kubeconfig kubeconfig cp {{ testdir }}/../pteconfig.tgz pteadmin:/var/hyperledger/fabric/
+    ./kubectl --kubeconfig kubeconfig cp {{ testdir }}/../pteconfig.tgz pteadmin{{ pteenv }}{{ chaincode | replace('_', '') }}:/var/hyperledger/fabric/
   args:
     chdir: "{{ playbook_dir }}/../../../../cello/src/agent/ansible/vars/"
   tags: "pteadminconfig"
 
 - name: Wait for PTE admin pod to be completed
   command: >-
-    ./kubectl --kubeconfig kubeconfig get -o=custom-columns=STATUS:.status.containerStatuses[].ready pods pteadmin
+    ./kubectl --kubeconfig kubeconfig get -o=custom-columns=STATUS:.status.containerStatuses[].ready pods pteadmin{{ pteenv }}{{ chaincode | replace('_', '') }}
   args:
     chdir: "{{ playbook_dir }}/../../../../cello/src/agent/ansible/vars/"
   register: pteadminstatus
@@ -155,7 +176,7 @@
 
 - name: Logs in PTE admin to local
   shell: >-
-    ./kubectl --kubeconfig kubeconfig logs pteadmin -c pteadmin > {{ playbook_dir }}/../../vars/admin-{{ testcase }}-{{ testcase_query }}.log 2>&1
+    ./kubectl --kubeconfig kubeconfig logs pteadmin{{ pteenv }}{{ chaincode | replace('_', '') }} > {{ playbook_dir }}/../../vars/admin-{{ pteenv }}-{{ chaincode }}-{{ testcase }}-{{ testcase_query }}.log 2>&1
   args:
-    chdir: "{{ playbook_dir }}/../../../../cello_0823/src/agent/ansible/vars/"
+    chdir: "{{ playbook_dir }}/../../../../cello/src/agent/ansible/vars/"
   tags: "pteadminlogs"
