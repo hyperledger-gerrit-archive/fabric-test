@@ -173,11 +173,29 @@ Scenario Outline: FAB-6211: Test example02 chaincode written using <language> <s
     When a user queries on the chaincode named "mycc" with args ["query","b"]
     Then a user receives a success response of 2010
 Examples:
-    |                            path                               | language | security    |
+    |                              path                                 | language | security    |
+    |          ../../fabric-test/chaincodes/example02/node              | NODE     | without tls |
+
+
+@daily
+Scenario Outline: FAB-6211: Test example02 chaincode written using <language> <security>
+    Given I have a bootstrapped fabric network of type solo <security>
+    When an admin sets up a channel
+    And an admin deploys chaincode at path "<path>" with args ["init","a","1000","b","2000"] with name "mycc" with language "<language>"
+    When a user queries on the chaincode named "mycc" with args ["query","a"]
+    Then a user receives a success response of 1000
+    When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
+    And I wait "3" seconds
+    When a user queries on the chaincode named "mycc" with args ["query","a"]
+    Then a user receives a success response of 990
+    When a user queries on the chaincode named "mycc" with args ["query","b"]
+    Then a user receives a success response of 2010
+Examples:
+    |                              path                                 | language | security    |
     | github.com/hyperledger/fabric/examples/chaincode/go/example02/cmd | GOLANG   | with tls    |
     | github.com/hyperledger/fabric/examples/chaincode/go/example02/cmd | GOLANG   | without tls |
-    |        ../../fabric-test/chaincodes/example02/node            | NODE     | with tls    |
-    |        ../../fabric-test/chaincodes/example02/node            | NODE     | without tls |
+    |          ../../fabric-test/chaincodes/example02/node              | NODE     | with tls    |
+
 
 
 @shimAPI
@@ -340,7 +358,7 @@ Examples:
 
 
 @shimAPI
-@smoke
+@daily
 Scenario Outline: FAB-5791: Test API in SHIM interface using marbles02 and shimApiDriver chaincodes for <type> orderer <database> db <language> lang
 # |  shim API in fabric/core/shim/chaincode.go	|   Covered in marbles02  chaincode                     |
 # |        for chaincode invocation
