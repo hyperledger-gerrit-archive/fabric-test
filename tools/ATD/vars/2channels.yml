@@ -7,7 +7,7 @@
 pte: {
   ptechannels: [
     {name: "testorgschannel1", orgs: ["org1", "org2"], orderer: "orderer0"},
-    {name: "testorgschannel2", orgs: ["org1", "org2"], orderer: "orderer0"},
+    {name: "testorgschannel2", orgs: ["org1", "org2"], orderer: "orderer0"}
   ],
   transaction: {
     transMode: "Constant",
@@ -42,6 +42,12 @@ pte: {
       listener: "Block",
       timeout: 600000
     },
+    endorsement: {
+      identities: [
+        { role: "peer", orgs: ["org1", "org2"] }
+      ],
+      policy: "\"1-of\": [{ \"signed-by\": 0 }, { \"signed-by\": 1 }]"
+    },
     failoverOpt: {
       method: "RoundRobin",
       list: "targetPeers"
@@ -62,7 +68,9 @@ pte: {
     # official hub - url: "hyperledger/",
     # fabric build hub - url: "nexus3.hyperledger.org:10001/hyperledger/",
     url: "nexus3.hyperledger.org:10001/hyperledger/",
+    #url: "suryalnvs/",
     tag: "1.2.0",
+    #tag: "latest",
     username: "",
     password: ""
   }
