@@ -216,6 +216,17 @@ for(i in array) {
             buff = '    '+hdr+' Overall '+transMode+' '+transType+' TPS '+tTPS.toFixed(2)+'\n';
         }
         fs.appendFileSync(pteReport, buff);
+    } else if ( transType == 'DISCOVERY' ) {
+        buff = '    '+hdr+' Overall transactions: sent '+sentTx+' received '+receivedTx+'\n';
+        fs.appendFileSync(pteReport, buff);
+
+        var duration = endTime - startTime;
+        buff = '    '+hdr+' Overall time: start '+startTime+' end '+endTime+' duration '+duration+'\n';
+        fs.appendFileSync(pteReport, buff);
+
+        var tTPS=1000*receivedTx/duration;
+        buff = '    '+hdr+' Overall '+transMode+' '+transType+' TPS '+tTPS.toFixed(2)+'\n';
+        fs.appendFileSync(pteReport, buff);
     } else if ( transMode == 'MIX' ) {
         var sentInvoke=sentTx/2;
         var sentQuery=sentTx/2;
