@@ -1,0 +1,8 @@
+Verified+1: Hyperledger Jobbuilder <jobbuilder@jenkins.hyperledger.org>
+Code-Review+1: Artem Barger <bartem@il.ibm.com>
+Code-Review+2: David Enyeart <enyeart@us.ibm.com>
+Submitted-by: David Enyeart <enyeart@us.ibm.com>
+Submitted-at: Mon, 24 Sep 2018 11:50:51 +0000
+Reviewed-on: https://gerrit.hyperledger.org/r/26501
+Project: fabric-test
+Branch: refs/heads/master
