@@ -102,6 +102,8 @@ The command is located in `PTE/CITest/scripts`
         FAB-10191-4i: 4 processes X 1 hour invokes with service discovery and simultaneously execute test_chaos.sh to restart all orderers, peers, kafkas, and zookeepers one at a time for robustness test
         FAB-10677: multiple processes (4, 8, 12, ..., 40) X 10000 transactions, both invoke and query, 1 channel, 1 org, 1 peer, 1 ca, solo orderer, levelDB, 1 samplcc go cc.  This is a test driver, which creates a bare bones network as described, and runs a performance test multiple times, collecting stats for each. It is useful to determine the peak throughput and optimum number of threads, for a chosen hardware platform and testcase.
         FAB-11726-4i: samplecc java chaincode, 4 processes X 10000 invokes, TLS, levelDB, 2 channel, filtered block event service, event listener: per block
+        FAB-11615-2iVal: SBEcc chaincode, 2 processes X 50000 invokes with valuee only, TLS, CouchDB, 2 Channel 
+        FAB-11615-2iEP: SBEcc chaincode, 2 processes X 50000 invokes with valuee and Endorsement policies, TLS, CouchDB, 2 Channel
 
     **Note that a query testcase requires execution of corresponding invoke testcase first to avoid errors due to the absence of transactions.**
 
