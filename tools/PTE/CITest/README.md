@@ -102,6 +102,8 @@ The command is located in `PTE/CITest/scripts`
         FAB-10191-4i: 4 processes X 1 hour invokes with service discovery and simultaneously execute test_chaos.sh to restart all orderers, peers, kafkas, and zookeepers one at a time for robustness test
         FAB-10677: multiple processes (4, 8, 12, ..., 40) X 10000 transactions, both invoke and query, 1 channel, 1 org, 1 peer, 1 ca, solo orderer, levelDB, 1 samplcc go cc.  This is a test driver, which creates a bare bones network as described, and runs a performance test multiple times, collecting stats for each. It is useful to determine the peak throughput and optimum number of threads, for a chosen hardware platform and testcase.
         FAB-11726-4i: samplecc java chaincode, 4 processes X 10000 invokes, TLS, levelDB, 2 channel, filtered block event service, event listener: per block
+        FAB-11615-2i: SBEcc chaincode, 2 processes X 50000 invokes with valuee only, TLS, CouchDB, 2 Channel
+        FAB-11615-2iSBE: SBEcc chaincode, 2 processes X 50000 invokes with valuee and Endorsement policies, TLS, CouchDB, 2 Channel
 
     **Note that a query testcase requires execution of corresponding invoke testcase first to avoid errors due to the absence of transactions.**
 
@@ -150,7 +152,7 @@ The command is located in `PTE/CITest/scripts`
 
 
 * ### Scenarios
-    The PTE test scenarios scripts are located in directory `PTE/CITest/scenarios`.  Each script will create a network, create/join channels, install/instantiate chaincode, and execute test. The TPS results will be documented in a file, namely `result_<scenarios script>.log`, located in the `PTE/CITest/scenarios` if applicable. For example, `result_FAB-3808-2i.log` is the results of executing FAB-3808-2i.sh. The available scenarios scripts includes the following:
+    The PTE test scenarios scripts are located in directory `PTE/CITest/scenarios`.  Each script will create a network, create/join channels, install/instantiate chaincode, and execute test. The TPS results will be documented in a file, namely `CITest/Logs/<testcase>-pteReport.log`, if applicable. The test scenarios that run a basic flow (network setup followed by a set of invokes or queries) use the avilable script in `CITest/run_scenarios.sh` to generate the result file automatically. For example, `FAB-3808-2i-pteReport.log` is the results of executing FAB-3808-2i.sh. The available scenarios scripts includes the following:
 
         FAB-3807-4i.sh: execute both FAB-3807-4i and FAB-3835-4q
         FAB-3808-2i.sh: execute both FAB-3808-2i and FAB-3811-2q
@@ -190,6 +192,8 @@ The command is located in `PTE/CITest/scripts`
         FAB-10190-4i.sh: execute FAB-10190-4i
         FAB-10191-4i.sh: execute FAB-10191-4i
         FAB-10677.sh: execute FAB-10677
+        FAB-11615-2iVal.sh: execute FAB-11615 with invokes in 2 threads to update value only 
+        FAB-11615-2iVal.sh: execute FAB-11615 with invokes in 2 threads to update Endorsement policy only 
         FAB-11726-4i.sh: execute FAB-11726-4i
 
 * ### Network
