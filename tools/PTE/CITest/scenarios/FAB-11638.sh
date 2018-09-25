@@ -14,11 +14,23 @@
 #    4. execute 2nd 10000 invokes
 #    5. execute 2nd 10000 queries
 
+# Usage:
+#    ./FAB-11638.sh [network]
+#        network: script uses NL to bring up the bare bones network, create/join channel and install/instantiate cc
+#        else if omitted (default) then user first establishes own network and places their PTE network json files in PTE/FAB-11638-SC/
+
 
 # testcase
 TESTCASE=$0
 TESTCASE=${TESTCASE#"./"}
 TESTCASE=${TESTCASE%".sh"}
+
+NetworkOpt="no"
+if [ $# -eq 1 ]; then
+    NetworkOpt=$1
+fi
+NetworkOpt=`echo $NetworkOpt | tr A-Z a-z`
+echo "NetworkOpt $NetworkOpt"
 
 # parameters
 NREQ=10000
@@ -47,13 +59,18 @@ echo "PTE testcase: $TESTCASE" >> $CIpteReport
 procTX() {
     invokeType=$1
     keyStart=$2
+    if [ $# -eq 3 ]; then
+        chkPeers=$3
+    else
+        chkPeers="ORGANCHOR"
+    fi
 
     cd $CWD
     cd ../scripts
     tCurr=`date +%m%d%H%M%S`
     IPTELOG=$logDir"/"$TESTCASE"-"$invokeType"-"$tCurr".log"
-    echo "./gen_cfgInputs.sh -d $LSCDir -n testorgschannel1 --norg 2 --keystart $keyStart -a samplecc --nreq $NREQ --nproc $NTHREAD -t $invokeType >& $IPTELOG"
-          ./gen_cfgInputs.sh -d $LSCDir -n testorgschannel1 --norg 2 --keystart $keyStart -a samplecc --nreq $NREQ --nproc $NTHREAD -t $invokeType >& $IPTELOG
+    echo "./gen_cfgInputs.sh -d $LSCDir -n testorgschannel1 --norg 2 --keystart $keyStart --chkpeers $chkPeers -a samplejava --nreq $NREQ --nproc $NTHREAD -t $invokeType >& $IPTELOG"
+          ./gen_cfgInputs.sh -d $LSCDir -n testorgschannel1 --norg 2 --keystart $keyStart --chkpeers $chkPeers -a samplejava --nreq $NREQ --nproc $NTHREAD -t $invokeType >& $IPTELOG
 
     # calculate overall TPS
     echo ""
@@ -70,45 +87,50 @@ procTX() {
 # process begins
     timestamp=`date`
     echo "[$TESTCASE] $TESTCASE with $NTHREAD threads x $NREQ transactions starts at $timestamp"
-    if [ -e $SCDir ]; then
-        echo "[$TESTCASE] clean up $SCDir"
-        rm -rf $SCDir
+
+    #### network and pre-config
+    if [ $NetworkOpt == "network" ]; then
+
+        if [ -e $SCDir ]; then
+            echo "[$TESTCASE] clean up $SCDir"
+            rm -rf $SCDir
+        fi
+        echo "[$TESTCASE] mkdir $SCDir"
+        mkdir $SCDir
+
+        ### launch network
+        cd $NLDir
+        rm -f config-chan*
+
+        echo "[$TESTCASE] destroy existing network"
+        ./networkLauncher.sh -a down
+
+        echo "[$TESTCASE] launch network"
+        ./networkLauncher.sh -o 3 -x 2 -r 2 -p 2 -k 4 -z 3 -n 1 -e 3 -f test -w localhost -S serverauth -c 2s -l INFO -B 500
+
+        cp config-chan*-TLS.json $SCDir
+        sleep 30
+
+        cd $CWD
+        cd ../scripts
+
+        # PTE: pre-config
+        echo ""
+        echo "          *****************************************************************************"
+        echo "          *                            PTE: pre-config                                *"
+        echo "          *****************************************************************************"
+        echo ""
+
+        # PTE: create/join channel
+        echo "./gen_cfgInputs.sh -d $LSCDir -c -n testorgschannel1 --norg 2 -a samplecc"
+              ./gen_cfgInputs.sh -d $LSCDir -c -n testorgschannel1 --norg 2 -a samplecc
+        sleep 30
+
+        # PTE: install/instantiate chaincode
+        echo "./gen_cfgInputs.sh -d $LSCDir -i -n testorgschannel1 --norg 2 -a samplecc"
+              ./gen_cfgInputs.sh -d $LSCDir -i -n testorgschannel1 --norg 2 -a samplecc
+        sleep 30
     fi
-    echo "[$TESTCASE] mkdir $SCDir"
-    mkdir $SCDir
-
-    ### launch network
-    cd $NLDir
-    rm -f config-chan*
-
-    echo "[$TESTCASE] destroy existing network"
-    ./networkLauncher.sh -a down
-
-    echo "[$TESTCASE] launch network"
-    ./networkLauncher.sh -o 3 -x 2 -r 2 -p 2 -k 4 -z 3 -n 1 -e 3 -f test -w localhost -S serverauth -c 2s -l INFO -B 500
-
-    cp config-chan*-TLS.json $SCDir
-    sleep 30
-
-    cd $CWD
-    cd ../scripts
-
-    # PTE: pre-config
-    echo ""
-    echo "          *****************************************************************************"
-    echo "          *                            PTE: pre-config                                *"
-    echo "          *****************************************************************************"
-    echo ""
-
-    # PTE: create/join channel
-    echo "./gen_cfgInputs.sh -d $LSCDir -c -n testorgschannel1 --norg 2 -a samplecc"
-          ./gen_cfgInputs.sh -d $LSCDir -c -n testorgschannel1 --norg 2 -a samplecc
-    sleep 30
-
-    # PTE: install/instantiate chaincode
-    echo "./gen_cfgInputs.sh -d $LSCDir -i -n testorgschannel1 --norg 2 -a samplecc"
-          ./gen_cfgInputs.sh -d $LSCDir -i -n testorgschannel1 --norg 2 -a samplecc
-    sleep 30
 
     # remove existing pteReport
     if [ -e $pteReport ]; then
@@ -123,7 +145,7 @@ procTX() {
     echo "          *****************************************************************************"
     echo ""
 
-    procTX move 0
+    procTX move 0 ALLPEERS
     sleep 30
 
     # PTE: 1st queries
@@ -151,7 +173,7 @@ procTX() {
     echo "          *                             PTE: 2nd invokes                              *"
     echo "          *****************************************************************************"
     echo ""
-    procTX move $NREQ
+    procTX move $NREQ ALLPEERS
     sleep 30
 
     # PTE: 2nd queries run
