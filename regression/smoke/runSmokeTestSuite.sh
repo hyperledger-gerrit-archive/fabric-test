@@ -30,4 +30,3 @@ else
 fi
 cd $SMOKEDIR && py.test -v --junitxml results_systest_pte.xml systest_pte.py
 
-
