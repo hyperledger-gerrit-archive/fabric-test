@@ -33,6 +33,7 @@
 #
 # ------------------------------------------------------------------
 
+# base version for pte and test-viewer image
 BASE_VERSION = 1.2.0
 DOCKER_NS = hyperledger
 EXTRA_VERSION ?= $(shell git rev-parse --short HEAD)
