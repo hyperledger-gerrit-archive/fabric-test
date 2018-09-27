@@ -40,7 +40,7 @@ echo " ./pte_driver.sh CITest/$PrecfgDir/preconfig/channels/runCases-chan-join-T
 echo "[$0] update channel"
 echo " ./pte_driver.sh CITest/$PrecfgDir/preconfig/channels/runCases-chan-update-TLS.txt"
 
-    runUpdate=`ls CITest/$PrecfgDir/preconfig/channels/runCases*update*`
+    runUpdate=`ls CITest/$PrecfgDir/preconfig/channels/runCases*update* 2>/dev/null`
     echo "runUpdate $runUpdate"
     for ri in $runUpdate; do
        echo "./pte_driver.sh $ri"
