@@ -357,8 +357,12 @@ function getTLSCert(key, subkey) {
         if (fs.existsSync(caRootsPath)) {
             data = fs.readFileSync(caRootsPath);
         } else {
-            logger.info('[getTLSCert] tls_cacerts does not exist: caRootsPath: %s, key: %s, subkey: %s', caRootsPath, key, subkey);
-            return null;
+            if (fs.existsSync(caRootsPath)) {
+                data = fs.readFileSync(caRootsPath);
+            } else {
+                logger.info('[getTLSCert] tls_cacerts does not exist: caRootsPath: %s, key: %s, subkey: %s', caRootsPath, key, subkey);
+                return null;
+            }
         }
     }
     return data;
