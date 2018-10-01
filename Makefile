@@ -122,14 +122,14 @@ smoke-tests:
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/smoke && ./runSmokeTestSuite.sh
 
 .PHONY: daily-tests
-daily-tests:
+daily-tests: pull-thirdparty-images
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runBehaveTestSuite.sh; ./runPteTestSuite.sh; ./runOteTestSuite.sh; ./runLteTestSuite.sh; ./runCATestSuite.sh
 .PHONY: pull-images
 pull-images:
 	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh
 
 .PHONY: svt-daily-behave-tests
-svt-daily-behave-tests: pull-images
+svt-daily-behave-tests: pull-images pull-thirdparty-images
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runBehaveTestSuite.sh
 
 .PHONY: svt-daily-pte-tests
