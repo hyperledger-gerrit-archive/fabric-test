@@ -437,14 +437,14 @@ def step_impl(context, name, args, peer):
     context.result = context.interface.query_chaincode(context, chaincode, peer, context.interface.TEST_CHANNEL_ID, user="User1")
 
 @when(u'a user queries on version "{version:d}" of the channel "{channel}" using chaincode named "{name}" with args {args} on "{peer}"')
-def query_impl(context, channel, name, args, peer, targs='', version=0, user="User1"):
+def query_impl(context, channel, name, args, peer, targs='', version=0, user="User1", opts={}):
     # Temporarily sleep for 2 sec. This delay should be able to be removed once we start using events for being sure the invokes are complete
     time.sleep(2)
     chaincode = {"args": args,
                  "chaincodeId": str(name),
                  "version": version,
                  "name": str(name)}
-    context.result = context.interface.query_chaincode(context, chaincode, peer, channel, targs, user=user)
+    context.result = context.interface.query_chaincode(context, chaincode, peer, channel, targs, user=user, opts=opts)
 
 @when(u'a user queries on the channel "{channel}" using chaincode named "{name}" with args {args} on "{peer}"')
 def step_impl(context, channel, name, args, peer):
@@ -498,6 +498,10 @@ def step_impl(context, name, args):
 def step_impl(context, user, name, args):
     query_impl(context, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com", user=user)
 
+@when(u'a user excutes a transaction on the chaincode named "{name}" with args {args}')
+def step_impl(context, name, args):
+    query_impl(context, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com", opts={"transaction": "true"})
+
 @when(u'a user queries on the channel "{channel}" using chaincode named "{name}" with args {args}')
 def step_impl(context, channel, name, args):
     query_impl(context, channel, name, args, "peer0.org1.example.com")
@@ -539,12 +543,12 @@ def step_impl(context):
     query_impl(context, context.interface.TEST_CHANNEL_ID, context.chaincode["name"], '["query","a"]', "peer0.org1.example.com")
 
 @when(u'a user invokes {numInvokes:d} times on the channel "{channel}" using chaincode named "{name}" with args {args} on "{peer}" using orderer "{orderer}"')
-def invokes_impl(context, numInvokes, channel, name, args, peer, orderer="orderer0.example.com", targs='', user="User1"):
+def invokes_impl(context, numInvokes, channel, name, args, peer, orderer="orderer0.example.com", targs='', user="User1", opts={}):
     chaincode = {"args": args,
                  "name": str(name),
                  "chaincodeId": str(name)}
     for count in range(numInvokes):
-        context.result = context.interface.invoke_chaincode(context, chaincode, orderer, peer, channel, targs, user=user)
+        context.result = context.interface.invoke_chaincode(context, chaincode, orderer, peer, channel, targs, user=user, opts=opts)
 
 @when(u'a user invokes {numInvokes:d} times on the channel "{channel}" using chaincode named "{name}" with args {args} on "{peer}"')
 def step_impl(context, numInvokes, channel, name, args):
@@ -654,6 +658,10 @@ def step_impl(context, name, args):
 @when(u'a user "{user}" invokes on the chaincode named "{name}" with args {args}')
 def step_impl(context, user, name, args):
     invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com", user=user)
+
+@when(u'a user submits a transaction on the chaincode named "{name}" with args {args}')
+def step_impl(context, name, args):
+    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com","orderer0.example.com", opts={"transaction": "true"})
 
 @when(u'a user invokes {numInvokes:d} times on the chaincode')
 def step_impl(context, numInvokes):
@@ -909,7 +917,7 @@ def step_impl(context, response, org, status):
 def expected_impl(context, response, peer, status="a success"):
     assert peer in context.result, "There is no response from {0}".format(peer)
     if status == "a success":
-        assert context.result[peer] == "{0}\n".format(response), \
+        assert str(context.result[peer].strip()) == str(response.strip()), \
                "Expected response was {0}; received {1}".format(response,
                                                                 context.result[peer])
     elif status == "an error":
