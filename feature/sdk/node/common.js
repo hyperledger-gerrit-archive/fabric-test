@@ -5,12 +5,12 @@
  */
 'use strict';
 const log4js = require('log4js');
-var logger = log4js.getLogger('SDK_INT');
+const logger = log4js.getLogger('SDK_INT');
 
-var path = require('path');
-var util = require('util');
-var fs = require('fs-extra');
-var Client = require('fabric-client');
+const path = require('path');
+const util = require('util');
+const fs = require('fs-extra');
+const Client = require('fabric-client');
 
 function setupPeers(peers, channel, org, client, network_config, tls) {
     let nodes = network_config[org]['peers'];
@@ -136,3 +136,4 @@ exports.newRemotes = newRemotes;
 exports.newOrderer = newOrderer;
 exports.getRegisteredUsers = getRegisteredUsers;
 exports.getKeyStoreForOrg = getKeyStoreForOrg;
+exports.readAllFiles = readAllFiles;
