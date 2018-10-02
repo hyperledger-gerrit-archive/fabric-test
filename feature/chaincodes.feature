@@ -29,6 +29,24 @@ Examples:
     | kafka |  MYcc_Test |
 
 @daily
+@transaction
+Scenario Outline: FAB-11808: Test calling chaincode with network model API
+    Given I have a bootstrapped fabric network of type <type> <security>
+    And I use the <interface> interface
+    When an admin sets up a channel
+    And an admin deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/example02/cmd" with args ["init","a","1000","b","2000"] with name "<ccName>"
+    When a user executes a transaction on the chaincode named "<ccName>" with args ["query","a"]
+    Then a user receives a success response of 1000
+    When a user submits a transaction on the chaincode named "<ccName>" with args ["invoke","a","b","10"]
+    And I wait "5" seconds
+    When a user executes a transaction on the chaincode named "<ccName>" with args ["query","a"]
+    Then a user receives a success response of 990
+Examples:
+    | type  |   security  |  interface |   ccName   |
+    | solo  |   with tls  | NodeJS SDK |    mycc    |
+    | kafka |   with tls  | NodeJS SDK |    mycc    |
+
+@daily
 Scenario: FAB-4703: FAB-5663, Test chaincode calling chaincode - fabric/examples/example04/cmd
   Given I have a bootstrapped fabric network of type kafka
   When an admin sets up a channel
@@ -39,7 +57,6 @@ Scenario: FAB-4703: FAB-5663, Test chaincode calling chaincode - fabric/examples
   Then a user receives a success response of 1000
   When a user queries on the chaincode named "myex04" with args ["query","Event", "myex02_a", "a", "channel2"]
   Then a user receives a success response of 1000
-
 
 @shimAPI
 @daily
