@@ -741,6 +741,11 @@ class CLIInterface(InterfaceBase):
 
     def placeCertsInDirStruct(self, context, user, org, peer):
         fca = 'ca.{}'.format(org)
+
+        # Ensure that the owner of the directory is the same
+        st = os.stat("configs/{2}/peerOrganizations/{1}/users/Admin@org1.example.com".format(user, org, context.projectName))
+        os.chown("configs/{2}/peerOrganizations/{1}/users/{0}@{1}".format(user, org, context.projectName), st.st_uid, st.st_gid)
+
         os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp".format(user, org, context.projectName))
         os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/signcerts".format(user, org, context.projectName))
         os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/keystore".format(user, org, context.projectName))
