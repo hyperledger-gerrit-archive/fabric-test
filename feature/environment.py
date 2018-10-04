@@ -55,6 +55,8 @@ def after_scenario(context, scenario):
         print(output)
         output = str(subprocess.check_output(["ls -ltr configs/{}/peerOrganizations/org1.example.com/users".format(context.projectName)], shell=True))
         print(output)
+        output = str(subprocess.check_output(["ls -ltr configs/{}/peerOrganizations/org2.example.com/users".format(context.projectName)], shell=True))
+        print(output)
 
     getLogs = context.config.userdata.get("logs", "N")
     if getLogs.lower() == "force" or (scenario.status == "failed" and getLogs.lower() == "y" and "compose_containers" in context):
