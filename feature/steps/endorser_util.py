@@ -741,6 +741,16 @@ class CLIInterface(InterfaceBase):
 
     def placeCertsInDirStruct(self, context, user, org, peer):
         fca = 'ca.{}'.format(org)
+
+        # Ensure that the owner of the directory is the same
+        print("Changing file ownership: /var/hyperledger/users/{0}@{1} ...".format(user, org))
+        output = context.composition.docker_exec(['stat -c "%u %g" /var/hyperledger/users/Admin@{0}'.format(org)], [peer])
+        out = output[peer].strip().split(" ")
+        print("stat:: {}".format(out))
+        output = context.composition.docker_exec(['chown -R {2}:{3} /var/hyperledger/users/{0}@{1}'.format(user, org, out[0], out[1])], [peer])
+        #st = os.stat("configs/{2}/peerOrganizations/{1}/users/Admin@{1)".format(user, org, context.projectName))
+        #os.chown("configs/{2}/peerOrganizations/{1}/users/{0}@{1}".format(user, org, context.projectName), st.st_uid, st.st_gid)
+
         os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp".format(user, org, context.projectName))
         os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/signcerts".format(user, org, context.projectName))
         os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/keystore".format(user, org, context.projectName))
