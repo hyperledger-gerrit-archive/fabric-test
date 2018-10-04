@@ -10,6 +10,7 @@ Feature: Fabric-CA Service
 #@doNotDecompose
 @interop
 @daily
+@smoke
 Scenario Outline: FAB-6489: Interoperability Test using <type> based orderer
     Given I have a bootstrapped fabric network of type <type> using state-database <database> with tls
     And I use the <interface> interface
