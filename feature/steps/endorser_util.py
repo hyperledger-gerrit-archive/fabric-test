@@ -741,6 +741,14 @@ class CLIInterface(InterfaceBase):
 
     def placeCertsInDirStruct(self, context, user, org, peer):
         fca = 'ca.{}'.format(org)
+
+        # Ensure that the owner of the directory is the same
+        output = context.composition.docker_exec(['stat -c "%U %G" configs/{1}/peerOrganizations/{0}/users/Admin@{0}'.format(org, context.projectName)], [peer])
+        out = output.strip().split(" ")
+        output = context.composition.docker_exec(['chown {3}:{4} configs/{2}/peerOrganizations/{1}/users/{0}@{1}'.format(user, org, context.projectName, out[0], out[1])], [peer])
+        #st = os.stat("configs/{2}/peerOrganizations/{1}/users/Admin@{1)".format(user, org, context.projectName))
+        #os.chown("configs/{2}/peerOrganizations/{1}/users/{0}@{1}".format(user, org, context.projectName), st.st_uid, st.st_gid)
+
         os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp".format(user, org, context.projectName))
         os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/signcerts".format(user, org, context.projectName))
         os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/keystore".format(user, org, context.projectName))
