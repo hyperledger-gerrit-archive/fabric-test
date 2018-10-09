@@ -1933,6 +1933,19 @@ function invoke_query_const(freq) {
     channel.queryByChaincode(request_query)
     .then(
         function(response_payloads) {
+            // query validation
+            queryValidation(response_payloads);
+
+            // check bookmark
+            var qcheck = response_payloads[0].toString('utf8').toUpperCase();
+            if ( qcheck.includes('BOOKMARK') && qcheck.includes('KEY') ) {
+                // get bookmark from query returned
+                var qc=JSON.parse(response_payloads[0].toString('utf8'));
+                bookmark=qc.ResponseMetadata.Bookmark;
+            } else {
+                // reset bookmark
+                bookmark='';
+            }
             // output
             if ( recHist == 'HIST' ) {
                 tCurr = new Date().getTime();
