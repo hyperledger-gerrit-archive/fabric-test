@@ -17,6 +17,7 @@ removePteReport () {
 
 calcTPS () {
 # calculate overall TPS
+# first parameter is the PTEReport file and second one is the summary results log file 
 echo ""
 echo "node get_pteReport.js $1"
   node get_pteReport.js $1
@@ -37,7 +38,7 @@ govendor add +external
 cd ../../tools/PTE/CITest/scripts
 
 #### Launch network
-./test_driver.sh -n -m FAB-11615-2i -p -c sbe_cc &> ../Logs/FAB-11615-precfg.log
+./test_driver.sh -n -m FAB-11615-2i -p -c sbe_cc >& ../Logs/FAB-11614-precfg.log
 
 #### first set of invokes to create the keys
 removePteReport
@@ -46,8 +47,8 @@ calcTPS $pteReport "../Logs/FAB-11615-2iSBE-PTEReport-createKeys.log"
 
 #### change EP of all the keys
 removePteReport
-./test_driver.sh -t FAB-11615-2iSBE
-calcTPS $pteReport "../Logs/FAB-11615-2iSBE-PTEReport-setSBEPoliciesOnAllKeys.log"
+./test_driver.sh -t FAB-11614-2iSBE
+calcTPS $pteReport "../Logs/FAB-11614-2iSBE-PTEReport-setSBEPoliciesOnHalfOfAllKeys.log"
 
 #### invokes to update the values of the keys
 removePteReport
