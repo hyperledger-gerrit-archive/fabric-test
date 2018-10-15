@@ -20,22 +20,32 @@
 #
 # ------------------------------------------------------------------
 
+BASE_VERSION = 1.1.0
+DOCKER_ORG = hyperledger
+EXTRA_VERSION ?= $(shell git rev-parse --short HEAD)
+PROJECT_VERSION=$(BASE_VERSION)-$(EXTRA_VERSION)
+ARCH=$(go env GOARCH)
+
 FABRIC = https://gerrit.hyperledger.org/r/fabric
 FABRIC_CA = https://gerrit.hyperledger.org/r/fabric-ca
 HYPERLEDGER_DIR = $(GOPATH)/src/github.com/hyperledger
 INSTALL_BEHAVE_DEPS = $(GOPATH)/src/github.com/hyperledger/fabric-test/feature/scripts/install_behave.sh
 FABRIC_DIR = $(HYPERLEDGER_DIR)/fabric
 CA_DIR = $(HYPERLEDGER_DIR)/fabric-ca
-DOCKER_ORG = hyperledger
 PRE_SETUP = $(GOPATH)/src/github.com/hyperledger/fabric-test/pre_setup.sh
-PTE_TAG = $(DOCKER_ORG)/fabric-pte:$(shell git rev-parse --short HEAD)
+PTE_IMAGE = $(DOCKER_NS)/fabric-pte
+#PTE_TAG = $(DOCKER_ORG)/fabric-pte:$(shell git rev-parse --short HEAD)
 
 .PHONY: ci-smoke
 ci-smoke: git-init fabric ca clean pre-setup docker-images smoke-tests
 
 .PHONY: git-latest
 git-latest:
-	@git submodule foreach git pull origin master
+	cd $(HYPERLEDGER_DIR)/fabric-test/cello && git pull origin master && git show-ref HEAD
+	cd $(HYPERLEDGER_DIR)/fabric-test/fabric && git checkout release-1.1 && git pull origin release-1.1 && git show-ref HEAD
+	cd $(HYPERLEDGER_DIR)/fabric-test/fabric-ca && git checkout release-1.1 && git pull origin release-1.1 && git show-ref HEAD
+	cd $(HYPERLEDGER_DIR)/fabric-test/fabric-samples && git checkout release-1.1 && git pull origin release-1.1 && git show-ref HEAD
+	cd $(HYPERLEDGER_DIR)/fabric-test/fabric-sdk-node && git checkout release-1.1 && git pull origin release-1.1 && git show-ref HEAD
 
 .PHONY: git-init
 git-init:
@@ -54,16 +64,19 @@ fabric:
 	if [ ! -d "$(FABRIC_DIR)" ]; then \
 		echo "Clone FABRIC REPO"; \
 		cd $(HYPERLEDGER_DIR); \
-		git clone $(FABRIC) $(FABRIC_DIR); \
+		git clone --single-branch -b release-1.1 $(FABRIC) $(FABRIC_DIR); \
 	fi
-	cd $(FABRIC_DIR) && git checkout $(shell cat ../fabric-test/.git/modules/fabric/HEAD)
+	cd $(FABRIC_DIR) && git checkout release-1.1 && git pull origin release-1.1 && git show-ref HEAD
 
 .PHONY: docker-images
 docker-images:
-	@make docker -C $(FABRIC_DIR)
+	docker pull hyperledger/fabric-peer:$(ARCH)-$(BASE_VERSION)
+	docker pull hyperledger/fabric-orderer:$(ARCH)-$(BASE_VERSION)
+	@make cryptogen configtxgen -C $(FABRIC_DIR)
+	#@make docker -C $(FABRIC_DIR)
 	@make native -C $(FABRIC_DIR)
-	@make docker -C $(CA_DIR)
-	@make docker-fvt -C $(CA_DIR)
+	#@make docker -C $(CA_DIR)
+	#@make docker-fvt -C $(CA_DIR)
 
 .PHONY: ca
 ca:
@@ -72,7 +85,7 @@ ca:
 		cd $(HYPERLEDGER_DIR); \
 		git clone $(FABRIC_CA) $(CA_DIR); \
 	fi
-	cd $(CA_DIR) && git checkout $(shell cat ../fabric-test/.git/modules/fabric-ca/HEAD)
+	cd $(CA_DIR) && git checkout release-1.1 && git pull origin release-1.1 && git show-ref HEAD
 
 .PHONY: smoke-tests
 smoke-tests:
