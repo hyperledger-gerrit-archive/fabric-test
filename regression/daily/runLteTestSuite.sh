@@ -14,7 +14,8 @@ if [ ! -z $GERRIT_BRANCH ] && [ ! -z $WORKSPACE ]; then
     rm -rf $WORKSPACE/archives
     mkdir -p $WORKSPACE/archives/LTE_Test_Logs $WORKSPACE/archives/LTE_Test_XML $WORKSPACE/archives/LTE_Test_Results/experiments/BenchmarkReadWriteTxs
     # copy all the output_Vary*.log files
-    cp $GOPATH/src/github.com/hyperledger/fabric-test/regression/daily/*.log $WORKSPACE/archives/LTE_Test_Logs/
+    tar cvf daily.zip $GOPATH/src/github.com/hyperledger/fabric-test/regression/daily/*.log
+    mv daily.zip $WORKSPACE/archives/LTE_Test_Logs/
     # copy the results_ledger_lte.xml file
     cp $GOPATH/src/github.com/hyperledger/fabric-test/regression/daily/*.xml $WORKSPACE/archives/LTE_Test_XML/
     # copy the files of the ReadWriteTxs experiment: output_LTE.log and results.csv
