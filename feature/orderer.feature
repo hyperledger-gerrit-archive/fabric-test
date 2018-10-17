@@ -138,6 +138,7 @@ Examples:
 
 
 @daily
+@smoke
 Scenario Outline: FAB-3851: Message Payloads of size <comment>, for <type> orderer
     Given I have a bootstrapped fabric network of type <type> using state-database couchdb
     And I use the NodeJS SDK interface
@@ -167,6 +168,7 @@ Examples:
 
 
 @daily
+@smoke
 Scenario Outline: FAB-3859: Kafka Network with Large Message Size <comment> with Configuration Tweaks
   Given the ORDERER_ABSOLUTEMAXBYTES environment variable is <absoluteMaxBytes>
   And the ORDERER_PREFERREDMAXBYTES environment variable is <preferredMaxBytes>
@@ -194,6 +196,7 @@ Examples:
     |     11 MB        |      2 MB         |    22 MB        |       11 MB          |           20 MB              | 10485760 |   10MB  |
 
 @daily
+@smoke
 Scenario Outline: FAB-3857: <count> key/value pairs in Payloads of size <size>
     Given I have a bootstrapped fabric network of type kafka using state-database couchdb
     And I use the NodeJS SDK interface
@@ -213,9 +216,11 @@ Scenario Outline: FAB-3857: <count> key/value pairs in Payloads of size <size>
     Then a user receives a response containing a value of length <size>
     And a user receives a response with the random value
 Examples:
-    |  size  |  count  |
-    |  2048  |   20    |
-    |  256   |  1024   |
+    |  size  |  count  |                  comment                         |
+    #|  2048  |   20    | caused IOError: resource temporarily unavailable |
+    |  1024  |   10    |                                                  |
+    #|  256   |  1024   | caused IOError: resource temporarily unavailable |
+    |  128   |   512   |                                                  |
 
 
 @daily
