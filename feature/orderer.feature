@@ -162,7 +162,7 @@ Examples:
     | solo  | 4194304 |           4MB                |
     | kafka |  125000 | 125KB (with default msg size) |
     | kafka |  320000 | 320KB (with default msg size) |
-    | kafka |  490000 | 490KB (with default msg size) |
+    #| kafka |  490000 | 490KB (with default msg size) |
     #| kafka | 1000012 |   1MB   |
 
 
