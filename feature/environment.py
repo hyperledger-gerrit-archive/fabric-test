@@ -100,6 +100,8 @@ def after_scenario(context, scenario):
         del context.random_key
     if hasattr(context, "composition"):
         del context.composition
+    if hasattr(context, "result"):
+        del context.result
     gc.collect()
 
 def before_all(context):
