@@ -179,6 +179,7 @@ def inspectOrdererConfig(context, filename, channelID):
     updated_env = updateEnviron(context)
     try:
         command = ["configtxgen", "-inspectBlock", filename,
+                   "-configPath", ".",
                    "-channelID", channelID]
         return subprocess.check_output(command, cwd=testConfigs, env=updated_env)
     except:
@@ -189,8 +190,10 @@ def inspectChannelConfig(context, filename, channelID):
     updated_env = updateEnviron(context)
     try:
         command = ["configtxgen", "-inspectChannelCreateTx", filename,
+                   "-configPath", testConfigs,
                    "-channelID", channelID]
-        return subprocess.check_output(command, cwd=testConfigs, env=updated_env)
+        #return subprocess.check_output(command, cwd=testConfigs, env=updated_env)
+        return subprocess.check_output(command, env=updated_env)
     except:
         print("Unable to inspect channel config data: {0}".format(sys.exc_info()[1]))
 
@@ -213,6 +216,7 @@ def generateOrdererConfig(context, channelID, ordererProfile, block):
     try:
         command = ["configtxgen", "-profile", ordererProfile,
                    "-outputBlock", block,
+                   "-configPath", ".",
                    "-channelID", channelID]
         subprocess.check_call(command, cwd=testConfigs, env=updated_env)
     except:
@@ -224,6 +228,7 @@ def generateChannelConfig(channelID, profile, context):
     try:
         command = ["configtxgen", "-profile", profile,
                    "-outputCreateChannelTx", "%s.tx" % channelID,
+                   "-configPath", ".",
                    "-channelID", channelID]
         subprocess.check_call(command, cwd=testConfigs, env=updated_env)
     except:
@@ -246,6 +251,7 @@ def generateChannelAnchorConfig(channelID, profile, context):
             command = ["configtxgen", "-profile", profile,
                        "-outputAnchorPeersUpdate", "{0}{1}Anchor.tx".format(org, channelID),
                        "-channelID", channelID,
+                       "-configPath", ".",
                        "-asOrg", org.title().replace('.', '')]
             subprocess.check_call(command, cwd=testConfigs, env=updated_env)
         except:
@@ -256,7 +262,7 @@ def generateCrypto(context, cryptoLoc="./configs/crypto.yaml"):
     updated_env = updateEnviron(context)
     try:
         subprocess.check_call(["cryptogen", "generate",
-                               '--output={0}'.format(testConfigs),
+                               '--output={0}/.'.format(testConfigs),
                                '--config={0}'.format(cryptoLoc)],
                               env=updated_env)
     except:
