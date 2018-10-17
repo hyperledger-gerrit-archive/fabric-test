@@ -945,6 +945,7 @@ def step_impl(context, valueType):
 def length_impl(context, length, peer):
     assert peer in context.result, "There is no response from {0}".format(peer)
     assert "Error endorsing query" not in context.result[peer], "There was an error response: {0}".format(context.result[peer])
+    print("Result: {}".format(context.result[peer]))
     assert len(context.result[peer].replace('\n', '').replace('"', '')) == length, \
         "Expected response to be of length {0}; received length {1}; Result: {2}".format(length,
                                                                                          len(context.result[peer]),
