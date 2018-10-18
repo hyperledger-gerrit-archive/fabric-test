@@ -22,10 +22,10 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/hyperledger/fabric/core/ledger/testutil"
-
 	"fmt"
+	"github.com/davecgh/go-spew/spew"
+	"github.com/hyperledger/fabric/common/flogging"
+	"github.com/hyperledger/fabric/core/ledger/testutil"
 	"github.com/spf13/viper"
 )
 
@@ -42,6 +42,16 @@ var conf *configuration
 // parses this and does not recognized this flag (-testParams)
 func TestMain(m *testing.M) {
 	testutil.SetupCoreYAMLConfig()
+	flogging.SetModuleLevel("kvledger", "error")
+	flogging.SetModuleLevel("ledgermgmt", "error")
+	flogging.SetModuleLevel("fsblkstorage", "error")
+	flogging.SetModuleLevel("lockbasedtxmgr", "error")
+	flogging.SetModuleLevel("statevalidator", "error")
+	flogging.SetModuleLevel("statebasedval", "error")
+	flogging.SetModuleLevel("statecouchdb", "error")
+	flogging.SetModuleLevel("valimpl", "error")
+	flogging.SetModuleLevel("pvtstatepurgemgmt", "error")
+	flogging.SetModuleLevel("confighistory", "error")
 	testParams := parseTestParams()
 	conf = confFromTestParams(testParams)
 	if os.Getenv("useCouchDB") == "yes" {
