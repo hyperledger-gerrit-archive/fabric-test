@@ -8,7 +8,7 @@ Feature: Gossip Service
 
 @daily
 Scenario Outline: [FAB-4663] [FAB-4664] [FAB-4665] A non-leader peer goes down by <takeDownType>, comes back up and catches up eventually.
-  Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
+  Given the FABRIC_LOGGING_SPEC environment variable is "DEBUG"
   And I have a bootstrapped fabric network of type kafka
   When an admin sets up a channel
   # the following wait is for Gossip leadership states to be stabilized
@@ -56,7 +56,7 @@ Scenario Outline: [FAB-4663] [FAB-4664] [FAB-4665] A non-leader peer goes down b
 
 @daily
 Scenario Outline: [FAB-4667] [FAB-4671] [FAB-4672] A leader peer goes down by <takeDownType>, comes back up *after* another leader is elected, catches up.
-  Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
+  Given the FABRIC_LOGGING_SPEC environment variable is "DEBUG"
   And I have a bootstrapped fabric network of type kafka
   When an admin sets up a channel
   # the following wait is for Gossip leadership states to be stabilized
@@ -106,7 +106,7 @@ Scenario Outline: [FAB-4667] [FAB-4671] [FAB-4672] A leader peer goes down by <t
 
 @daily
 Scenario Outline: [FAB-4673] [FAB-4674] [FAB-4675] A leader peer goes down by <takeDownType>, comes back up *before* another leader is elected, catches up.
-  Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
+  Given the FABRIC_LOGGING_SPEC environment variable is "DEBUG"
   And I have a bootstrapped fabric network of type kafka
   When an admin sets up a channel
   # the following wait is for Gossip leadership states to be stabilized
@@ -140,7 +140,7 @@ Scenario Outline: [FAB-4673] [FAB-4674] [FAB-4675] A leader peer goes down by <t
 
 @daily
 Scenario Outline: [FAB-4676] [FAB-4677] [FAB-4678] "All peers in an organization go down via <takeDownType>, then catch up after <bringUpType>".
-  Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
+  Given the FABRIC_LOGGING_SPEC environment variable is "DEBUG"
   And I have a bootstrapped fabric network of type kafka
   When an admin sets up a channel
   And an admin deploys chaincode at path "github.com/hyperledger/fabric/examples/chaincode/go/example02/cmd" with args ["init","a","1000","b","2000"] with name "mycc"
@@ -315,7 +315,7 @@ Scenario Outline: [FAB-4683] [FAB-4684] [FAB-4685] In leader-selection setup, le
 @daily
   Scenario: [FAB-4666] A non-leader peer, that joins an already-active channel--is expected to have all the blocks eventually.
 
-  Given the CORE_LOGGING_GOSSIP environment variable is "DEBUG"
+  Given the FABRIC_LOGGING_SPEC environment variable is "DEBUG"
   And I have a bootstrapped fabric network of type kafka
   When an admin creates a channel
 
