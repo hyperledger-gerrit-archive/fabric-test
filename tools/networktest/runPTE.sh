@@ -161,6 +161,10 @@ testPreProc() {
     tcase=$1
     tcc=$2
     echo -e "[testPreProc] executes test pre-process: testcase $tcase, chaincode $tcc"
+
+    # restore testcase first in case the testcase was changed
+    restoreCITestcase $tcase
+
     cd $PTEDir
 
     # channel
