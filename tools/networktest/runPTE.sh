@@ -37,6 +37,18 @@ usage () {
     echo -e "\t\t(Must match org names in connection profile. Default: org1 org2)"
     echo
 
+    echo -e "--ccver <chaincode version>"
+    echo -e "\t\t(Default: v0)"
+    echo
+
+    echo -e "--ccprefix <chaincode name prefix>"
+    echo -e "\t\t(Default: sample_)"
+    echo
+
+    echo -e "--ccupgrade\tupgrade chaincode"
+    echo -e "\t\t(a specified chaincode version is required)"
+    echo
+
     echo -e "-t, --testcase <list of testcases>"
     echo
 
@@ -96,6 +108,11 @@ Chaincodes=""
 CProfConv="yes"
 CCProc="yes"
 CHANNEL="defaultchannel"
+CCVER="v0"
+CCVERUPD="no"
+CCPREFIX="sample_"
+CCPREFIXUPD="no"
+CCUPGRADE="no"
 
 
 ### error message handler
@@ -157,10 +174,20 @@ cProfConversion() {
 # pre-process
 # $1: test case, e.g., FAB-3807-4i
 # $2: chaincode, e.g., samplecc
+# $3: chaincode upgrade
 testPreProc() {
     tcase=$1
     tcc=$2
-    echo -e "[testPreProc] executes test pre-process: testcase $tcase, chaincode $tcc"
+    tccupgrade="no"
+    echo "num inputs: $#"
+    if [ $# -gt 2 ]; then
+        tccupgrade=$3
+    fi
+    echo -e "[testPreProc] executes test pre-process: testcase $tcase, chaincode $tcc, upgrade: $tccupgrade"
+
+    # restore testcase first in case the testcase was changed
+    restoreCITestcase $tcase
+
     cd $PTEDir
 
     # channel
@@ -174,6 +201,30 @@ testPreProc() {
         fi
         sed -i "s/testorgschannel$idx1/${Channel[$idx]}/g" CITest/$tcase/$tcc/*
     done
+
+    # chaincode version and prefix
+    if [ $CCVERUPD == "yes" ]; then
+        echo -e "[testPreProc] replace v0 with $CCVER"
+        if [ -e CITest/$tcase/preconfig ]; then
+            sed -i "s/v0/$CCVER/g" CITest/$tcase/preconfig/$tcc/*
+        fi
+        sed -i "s/v0/$CCVER/g" CITest/$tcase/$tcc/*
+    fi
+
+    if [ $CCPREFIXUPD == "yes" ]; then
+        echo -e "[testPreProc] replace sample_ with $CCPREFIX"
+        if [ -e CITest/$tcase/preconfig ]; then
+            sed -i "s/sample_/$CCPREFIX/g" CITest/$tcase/preconfig/$tcc/*
+        fi
+        sed -i "s/sample_/$CCPREFIX/g" CITest/$tcase/$tcc/*
+    fi
+
+    if [ $tccupgrade == "yes" ]; then
+        echo -e "[testPreProc] chaincode upgrade"
+        if [ -e CITest/$tcase/preconfig ]; then
+            sed -i "s/instantiate/upgrade/g" CITest/$tcase/preconfig/$tcc/sample*
+        fi
+    fi
 
     # orgs
     for (( idx=0; idx<${#Organization[@]}; idx++ ))
@@ -253,8 +304,13 @@ ccProc() {
         echo -e "[ccProc] Warning: installation failed, chaincode: $chaincode (can ignore this warning if done during previous test or prior to running this test)"
     fi
 
-    # instantiate chaincode
-    echo -e "[ccProc] instantiate chaincode: $chaincode"
+    # upgrade chaincode
+    if [ $CCUPGRADE == "yes" ]; then
+        echo -e "[ccProc] upgrade chaincode: $CCUPGRADE"
+        testPreProc $tcase $chaincode $CCUPGRADE
+    fi
+    # instantiate/upgrade chaincode
+    echo -e "[ccProc] instantiate/upgrade chaincode: $chaincode"
     instantiateTXT=CITest/$tcase/preconfig/$chaincode/runCases-$chaincode"-instantiate-TLS.txt"
     echo -e "[ccProc] ./pte_driver.sh $instantiateTXT"
     ./pte_driver.sh $instantiateTXT
@@ -381,6 +437,28 @@ while [[ $# -gt 0 ]]; do
           echo -e "\t- Specify Organization: ${Organization[@]}"
           ;;
 
+      --ccver)
+          shift
+          CCVER=$1     # chaincode version
+          CCVERUPD="yes"     # cc version updated
+          echo -e "\t- Specify CCVER: $CCVER\n"
+          shift
+          ;;
+
+      --ccprefix)
+          shift
+          CCPREFIX=$1     # chaincode name prefix
+          CCPREFIXUPD="yes"     # chaincode name prefix updated
+          echo -e "\t- Specify CCPREFIX: $CCPREFIX\n"
+          shift
+          ;;
+
+      --ccupgrade)
+          CCUPGRADE="yes"     # chaincode name prefix
+          echo -e "\t- Specify CCPREFIX: $CCPREFIX\n"
+          shift
+          ;;
+
       -s | --sanity)
           CCProc="yes"         # install/instantiate chaincode
           TestCases=("FAB-3808-2i" "FAB-3811-2q")  # testcases
@@ -469,6 +547,7 @@ if [ $CProfConv != "none" ]; then
     cProfConversion
 fi
 
+echo "CCVER: $CCVER, CCPREFIXUPD: $CCPREFIXUPD, CCUPGRADE: $CCUPGRADE"
 
 # execute PTE transactions
 if [ ${#TestCases[@]} -gt 0 ]; then
