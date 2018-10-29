@@ -37,6 +37,14 @@ usage () {
     echo -e "\t\t(Must match org names in connection profile. Default: org1 org2)"
     echo
 
+    echo -e "--ccver <chaincode version>"
+    echo -e "\t\t(Default: v0)"
+    echo
+
+    echo -e "--ccprefix <chaincode name prefix>"
+    echo -e "\t\t(Default: sample)"
+    echo
+
     echo -e "-t, --testcase <list of testcases>"
     echo
 
@@ -96,6 +104,8 @@ Chaincodes=""
 CProfConv="yes"
 CCProc="yes"
 CHANNEL="defaultchannel"
+CCVER="v0"
+CCPREFIX="sample"
 
 
 ### error message handler
@@ -161,6 +171,10 @@ testPreProc() {
     tcase=$1
     tcc=$2
     echo -e "[testPreProc] executes test pre-process: testcase $tcase, chaincode $tcc"
+
+    # restore testcase first in case the testcase was changed
+    restoreCITestcase $tcase
+
     cd $PTEDir
 
     # channel
@@ -174,6 +188,16 @@ testPreProc() {
         fi
         sed -i "s/testorgschannel$idx1/${Channel[$idx]}/g" CITest/$tcase/$tcc/*
     done
+
+    # chaincode version and prefix
+    echo -e "[testPreProc] replace v0 with $CCVER"
+    if [ -e CITest/$tcase/preconfig ]; then
+        echo -e "[testPreProc] replace sample_ with $CCPREFIX"
+        sed -i "s/v0/$CCVER/g" CITest/$tcase/preconfig/$tcc/*
+        sed -i "s/sample_/$CCPREFIX/g" CITest/$tcase/preconfig/$tcc/*
+    fi
+    sed -i "s/v0/$CCVER/g" CITest/$tcase/$tcc/*
+    sed -i "s/sample_/$CCPREFIX/g" CITest/$tcase/$tcc/*
 
     # orgs
     for (( idx=0; idx<${#Organization[@]}; idx++ ))
@@ -381,6 +405,20 @@ while [[ $# -gt 0 ]]; do
           echo -e "\t- Specify Organization: ${Organization[@]}"
           ;;
 
+      --ccver)
+          shift
+          CCVER=$1     # chaincode version
+          echo -e "\t- Specify CCVER: $CCVER\n"
+          shift
+          ;;
+
+      --ccprefix)
+          shift
+          CCPREFIX=$1     # chaincode name prefix
+          echo -e "\t- Specify CCPREFIX: $CCPREFIX\n"
+          shift
+          ;;
+
       -s | --sanity)
           CCProc="yes"         # install/instantiate chaincode
           TestCases=("FAB-3808-2i" "FAB-3811-2q")  # testcases
@@ -469,6 +507,9 @@ if [ $CProfConv != "none" ]; then
     cProfConversion
 fi
 
+CCPREFIX=$CCPREFIX"_"
+echo "CCPREFIX: $CCPREFIX"
+echo "CCVER: $CCVER"
 
 # execute PTE transactions
 if [ ${#TestCases[@]} -gt 0 ]; then
