@@ -52,7 +52,7 @@ TEST_VIEWER_IMAGE = $(DOCKER_NS)/fabric-testviewer
 TARGET = pte test-viewer
 
 .PHONY: ci-smoke
-ci-smoke: git-init git-latest fabric ca clean pre-setup build-docker-images javaenv smoke-tests
+ci-smoke: git-init git-latest fabric ca clean pre-setup pull-images pull-javaenv smoke-tests
 
 .PHONY: git-latest
 git-latest:
@@ -69,7 +69,7 @@ pre-setup:
 #	@bash $(INSTALL_BEHAVE_DEPS)
 
 .PHONY: ci-daily
-ci-daily: git-init git-latest fabric ca clean pre-setup build-docker-images javaenv daily-tests
+ci-daily: git-init git-latest fabric ca clean pre-setup pull-images pull-javaenv daily-tests
 
 .PHONY: fabric
 fabric:
@@ -124,9 +124,14 @@ smoke-tests:
 .PHONY: daily-tests
 daily-tests:
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runBehaveTestSuite.sh; ./runPteTestSuite.sh; ./runOteTestSuite.sh; ./runLteTestSuite.sh; ./runCATestSuite.sh
+
 .PHONY: pull-images
 pull-images:
 	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh
+
+.PHONY: pull-javaenv
+pull-javaenv:
+	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullJavaenvImage.sh
 
 .PHONY: svt-daily-behave-tests
 svt-daily-behave-tests: pull-images pull-thirdparty-images
