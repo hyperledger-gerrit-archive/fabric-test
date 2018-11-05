@@ -11,6 +11,8 @@ go get -u github.com/kardianos/govendor
 
 echo "======== PULL DOCKER IMAGES ========"
 
+$REPO = $1
+
 ##########################################################
 # Pull and Tag the fabric and fabric-ca images from Nexus
 ##########################################################
@@ -18,9 +20,9 @@ echo "Fetching images from Nexus"
 NEXUS_URL=nexus3.hyperledger.org:10001
 ORG_NAME="hyperledger/fabric"
 ARCH=$(go env GOARCH)
-: ${STABLE_VERSION:=1.3.1-stable}
-STABLE_TAG=$ARCH-$STABLE_VERSION
-echo "---------> STABLE_VERSION:" $STABLE_VERSION
+LATEST_TAG=$ARCH-latest
+echo "---------> REPO:" $REPO
+echo "---------> LATEST TAG:" $LATEST_TAG
 
 cd $GOPATH/src/github.com/hyperledger/fabric
 
