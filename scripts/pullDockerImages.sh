@@ -11,6 +11,8 @@ go get -u github.com/kardianos/govendor
 
 echo "======== PULL DOCKER IMAGES ========"
 
+REPO=$1
+
 ##########################################################
 # Pull and Tag the fabric and fabric-ca images from Nexus
 ##########################################################
@@ -18,9 +20,9 @@ echo "Fetching images from Nexus"
 NEXUS_URL=nexus3.hyperledger.org:10001
 ORG_NAME="hyperledger/fabric"
 ARCH=$(go env GOARCH)
-: ${STABLE_VERSION:=1.3.1-stable}
-STABLE_TAG=$ARCH-$STABLE_VERSION
-echo "---------> STABLE_VERSION:" $STABLE_VERSION
+LATEST_TAG=$ARCH-latest
+echo "---------> REPO:" $REPO
+echo "---------> LATEST TAG:" $LATEST_TAG
 
 cd $GOPATH/src/github.com/hyperledger/fabric
 
@@ -28,16 +30,16 @@ dockerTag() {
   for IMAGES in peer orderer ccenv tools ca ca-tools ca-peer ca-orderer ca-fvt; do
     echo "Images: $IMAGES"
     echo
-    docker pull $NEXUS_URL/$ORG_NAME-$IMAGES:$STABLE_TAG
+    docker pull $NEXUS_URL/$ORG_NAME-$IMAGES:$LATEST_TAG
           if [ $? != 0 ]; then
              echo  "FAILED: Docker Pull Failed on $IMAGES"
              exit 1
           fi
-    docker tag $NEXUS_URL/$ORG_NAME-$IMAGES:$STABLE_TAG $ORG_NAME-$IMAGES
-    docker tag $NEXUS_URL/$ORG_NAME-$IMAGES:$STABLE_TAG $ORG_NAME-$IMAGES:$STABLE_TAG
-    echo "$ORG_NAME-$IMAGES:$STABLE_TAG"
+    docker tag $NEXUS_URL/$ORG_NAME-$IMAGES:$LATEST_TAG $ORG_NAME-$IMAGES
+    docker tag $NEXUS_URL/$ORG_NAME-$IMAGES:$LATEST_TAG $ORG_NAME-$IMAGES:$LATEST_TAG
+    echo "$ORG_NAME-$IMAGES:$LATEST_TAG"
     echo "Deleting Nexus docker images: $IMAGES"
-    docker rmi -f $NEXUS_URL/$ORG_NAME-$IMAGES:$STABLE_TAG
+    docker rmi -f $NEXUS_URL/$ORG_NAME-$IMAGES:$LATEST_TAG
   done
 }
 
