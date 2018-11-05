@@ -11,6 +11,8 @@ go get -u github.com/kardianos/govendor
 
 echo "======== PULL DOCKER IMAGES ========"
 
+REPO=$1
+
 ##########################################################
 # Pull and Tag the fabric and fabric-ca images from Nexus
 ##########################################################
@@ -18,63 +20,56 @@ echo "Fetching images from Nexus"
 NEXUS_URL=nexus3.hyperledger.org:10001
 ORG_NAME="hyperledger/fabric"
 ARCH=$(go env GOARCH)
-: ${STABLE_VERSION:=1.3.1-stable}
-STABLE_TAG=$ARCH-$STABLE_VERSION
-echo "---------> STABLE_VERSION:" $STABLE_VERSION
+LATEST_TAG=$ARCH-latest
+echo "---------> REPO:" $REPO
+echo "---------> LATEST TAG:" $LATEST_TAG
 
 cd $GOPATH/src/github.com/hyperledger/fabric
 
-dockerTag() {
-  for IMAGES in peer orderer ccenv tools ca ca-tools ca-peer ca-orderer ca-fvt; do
+dockerTag(images) {
+  for IMAGES in images; do
     echo "Images: $IMAGES"
     echo
-    docker pull $NEXUS_URL/$ORG_NAME-$IMAGES:$STABLE_TAG
+    docker pull $NEXUS_URL/$ORG_NAME-$IMAGES:$LATEST_TAG
           if [ $? != 0 ]; then
              echo  "FAILED: Docker Pull Failed on $IMAGES"
              exit 1
           fi
-    docker tag $NEXUS_URL/$ORG_NAME-$IMAGES:$STABLE_TAG $ORG_NAME-$IMAGES
-    docker tag $NEXUS_URL/$ORG_NAME-$IMAGES:$STABLE_TAG $ORG_NAME-$IMAGES:$STABLE_TAG
-    echo "$ORG_NAME-$IMAGES:$STABLE_TAG"
+    docker tag $NEXUS_URL/$ORG_NAME-$IMAGES:$LATEST_TAG $ORG_NAME-$IMAGES
+    docker tag $NEXUS_URL/$ORG_NAME-$IMAGES:$LATEST_TAG $ORG_NAME-$IMAGES:$LATEST_TAG
+    echo "$ORG_NAME-$IMAGES:$LATEST_TAG"
     echo "Deleting Nexus docker images: $IMAGES"
-    docker rmi -f $NEXUS_URL/$ORG_NAME-$IMAGES:$STABLE_TAG
+    docker rmi -f $NEXUS_URL/$ORG_NAME-$IMAGES:$LATEST_TAG
   done
 }
 
-dockerTag
+case $REPO in
+all)
+  echo "Pull all images"
+  dockerTag(peer orderer ccenv tools ca ca-tools ca-peer ca-orderer ca-fvt javaenv)
+  ;;
+fabric)
+  echo "Pull all images except fabric"
+  dockerTag(javaenv tools ca )
+  ;;
+fabric-ca)
+  echo "Pull all images except fabric-ca"
+  dockerTag(peer orderer ccenv tools javaenv)
+  ;;
+fabric-sdk-node)
+  echo "Pull all images except fabric-sdk-node"
+  dockerTag(peer orderer ccenv tools ca ca-tools ca-peer ca-orderer ca-fvt javaenv)
+  ;;
+fabric-sdk-java)
+  echo "Pull all images except fabric-sdk-java"
+  dockerTag(peer orderer ccenv tools ca ca-tools ca-peer ca-orderer ca-fvt javaenv)
+  ;;
+fabric-javaenv)
+  echo "Pull all images except fabric-javaenv"
+  dockerTag(peer orderer ccenv tools ca ca-tools ca-peer ca-orderer ca-fvt)
+  ;;
+esac
 
 echo
-docker images | grep "hyperledger*"
-echo
-
-#####################################################
-# Pull the fabric-chaincode-javaenv image from Nexus
-#####################################################
-if [ "$GERRIT_BRANCH" != "master" ]; then
-       echo "========> SKIP: javaenv image is not available on $GERRIT_BRANCH"
-else
-       NEXUS_URL=nexus3.hyperledger.org:10001
-       ORG_NAME="hyperledger/fabric"
-       IMAGE=javaenv
-       : ${JAVAENV:=amd64-1.3.0-stable}
-       docker pull $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV
-       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE
-       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE:amd64-1.3.0
-       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE:amd64-latest
-       ######################################
-       docker images | grep hyperledger/fabric-javaenv || true
-fi
-echo
-
-echo "======== PULL FABRIC BINARIES ========"
-echo "------------> RELEASE_COMMIT:" $RELEASE_COMMIT
-RELEASE_COMMIT=${RELEASE_COMMIT:0:7}
-OS_VER=$(uname -s|tr '[:upper:]' '[:lower:]')
-echo
-rm -rf .build && mkdir -p .build && cd .build
-curl https://nexus.hyperledger.org/content/repositories/releases/org/hyperledger/fabric/hyperledger-fabric-$STABLE_VERSION/$OS_VER-$ARCH.$STABLE_VERSION-$RELEASE_COMMIT/hyperledger-fabric-$STABLE_VERSION-$OS_VER-$ARCH.$STABLE_VERSION-$RELEASE_COMMIT.tar.gz | tar xz
-export PATH=$WORKSPACE/gopath/src/github.com/hyperledger/fabric/.build/bin:$PATH
-echo "Binaries fetched from Nexus"
-echo
-ls -l bin/
+docker images | grep "hyperledger*" || true
 echo
