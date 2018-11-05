@@ -52,7 +52,7 @@ TEST_VIEWER_IMAGE = $(DOCKER_NS)/fabric-testviewer
 TARGET = pte test-viewer
 
 .PHONY: ci-smoke
-ci-smoke: git-init git-latest fabric ca clean pre-setup build-docker-images javaenv smoke-tests
+ci-smoke: pull-images pull-binaries javaenv smoke-tests
 
 .PHONY: git-latest
 git-latest:
@@ -69,7 +69,7 @@ pre-setup:
 #	@bash $(INSTALL_BEHAVE_DEPS)
 
 .PHONY: ci-daily
-ci-daily: git-init git-latest fabric ca clean pre-setup build-docker-images javaenv daily-tests
+ci-daily: pull-images pull-binaries javaenv daily-tests
 
 .PHONY: fabric
 fabric:
@@ -124,9 +124,53 @@ smoke-tests:
 .PHONY: daily-tests
 daily-tests:
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runBehaveTestSuite.sh; ./runPteTestSuite.sh; ./runOteTestSuite.sh; ./runLteTestSuite.sh; ./runCATestSuite.sh
+
+.PHONY: interop-tests
+interop-tests:
+	cd $(HYPERLEDGER_DIR)/fabric-test/regression/interop && ./runInteropTestSuite.sh
+
 .PHONY: pull-images
 pull-images: git-init git-latest fabric ca clean pre-setup
-	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh
+	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh all
+
+.PHONY: pull-binaries
+pull-binaries:
+	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullBinaries.sh
+
+.PHONY: pull-fabric
+pull-fabric:
+	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh fabric
+
+.PHONY: pull-fabric-ca
+pull-fabric-ca:
+	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh fabric-ca
+
+.PHONY: pull-fabric-sdk-node
+pull-fabric-sdk-node:
+	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh fabric-sdk-node
+
+.PHONY: pull-fabric-sdk-java
+pull-fabric-sdk-java:
+	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh fabric-sdk-java
+
+.PHONY: pull-fabric-javaenv
+pull-fabric-javaenv:
+	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh fabric-javaenv
+
+.PHONY: interop-fabric
+interop-fabric: pull-thirdparty-images build-fabric build-fabric-ca pull-javaenv interop-tests
+
+.PHONY: interop-fabric-ca
+interop-fabric-ca: pull-thirdparty-images pull-fabric build-fabric-ca pull-javaenv interop-tests
+
+.PHONY: interop-fabric-sdk-node
+interop-fabric-sdk-node: pull-thirdparty-images pull-fabric-ca pull-javaenv interop-tests
+
+.PHONY: interop-fabric-sdk-java
+interop-fabric-sdk-java: pull-thirdparty-images pull-fabric-ca pull-javaenv interop-tests
+
+.PHONY: interop-fabric-javaenv
+interop-fabric-javaenv: pull-thirdparty-images pull-fabric-ca javaenv interop-tests
 
 .PHONY: svt-daily-behave-tests
 svt-daily-behave-tests: pull-images pull-thirdparty-images
