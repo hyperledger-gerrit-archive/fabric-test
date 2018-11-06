@@ -46,7 +46,11 @@ function executeTest {
   runTestSetup
   cmd="go test -v -timeout 1000m $PKG_NAME -testParams=\"$TEST_PARAMS\" -bench=$FUNCTION_NAME"
   echo $cmd
-  RAW_OUTPUT=`eval $cmd`
+  RAW_OUTPUT=`eval $cmd 2>&1 | tee /dev/tty`
+  if [[ "$RAW_OUTPUT" == *"FAIL"* ]]; then
+    echo "Failed to run the test.";
+    return 1;
+  fi
   writeResults
 }
 
