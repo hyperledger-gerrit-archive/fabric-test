@@ -29,7 +29,8 @@
 BASE_VERSION = 1.2.0
 DOCKER_NS = hyperledger
 EXTRA_VERSION ?= $(shell git rev-parse --short HEAD)
-PROJECT_VERSION=$(BASE_VERSION)-$(EXTRA_VERSION)
+PROJECT_VERSION = $(BASE_VERSION)-$(EXTRA_VERSION)
+BRANCH = release-1.2
 
 FABRIC = https://gerrit.hyperledger.org/r/fabric
 FABRIC_CA = https://gerrit.hyperledger.org/r/fabric-ca
@@ -48,10 +49,10 @@ ci-smoke: git-init git-latest fabric ca clean pre-setup docker-images smoke-test
 .PHONY: git-latest
 git-latest:
 	cd $(HYPERLEDGER_DIR)/fabric-test/cello && git pull origin master && git show-ref HEAD
-	cd $(HYPERLEDGER_DIR)/fabric-test/fabric && git checkout release-1.2 && git pull origin release-1.2 && git show-ref HEAD
-	cd $(HYPERLEDGER_DIR)/fabric-test/fabric-ca && git checkout release-1.2 && git pull origin release-1.2 && git show-ref HEAD
-	cd $(HYPERLEDGER_DIR)/fabric-test/fabric-samples && git checkout release-1.2 && git pull origin release-1.2 && git show-ref HEAD
-	cd $(HYPERLEDGER_DIR)/fabric-test/fabric-sdk-node && git checkout release-1.2 && git pull origin release-1.2 && git show-ref HEAD
+	cd $(HYPERLEDGER_DIR)/fabric-test/fabric && git checkout $(BRANCH) && git pull origin $(BRANCH) && git show-ref HEAD
+	cd $(HYPERLEDGER_DIR)/fabric-test/fabric-ca && git checkout $(BRANCH) && git pull origin $(BRANCH) && git show-ref HEAD
+	cd $(HYPERLEDGER_DIR)/fabric-test/fabric-samples && git checkout $(BRANCH) && git pull origin $(BRANCH) && git show-ref HEAD
+	cd $(HYPERLEDGER_DIR)/fabric-test/fabric-sdk-node && git checkout $(BRANCH) && git pull origin $(BRANCH) && git show-ref HEAD
 
 .PHONY: git-init
 git-init:
