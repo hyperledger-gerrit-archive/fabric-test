@@ -26,9 +26,15 @@ fi
 
 keyWord=$1
 
-#bring down network
-echo "..... clean network ..... docker images key word: $keyWord"
-docker-compose down
+if [ -r docker-compose.yaml -o -r docker-compose.yml ]; then
+    #bring down network
+    echo "..... clean network ..... docker images key word: $keyWord"
+    docker-compose down
+else
+    # Maybe this is the first testcase to run, and therefore there might be
+    # no network to clean up. Not a problem. But echo a warning log, just in case.
+    echo "..... clean network - info: cannot find docker-compose.yaml file for any existing network; nothing to clean up"
+fi
 
 #remove dead docker containers
 echo "..... remove containers ....."
