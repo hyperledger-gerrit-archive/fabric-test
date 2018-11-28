@@ -15,6 +15,7 @@
 #   - build-docker-images      - builds fabric & ca docker images.
 #   - build-fabric             - builds fabric docker images and binaries.
 #   - build-fabric-ca          - builds fabric-ca docker images and binaries.
+#   - build-sdk-wrapper        - builds fabric-sdk-java wrapper jar files.
 #   - fabric                   - clones fabric repository.
 #   - fabric-chaincode-java    - clones the fabric-chaincode-java repository.
 #   - smoke-tests              - runs Smoke Test Suite.
@@ -55,7 +56,7 @@ TEST_VIEWER_IMAGE = $(DOCKER_NS)/fabric-testviewer
 TARGET = pte test-viewer
 
 .PHONY: ci-smoke
-ci-smoke: fabric pull-images pull-binaries pull-thirdparty-images smoke-tests
+ci-smoke: fabric pull-images pull-binaries pull-thirdparty-images build-sdk-wrapper smoke-tests
 
 .PHONY: git-latest
 git-latest:
@@ -72,7 +73,7 @@ pre-setup:
 #	@bash $(INSTALL_BEHAVE_DEPS)
 
 .PHONY: ci-daily
-ci-daily: fabric pull-images pull-binaries pull-thirdparty-images daily-tests
+ci-daily: fabric pull-images pull-binaries pull-thirdparty-images build-sdk-wrapper daily-tests
 
 .PHONY: fabric
 fabric:
@@ -97,6 +98,10 @@ build-fabric: fabric
 build-fabric-ca: ca
 	@make docker-all -C $(CA_DIR)
 	@make docker-fvt -C $(CA_DIR)
+
+.PHONY: build-sdk-wrapper
+build-sdk-wrapper:
+	cd $(HYPERLEDGER_DIR)/fabric-test/feature/sdk/java && ./package.sh
 
 .PHONY: pull-thirdparty-images
 pull-thirdparty-images:
