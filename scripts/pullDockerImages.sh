@@ -18,7 +18,7 @@ echo "Fetching images from Nexus"
 NEXUS_URL=nexus3.hyperledger.org:10001
 ORG_NAME="hyperledger/fabric"
 ARCH=$(go env GOARCH)
-: ${STABLE_VERSION:=1.3.1-stable}
+: ${STABLE_VERSION:=1.4.0-stable}
 STABLE_TAG=$ARCH-$STABLE_VERSION
 echo "---------> STABLE_VERSION:" $STABLE_VERSION
 
@@ -56,10 +56,11 @@ else
        NEXUS_URL=nexus3.hyperledger.org:10001
        ORG_NAME="hyperledger/fabric"
        IMAGE=javaenv
-       : ${JAVAENV:=amd64-1.3.0-stable}
+       #: ${JAVAENV:=amd64-1.3.0-stable}
+       JAVAENV=amd64-1.4.0-stable-3b61085
        docker pull $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV
        docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE
-       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE:amd64-1.3.0
+       #docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE:amd64-1.3.0
        docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE:amd64-latest
        ######################################
        docker images | grep hyperledger/fabric-javaenv || true
