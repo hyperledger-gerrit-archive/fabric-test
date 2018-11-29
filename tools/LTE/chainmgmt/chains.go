@@ -20,6 +20,8 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/hyperledger/fabric/common/metrics/disabled"
+
 	"github.com/hyperledger/fabric/bccsp/factory"
 	"github.com/hyperledger/fabric/common/configtx/test"
 	"github.com/hyperledger/fabric/core/chaincode/platforms"
@@ -55,6 +57,7 @@ func newChainsMgr(mgrConf *ChainMgrConf, batchConf *BatchConf, initOp chainInitO
 	ledgermgmt.Initialize(&ledgermgmt.Initializer{
 		PlatformRegistry:              platforms.NewRegistry(&golang.Platform{}),
 		DeployedChaincodeInfoProvider: &mock.DeployedChaincodeInfoProvider{},
+		MetricsProvider:               disabled.Provider{},
 	})
 	return &chainsMgr{mgrConf, batchConf, initOp, make(map[ChainID]*Chain), &sync.WaitGroup{}}
 }
