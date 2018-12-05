@@ -5,6 +5,7 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 const util = require('util');
 const common = require('./common.js');
 const {Gateway, InMemoryWallet, X509WalletMixin} = require('fabric-network');
@@ -21,6 +22,8 @@ let client = new Client();
  * @param {String} options string in JSON format containing additional test parameters
  */
 function query(user, org, cc, peer, network_config_path, options) {
+
+    console.log(user);
 
     const chaincode = JSON.parse(cc);
     let opts;
@@ -174,8 +177,18 @@ async function _evaluateTransaction(org, chaincode, network_config){
     };
 }
 
-exports.query = query;
+//exports.query = query;
 require('make-runnable');
+
+var filePath = path.join(__dirname, '../../commandInputs.txt');
+fs.readFile(filePath, {encoding: 'utf-8'}, function(err,data){
+    if (!err) {
+	var inputData = data.split(" ");
+	query(inputData[0], inputData[1], inputData[2], inputData[3], inputData[4], inputData[5]);
+    } else {
+        console.log(err);
+    }
+});
 
 // Example test calls
 // node query.js query User1@org2.example.com Org2ExampleCom' {"args": ["a"], "fcn":"query", "channelId": "behavesystest", "chaincodeId": "mycc"}' ["peer1.org2.example.com"] /opt/gopath/src/github.com/hyperledger/fabric-test/feature/configs/3f09636eb35811e79e510214683e8447/network-config.json;

@@ -6,6 +6,7 @@
 
 'use strict';
 const fs = require('fs');
+const path = require('path');
 const util = require('util');
 const hfc = require('fabric-client');
 const {Gateway, InMemoryWallet, X509WalletMixin} = require('fabric-network');
@@ -24,7 +25,12 @@ const client = new hfc();
  */
 function invoke(username, org, cc, inputPeerNames, orderer, network_config_path, options) {
 
-    const chaincode = JSON.parse(cc);
+    console.log(username);
+    console.log(org);
+    console.log(cc);
+
+    //const chaincode = JSON.parse(cc);
+    const chaincode = {};
     let opts;
 
     if (options){
@@ -207,8 +213,18 @@ async function _submitTransaction(org, chaincode, network_config){
     };
 }
 
-exports.invoke = invoke;
+//exports.invoke = invoke;
 require('make-runnable');
+
+var filePath = path.join(__dirname, '../../commandInputs.txt');
+fs.readFile(filePath, {encoding: 'utf-8'}, function(err,data){
+    if (!err) {
+	var inputData = data.split(" ");
+	invoke(inputData[0], inputData[1], inputData[2], inputData[3], inputData[4], inputData[5], inputData[6]);
+    } else {
+        console.log(err);
+    }
+});
 
 // Example test calls
 // node invoke.js invoke User1@org1.example.com Org1ExampleCom '{"channelId": "behavesystest", "args": ["a", "b", "10"], "chaincodeId": "mycc", "name": "mycc", "fcn": "invoke"}' ['peer0.org1.example.com'] orderer0.example.com /Users/nkl/go/src/github.com/hyperledger/fabric-test/feature/configs/0be5908ac30011e88d70acbc32c08695/network-config.json '{"transaction": "true"}'

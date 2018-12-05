@@ -289,6 +289,12 @@ class SDKInterface(InterfaceBase):
         shutil.copytree("../../../node_modules", "./node_modules")
         self.__class__ = NodeSDKInterface
 
+        # Because there are some inputs that are too large for the command line, a 
+        # file will be used as a temp storage for passing command parameters to the
+        # node wrapper. Also the nodejs package that was being used to pass parameters
+        # in memory does not support async/wait in node.
+        self.inputFile = "commandInputs.txt"
+
     def reformat_chaincode(self, chaincode, channelId):
         reformatted = yaml.safe_load(chaincode.get('args', '[]'))
         function = reformatted.pop(0)
@@ -334,19 +340,31 @@ class SDKInterface(InterfaceBase):
 class NodeSDKInterface(SDKInterface):
     def invoke_func(self, chaincode, channelId, user, org, peers, orderer, opts):
         reformatted = self.reformat_chaincode(chaincode, channelId)
-        print("Chaincode", chaincode)
+        #print("Chaincode", chaincode)
         orgName = org.title().replace('.', '')
 
-        cmd = "node ./sdk/node/invoke.js invoke {0}@{1} {2} '{3}' {4} {5} {6} '{7}'".format(user, org, orgName, json.dumps(reformatted), peers, orderer, self.networkConfigFile, json.dumps(opts))
+        with open(self.inputFile, "w") as fd:
+            #fd.write("invoke {0}@{1} {2} '{3}' {4} {5} {6} '{7}'".format(user, org, orgName, json.dumps(reformatted), peers, orderer, self.networkConfigFile, json.dumps(opts)))
+            fd.write("{0}@{1} {2} '{3}' {4} {5} {6} '{7}'".format(user, org, orgName, json.dumps(reformatted), peers, orderer, self.networkConfigFile, json.dumps(opts)))
+
+        #cmd = "node ./sdk/node/invoke.js {0}".format(self.inputFile)
+        cmd = "node ./sdk/node/invoke.js"
+        #cmd = "node ./sdk/node/invoke.js invoke {0}@{1} {2} '{3}' {4} {5} {6} '{7}'".format(user, org, orgName, json.dumps(reformatted), peers, orderer, self.networkConfigFile, json.dumps(opts))
         print("cmd: {0}".format(cmd))
         return subprocess.check_call(cmd, shell=True)
 
     def query_func(self, chaincode, channelId, user, org, peers, opts):
-        print("Chaincode", chaincode)
+        #print("Chaincode", chaincode)
         reformatted = self.reformat_chaincode(chaincode, channelId)
         orgName = org.title().replace('.', '')
 
-        cmd="node ./sdk/node/query.js query {0}@{1} {2} '{3}' {4} {5} '{6}'".format(user, org, orgName, json.dumps(reformatted), peers, self.networkConfigFile, json.dumps(opts))
+        with open(self.inputFile, "w") as fd:
+            #fd.write("query {0}@{1} {2} '{3}' {4} {5} '{6}'".format(user, org, orgName, json.dumps(reformatted), peers, self.networkConfigFile, json.dumps(opts)))
+            fd.write("{0}@{1} {2} '{3}' {4} {5} '{6}'".format(user, org, orgName, json.dumps(reformatted), peers, self.networkConfigFile, json.dumps(opts)))
+
+        #cmd = "node ./sdk/node/query.js {0}".format(self.inputFile)
+        cmd = "node ./sdk/node/query.js"
+        #cmd="node ./sdk/node/query.js query {0}@{1} {2} '{3}' {4} {5} '{6}'".format(user, org, orgName, json.dumps(reformatted), peers, self.networkConfigFile, json.dumps(opts))
         print("cmd: {0}".format(cmd))
         response = subprocess.check_output(cmd, shell=True)
         regex = "\{.*response.*:\"(.*?)\"\}"
