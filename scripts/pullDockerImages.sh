@@ -87,6 +87,20 @@ third-party)
   dockerTag peer orderer ccenv tools ca ca-tools ca-peer ca-orderer ca-fvt javaenv
   ;;
 esac
+#####################################################
+# Pull the fabric-chaincode-javaenv image from Nexus
+#####################################################
+NEXUS_URL=nexus3.hyperledger.org:10001
+ORG_NAME="hyperledger/fabric"
+IMAGE=javaenv
+export RELEASE=1.4.0
+export STABLE_VERSION=amd64-$RELEASE-stable
+docker pull $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION
+docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE
+docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE:amd64-$RELEASE
+docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE:amd64-latest
+######################################
+   docker images | grep hyperledger/fabric-javaenv || true
 
 echo
 docker images | grep "hyperledger*"
