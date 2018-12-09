@@ -63,21 +63,16 @@ echo
 #####################################################
 # Pull the fabric-chaincode-javaenv image from Nexus
 #####################################################
-if [ "$GERRIT_BRANCH" != "master" ]; then
-       echo "========> SKIP: javaenv image is not available on $GERRIT_BRANCH"
-else
-       NEXUS_URL=nexus3.hyperledger.org:10001
-       ORG_NAME="hyperledger/fabric"
-       IMAGE=javaenv
-       : ${JAVAENV:=amd64-1.3.0-stable}
-       docker pull $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV
-       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE
-       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE:amd64-1.3.0
-       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE:amd64-latest
-       ######################################
-       docker images | grep hyperledger/fabric-javaenv || true
-fi
-echo
+NEXUS_URL=nexus3.hyperledger.org:10001
+ORG_NAME="hyperledger/fabric"
+IMAGE=javaenv
+RELEASE=1.3.1
+STABLE_VERSION=amd64-$RELEASE-stable
+docker pull $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION
+docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE
+docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE:amd64-latest
+docker rmi -f $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION
+docker images
 
 echo "======== PULL FABRIC BINARIES ========"
 echo "------------> RELEASE_COMMIT:" $RELEASE_COMMIT
