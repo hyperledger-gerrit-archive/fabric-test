@@ -88,6 +88,14 @@ third-party)
   ;;
 esac
 
+NEXUS_URL=nexus3.hyperledger.org:10001
+ORG_NAME="hyperledger/fabric"
+IMAGE=javaenv
+RELEASE=1.4.0
+STABLE_VERSION=amd64-$RELEASE-stable
+docker pull $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION
+docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE
+docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE:amd64-latest
 echo
 docker images | grep "hyperledger*"
 echo
