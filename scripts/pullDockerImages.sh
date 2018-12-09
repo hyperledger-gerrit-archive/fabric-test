@@ -63,21 +63,27 @@ echo
 #####################################################
 # Pull the fabric-chaincode-javaenv image from Nexus
 #####################################################
-if [ "$GERRIT_BRANCH" != "master" ]; then
-       echo "========> SKIP: javaenv image is not available on $GERRIT_BRANCH"
+NEXUS_URL=nexus3.hyperledger.org:10001
+ORG_NAME="hyperledger/fabric"
+IMAGE=javaenv
+if [[ "$GERRIT_BRANCH" = "master" || "$GERRIT_BRANCH" = "release-1.3" ]]; then
+   if [ "$GERRIT_BRANCH" = "master" ]; then
+       export STABLE_VERSION=amd64-1.4.0-stable
+       export JAVA_ENV_TAG=1.4.0
+   else
+       export STABLE_VERSION=amd64-1.3.0-stable
+       export JAVA_ENV_TAG=1.3.1
+   fi
+
+   docker pull $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION
+   docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE
+   docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE:amd64-$JAVA_ENV_TAG
+   docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$STABLE_VERSION $ORG_NAME-$IMAGE:amd64-latest
+######################################
+docker images | grep hyperledger/fabric-javaenv || true
 else
-       NEXUS_URL=nexus3.hyperledger.org:10001
-       ORG_NAME="hyperledger/fabric"
-       IMAGE=javaenv
-       : ${JAVAENV:=amd64-1.3.0-stable}
-       docker pull $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV
-       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE
-       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE:amd64-1.3.0
-       docker tag $NEXUS_URL/$ORG_NAME-$IMAGE:$JAVAENV $ORG_NAME-$IMAGE:amd64-latest
-       ######################################
-       docker images | grep hyperledger/fabric-javaenv || true
+   echo "========> SKIP: javaenv image is not available on $GERRIT_BRANCH"
 fi
-echo
 
 echo "======== PULL FABRIC BINARIES ========"
 echo "------------> RELEASE_COMMIT:" $RELEASE_COMMIT
