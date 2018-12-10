@@ -6,6 +6,7 @@
 
 'use strict';
 const fs = require('fs');
+const path = require('path');
 const util = require('util');
 const hfc = require('fabric-client');
 const {Gateway, InMemoryWallet, X509WalletMixin} = require('fabric-network');
@@ -14,48 +15,46 @@ const client = new hfc();
 
 /**
  * Perform an "invoke" action on installed/instantiated chaincode
- * @param {String} username the username
- * @param {String} org the organisation to use
- * @param {String} cc string in JSON format describing the chaincode parameters
- * @param {String} inputPeerNames the peers to use
- * @param {String} orderer the orderer to use
- * @param {String} network_config_path the network configuration file path
- * @param {String} options string in JSON format containing additional test parameters
+ * @param {String} inputFilePath the file path containing test run information as a JSON object containing
+ * {
+ *  username: the test user name
+ *  org: the organisation to use
+ *  chaincode: object describing the chaincode parameters
+ *  orderer: the orderer to use
+ *  networkConfigFile: the network configuration file path
+ *  opts: additional test parameters 
+ * }
  */
-function invoke(username, org, cc, inputPeerNames, orderer, network_config_path, options) {
+function invoke(inputFilePath) {
 
-    const chaincode = JSON.parse(cc);
-    let opts;
+    const filePath = path.join(__dirname, inputFilePath);
+    const inputData = JSON.parse(fs.readFileSync(filePath, {encoding: 'utf-8'}));
 
-    if (options){
-        opts = JSON.parse(options);
-    }
-
-    const temptext = '\n\n Username : '+ username +
-                    '\n\n Org: '+ org +
-                    '\n\n chaincode : '+ util.format(chaincode) +
-                    '\n\n peerNames : '+ inputPeerNames +
-                    '\n\n orderer: '+ orderer +
-                    '\n\n network_config_path: '+ network_config_path +
-                    '\n\n opts: '+ opts;
+    const temptext = '\n\n Username : '+ inputData.user +
+                    '\n\n Org: '+ inputData.org +
+                    '\n\n chaincode : '+ util.format(inputData.chaincode) +
+                    '\n\n peerNames : '+ inputData.peers +
+                    '\n\n orderer: '+ inputData.orderer +
+                    '\n\n network_config_path: '+ inputData.networkConfigFile +
+                    '\n\n opts: '+ util.format(inputData.opts);
 
     // Read Network JSON PATH from behave
     let network_config;
     try {
-        network_config = JSON.parse(fs.readFileSync(network_config_path));
+        network_config = JSON.parse(fs.readFileSync(inputData.networkConfigFile));
     } catch(err) {
-        throw new Error('network_config error: ' + err.message);
+        console.error(err);
     }
 
     // Node SDK implements transaction as well as invoke, disambiguate on the passed opts
-    if(opts && opts['network-model'] && opts['network-model'].localeCompare("true") === 0){
-        return _submitTransaction(org, chaincode, network_config)
+    if(inputData.opts && inputData.opts['network-model'] && inputData.opts['network-model'].localeCompare("true") === 0){
+        return _submitTransaction(inputData.orgName, inputData.chaincode, network_config)
     } else {
         // inputPeerNames is a string representation of an array of peers "[peer,peer,...,peer]"
         // need to convert to an actual array [peer,peer,...,peer]
-        const peerList = inputPeerNames.slice(1, -1);
-        let peerNames = peerList.split(",");
-        return _invoke(username, org, chaincode, peerNames, orderer, network_config)
+        // const peerList = inputPeerNames.slice(1, -1);
+        // let peerNames = peerList.split(",");
+        return _invoke(inputData.user, inputData.orgName, inputData.chaincode, inputData.peers, inputData.orderer, network_config)
     }
 };
 

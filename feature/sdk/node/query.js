@@ -5,6 +5,7 @@
  */
 
 const fs = require('fs');
+const path = require('path');
 const util = require('util');
 const common = require('./common.js');
 const {Gateway, InMemoryWallet, X509WalletMixin} = require('fabric-network');
@@ -13,45 +14,42 @@ let client = new Client();
 
 /**
  * Perform a query using installed/instantiated chaincode
- * @param {String} user the username
- * @param {String} org the organisation to use
- * @param {String} cc string in JSON format describing the chaincode parameters
- * @param {[String]} peer string array of the peers to use
- * @param {String} network_config_path the network configuration file path
- * @param {String} options string in JSON format containing additional test parameters
+ * @param {String} inputFilePath the file path containing test run information as a JSON object containing
+ * {
+ *  username: the test user name
+ *  org: the organisation to use
+ *  chaincode: object describing the chaincode parameters
+ *  peer: array of the peers to use
+ *  networkConfigFile: the network configuration file path
+ *  opts: additional test parameters 
+ * }
  */
-function query(user, org, cc, peer, network_config_path, options) {
+function query(inputFilePath) {
+   
+    const filePath = path.join(__dirname, inputFilePath);
+    const inputData = JSON.parse(fs.readFileSync(filePath, {encoding: 'utf-8'}));
 
-    const chaincode = JSON.parse(cc);
-    let opts;
+    const temptext = '\n\n user : ' + inputData.user +
+                    '\n\n Org: ' + inputData.org +
+                    '\n\n chaincode : ' + util.format(inputData.chaincode) +
+                    '\n\n peerNames : ' + inputData.peers +
+                    '\n\n network_config_path: ' + inputData.networkConfigFile;
+                    '\n\n opts: '+ util.format(inputData.opts);
 
-    if (options){
-        opts = JSON.parse(options);
-    }
-
-    const temptext = '\n\n user : ' + user +
-                    '\n\n Org: ' + org +
-                    '\n\n chaincode : ' + util.format(chaincode) +
-                    '\n\n peerNames : ' + peer +
-                    '\n\n network_config_path: ' + network_config_path;
-
-    let network_config_details;
+    let network_config;
     try {
-        network_config_details = JSON.parse(fs.readFileSync(network_config_path));
+        network_config = JSON.parse(fs.readFileSync(inputData.networkConfigFile));
     } catch(err) {
         console.error(err);
-        return {"network-config error": err};
     }
 
     // Node SDK implements network and native options, disambiguate on the passed opts
-    if(opts && opts['network-model'] && opts['network-model'].localeCompare("true") === 0){
-        return _evaluateTransaction(org, chaincode, network_config_details)
+    if(inputData.opts && inputData.opts['network-model'] && inputData.opts['network-model'].localeCompare("true") === 0){
+        console.log('evaluating transaction .... ')
+        return _evaluateTransaction(inputData.orgName, inputData.chaincode, network_config)
     } else {
-        // peer is a string representation of an array of peers "[peer,peer,...,peer]"
-        // need to convert to an actual array [peer,peer,...,peer]
-        const peerList = peer.slice(1, -1);
-        let peerNames = peerList.split(",");
-        return _query(user, peerNames, org, chaincode, network_config_details)
+        console.log('performing query .... ')
+        return _query(inputData.user, inputData.peerNames, inputData.orgName, inputData.chaincode, network_config)
     }
 }
 
@@ -141,6 +139,7 @@ function formatString(inputString){
 async function _evaluateTransaction(org, chaincode, network_config){
     const ccp = network_config['common-connection-profile'];
     const orgConfig = ccp.organizations[org];
+    
     const cert = common.readAllFiles(orgConfig.signedCertPEM)[0];
     const key = common.readAllFiles(orgConfig.adminPrivateKeyPEM)[0];
     const inMemoryWallet = new InMemoryWallet();
