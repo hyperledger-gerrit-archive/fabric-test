@@ -138,7 +138,7 @@ interop-tests:
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/interop && ./runInteropTestSuite.sh
 
 .PHONY: pull-images
-pull-images: git-init git-latest fabric ca clean pre-setup
+pull-images: git-init git-latest clean pre-setup
 	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh all
 
 .PHONY: pull-binaries
@@ -193,11 +193,11 @@ svt-daily-behave-tests: pull-images pull-binaries pull-thirdparty-images
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runBehaveTestSuite.sh
 
 .PHONY: svt-daily-pte-tests
-svt-daily-pte-tests: pull-binaries pull-images
+svt-daily-pte-tests: pull-images pull-binaries pull-thirdparty-images
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runPteTestSuite.sh
 
 .PHONY: svt-daily-ote-tests
-svt-daily-ote-tests: pull-binaries pull-images
+svt-daily-ote-tests: pull-images pull-binaries pull-thirdparty-images
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runOteTestSuite.sh
 
 .PHONY: svt-daily-lte-tests
