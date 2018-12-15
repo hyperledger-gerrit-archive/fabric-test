@@ -1,5 +1,5 @@
 ### Welcome to fabric-test
--------
+==========================
 
 [![Build Status](https://jenkins.hyperledger.org/buildStatus/icon?job=fabric-test-merge-x86_64)](https://jenkins.hyperledger.org/view/fabric-test/job/fabric-test-merge-x86_64/)
 
