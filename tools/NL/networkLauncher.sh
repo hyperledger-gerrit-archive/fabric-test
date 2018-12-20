@@ -343,30 +343,36 @@ echo "        ####################################################### "
 echo "        #         create anchor peer update for orgs          # "
 echo "        ####################################################### "
 echo " "
-for (( i=1; i<=$nOrg; i++ ))
+nOrgPerChannel=$(( nOrg/nChannel ))
+iorg=0
+for (( j=1; j<=$nChannel; j++ ))
 do
-    orgMSP="PeerOrg"$i
-    if [ ! -z $orgMap ] && [ -f $orgMap ]
-    then
-        omVal=$(jq .$orgMSP $orgMap)
-        if [ ! -z $omVal ] && [ $omVal != "null" ]
+    for (( i=1; i<=$nOrgPerChannel; i++ ))
+    do
+        iorg=$(( iorg+1 ))
+        orgMSP="PeerOrg"$iorg
+        if [ ! -z $orgMap ] && [ -f $orgMap ]
         then
-            # Strip quotes from omVal if they are present
-            if [ ${omVal:0:1} == "\"" ]
+            omVal=$(jq .$orgMSP $orgMap)
+            if [ ! -z $omVal ] && [ $omVal != "null" ]
             then
-                omVal=${omVal:1}
+                # Strip quotes from omVal if they are present
+                if [ ${omVal:0:1} == "\"" ]
+                then
+                    omVal=${omVal:1}
+                fi
+                let "OMLEN = ${#omVal} - 1"
+                if [ ${omVal:$OMLEN:1} == "\"" ]
+                then
+                    omVal=${omVal:0:$OMLEN}
+                fi
+                orgMSP=$omVal
             fi
-            let "OMLEN = ${#omVal} - 1"
-            if [ ${omVal:$OMLEN:1} == "\"" ]
-            then
-                omVal=${omVal:0:$OMLEN}
-            fi
-            orgMSP=$omVal
         fi
-    fi
-    OrgMSP=$ordererDir"/"$orgMSP"anchors.tx"
-    echo "$CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $OrgMSP -channelID $ORG_PROFILE"$i" -asOrg $orgMSP"
-    $CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $OrgMSP -channelID $ORG_PROFILE"$i" -asOrg $orgMSP
+        OrgMSP=$ordererDir"/"$orgMSP"anchors.tx"
+        echo "$CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $OrgMSP -channelID $ORG_PROFILE"$j" -asOrg $orgMSP"
+        $CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $OrgMSP -channelID $ORG_PROFILE"$j" -asOrg $orgMSP
+    done
 done
 
 echo " "

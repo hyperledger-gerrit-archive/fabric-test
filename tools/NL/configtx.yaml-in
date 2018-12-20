@@ -35,7 +35,7 @@ Capabilities:
     Global: &ChannelCapabilities
         V1_3: true
         # V1_2 skipped; it was not defined in fabric
-        V1_1: true
+        #V1_1: true
 
     # Orderer capabilities apply only to the orderers, and may be safely
     # manipulated without concern for upgrading peers.  Set the value of the
@@ -50,8 +50,8 @@ Capabilities:
     # capability to true to require it.
     Application: &ApplicationCapabilities
         V1_3: true
-        V1_2: true
-        V1_1: true
+        #V1_2: true
+        #V1_1: true
 
 ################################################################################
 #
@@ -128,7 +128,7 @@ Orderer: &OrdererDefaults
             Rule: "ANY Writers"
         Admins:
             Type: ImplicitMeta
-            Rule: "ANY Admins"
+            Rule: "MAJORITY Admins"
         # BlockValidation specifies what signatures must be included in the block
         # from the orderer for the peer to validate it.
         BlockValidation:
@@ -168,7 +168,7 @@ Application: &ApplicationDefaults
             Rule: "ANY Writers"
         Admins:
             Type: ImplicitMeta
-            Rule: "ANY Admins"
+            Rule: "MAJORITY Admins"
 
     # Capabilities describes the application level capabilities, see the
     # dedicated Capabilities section elsewhere in this file for a full
