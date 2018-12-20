@@ -283,12 +283,11 @@ Scenario Outline: [FAB-4770] [FAB-4845]: <takeDownType> all kafka brokers in the
     Then a user receives a success response of 980
 
     When I <takeDownType> the current kafka topic partition leader
-    And I wait "65" seconds
+    And I wait "60" seconds
     Then the broker is reported as down
     And ensure kafka ISR set contains 1 brokers
-    And I wait "10" seconds
     When a user invokes on the chaincode named "mycc" with args ["invoke","a","b","10"]
-    And I wait "60" seconds
+    And I wait "5" seconds
     # Do not do this service_unavailable check, to see query value returned for an error
     #Then a user receives an error response of SERVICE_UNAVAILABLE
     When a user queries on the chaincode named "mycc" with args ["query","a"]
