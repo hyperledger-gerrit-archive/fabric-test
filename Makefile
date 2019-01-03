@@ -37,11 +37,11 @@
 #
 # ------------------------------------------------------------------
 
-BASE_VERSION = 1.2.0
+BASE_VERSION = 1.3.0
 DOCKER_NS = hyperledger
 EXTRA_VERSION ?= $(shell git rev-parse --short HEAD)
 PROJECT_VERSION = $(BASE_VERSION)-$(EXTRA_VERSION)
-BRANCH = master
+BRANCH = release-1.4
 FABRIC = https://gerrit.hyperledger.org/r/fabric
 FABRIC_CA = https://gerrit.hyperledger.org/r/fabric-ca
 FABRIC-CHAINCODE-JAVA = https://gerrit.hyperledger.org/r/fabric-chaincode-java
