@@ -17,7 +17,7 @@ echo "Fetching images from Nexus"
 NEXUS_URL=nexus3.hyperledger.org:10001
 ORG_NAME="hyperledger/fabric"
 ARCH=$(go env GOARCH)
-LATEST_TAG=${LATEST_TAG:=$ARCH-latest}
+LATEST_TAG=${LATEST_TAG:=$ARCH-1.4.0-stable}
 echo "---------> REPO:" $REPO
 echo "---------> LATEST_TAG:" $LATEST_TAG
 

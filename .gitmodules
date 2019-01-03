@@ -1,6 +1,7 @@
 [submodule "fabric"]
 	path = fabric
 	url = https://gerrit.hyperledger.org/r/fabric
+	branch = release-1.4
 [submodule "fabric-ca"]
 	path = fabric-ca
 	url = https://gerrit.hyperledger.org/r/fabric-ca
