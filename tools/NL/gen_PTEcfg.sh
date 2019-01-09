@@ -247,17 +247,21 @@ function outOrg {
         tmp="                \"comName\": \"$comName\"," >> $scOfile
         echo "$tmp" >> $scOfile
 
-        ordID=$(( (n-1) % nOrderer ))
-        tmp="                \"ordererID\": \"orderer$ordID\"," >> $scOfile
-        echo "$tmp" >> $scOfile
+        if [ $nOrderer -gt 0 ]; then
+            ordID=$(( (n-1) % nOrderer ))
+            tmp="                \"ordererID\": \"orderer$ordID\"," >> $scOfile
+            echo "$tmp" >> $scOfile
+        fi
 
         tmp="                \"ca\": {" >> $scOfile
         echo "$tmp" >> $scOfile
-        caID=$(( (n-1) % nCA ))
-        capid=$(( CAPort + caID ))
-        caPort="https://"$HostIP":"$capid
-        tmp="                    \"url\": \"$caPort\"," >> $scOfile
-        echo "$tmp" >> $scOfile
+        if [ $nCA -gt 0 ]; then
+            caID=$(( (n-1) % nCA ))
+            capid=$(( CAPort + caID ))
+            caPort="https://"$HostIP":"$capid
+            tmp="                    \"url\": \"$caPort\"," >> $scOfile
+            echo "$tmp" >> $scOfile
+        fi
         caName="ca"$caID
         tmp="                    \"name\": \"$caName\"" >> $scOfile
         echo "$tmp" >> $scOfile
