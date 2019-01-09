@@ -429,3 +429,22 @@ module.exports.setTLS=function(txCfgPtr) {
 
     return TLS;
 }
+
+// get ordererID for transactions
+module.exports.getOrdererID=function(pid, orgName, org, txCfgPtr, svcFile) {
+    hfc.addConfigFile(svcFile);
+    ORGS = hfc.getConfigSetting('test-network');
+
+    // find ordererID
+    var nProcPerOrg = parseInt(txCfgPtr.nProcPerOrg);
+    var orgNameLen=orgName.length;
+    var orgIdx=orgName.indexOf(org);
+    var SCordList=Object.keys(ORGS.orderer);
+    logger.info('[org:id=%s:%d getOrdererID] SC orderer list: %j', org, pid, SCordList);
+    var ordLen=SCordList.length;
+    var ordIdx=(pid*orgNameLen+orgIdx)%ordLen;
+    var ordererID=SCordList[ordIdx];
+    logger.info('[org:id=%s:%d getOrdererID] orderer assigned to the test: %s', org, pid, ordererID);
+
+    return ordererID;
+}
