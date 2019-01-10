@@ -174,6 +174,7 @@ Examples:
 
 
   @daily
+  @smoke
   Scenario Outline: <jira_num>: Test CouchDB indexing using CC upgrade with marbles chaincode using <language> with 3 channels and 1 upgrade
     Given I have a bootstrapped fabric network of type kafka using state-database couchdb with tls
     When a user defines a couchDB index named index_behave_test with design document name "indexdoc_behave_test" containing the fields "owner,docType,color" to the chaincode at path "<index_path>"
@@ -220,7 +221,7 @@ Examples:
     And I wait "2" seconds
     When a user requests to get the design doc "indexdoc_behave_test_v1" for the chaincode named "mycc2" in the channel "mychannel2" and from the CouchDB instance "http://localhost:5984"
     And I wait "2" seconds
-    Then a user receives error response of {"error":"not_found","reason":"missing"} from the couchDB container
+    Then a user receives error response of [{"error":"not_found","reason":"missing"}] from the couchDB container
     When a user requests to get the design doc "indexdoc_behave_test" for the chaincode named "mycc2" in the channel "mychannel2" and from the CouchDB instance "http://localhost:5984"
     Then a user receives success response of ["views":{"index_behave_test":{"map":{"fields":{"owner":"asc","docType":"asc","color":"asc"}] from the couchDB container
 
@@ -228,7 +229,7 @@ Examples:
     And I wait "2" seconds
     When a user requests to get the design doc "indexdoc_behave_test_v1" for the chaincode named "mycc3" in the channel "mychannel3" and from the CouchDB instance "http://localhost:5984"
     And I wait "2" seconds
-    Then a user receives error response of {"error":"not_found","reason":"missing"} from the couchDB container
+    Then a user receives error response of [{"error":"not_found","reason":"missing"}] from the couchDB container
     When a user requests to get the design doc "indexdoc_behave_test" for the chaincode named "mycc3" in the channel "mychannel3" and from the CouchDB instance "http://localhost:5984"
     Then a user receives success response of ["views":{"index_behave_test":{"map":{"fields":{"owner":"asc","docType":"asc","color":"asc"}] from the couchDB container
 
