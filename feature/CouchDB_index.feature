@@ -174,6 +174,7 @@ Examples:
 
 
   @daily
+  @smoke
   Scenario Outline: <jira_num>: Test CouchDB indexing using CC upgrade with marbles chaincode using <language> with 3 channels and 1 upgrade
     Given I have a bootstrapped fabric network of type kafka using state-database couchdb with tls
     When a user defines a couchDB index named index_behave_test with design document name "indexdoc_behave_test" containing the fields "owner,docType,color" to the chaincode at path "<index_path>"
