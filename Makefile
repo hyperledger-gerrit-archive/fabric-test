@@ -160,46 +160,46 @@ pull-binaries-fabric-ca:
 	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && . ./pullBinaries.sh fabric-ca
 
 .PHONY: pull-fabric
-pull-fabric:
+pull-fabric: git-init git-latest clean pre-setup
 	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh fabric
 
 .PHONY: pull-fabric-ca
-pull-fabric-ca:
+pull-fabric-ca: git-init git-latest clean pre-setup
 	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh fabric-ca
 
 .PHONY: pull-fabric-sdk-node
-pull-fabric-sdk-node:
+pull-fabric-sdk-node: git-init git-latest clean pre-setup
 	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh fabric-sdk-node
 
 .PHONY: pull-fabric-sdk-java
-pull-fabric-sdk-java:
+pull-fabric-sdk-java: git-init git-latest clean pre-setup
 	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh fabric-sdk-java
 
 .PHONY: pull-fabric-javaenv
-pull-fabric-javaenv:
+pull-fabric-javaenv: git-init git-latest clean pre-setup
 	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./pullDockerImages.sh fabric-javaenv
 
 .PHONY: interop-fabric
-interop-fabric: pull-thirdparty-images build-fabric pull-binaries-fabric-ca build-fabric-ca pull-fabric-javaenv build-sdk-wrapper interop-tests
+interop-fabric: git-init git-latest clean pre-setup fabric pull-thirdparty-images build-fabric pull-binaries-fabric-ca build-fabric-ca pull-fabric-javaenv build-sdk-wrapper interop-tests
 
 .PHONY: interop-fabric-ca
-interop-fabric-ca: pull-thirdparty-images pull-fabric pull-binaries-fabric build-fabric-ca pull-fabric-javaenv build-sdk-wrapper interop-tests
+interop-fabric-ca: fabric pull-thirdparty-images pull-fabric pull-binaries-fabric build-fabric-ca pull-fabric-javaenv build-sdk-wrapper interop-tests
 
 .PHONY: interop-fabric-sdk-node
-interop-fabric-sdk-node: pull-thirdparty-images pull-binaries pull-fabric-ca pull-fabric-javaenv build-sdk-wrapper interop-tests
+interop-fabric-sdk-node: fabric pull-thirdparty-images pull-binaries pull-fabric-ca pull-fabric-javaenv build-sdk-wrapper interop-tests
 
 .PHONY: interop-fabric-sdk-java
-interop-fabric-sdk-java: pull-thirdparty-images pull-binaries pull-fabric-ca pull-fabric-javaenv build-sdk-wrapper interop-tests
+interop-fabric-sdk-java: fabric pull-thirdparty-images pull-binaries pull-fabric-ca pull-fabric-javaenv build-sdk-wrapper interop-tests
 
 .PHONY: interop-fabric-javaenv
-interop-fabric-javaenv: pull-thirdparty-images pull-binaries pull-fabric-ca javaenv build-sdk-wrapper interop-tests
+interop-fabric-javaenv: fabric pull-thirdparty-images pull-binaries pull-fabric-ca javaenv build-sdk-wrapper interop-tests
 
 .PHONY: svt-daily-behave-tests
-svt-daily-behave-tests: pull-images pull-binaries pull-thirdparty-images build-sdk-wrapper
+svt-daily-behave-tests: fabric pull-images pull-binaries pull-thirdparty-images build-sdk-wrapper
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runBehaveTestSuite.sh
 
 .PHONY: svt-daily-pte-tests
-svt-daily-pte-tests: pull-images pull-binaries pull-thirdparty-images
+svt-daily-pte-tests: fabric pull-images pull-binaries pull-thirdparty-images
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runPteTestSuite.sh
 
 .PHONY: svt-daily-ote-tests
@@ -215,7 +215,7 @@ svt-daily-ca-tests: pull-images pull-binaries
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runCATestSuite.sh
 
 .PHONY: svt-weekly-pte-12hr-test
-svt-weekly-pte-12hr-test: pull-images pull-binaries pull-thirdparty-images
+svt-weekly-pte-12hr-test: fabric pull-images pull-binaries pull-thirdparty-images
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/weekly && ./run12HrTest.sh
 
 .PHONY: svt-daily
