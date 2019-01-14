@@ -983,6 +983,13 @@ function initDiscovery() {
 
 }
 
+// reconnect orderer
+function ordererReconnect(channel, client, org) {
+    channel.removeOrderer(ordererList[currOrdererId]);
+    channelAddOrderer(channel, client, org);
+    logger.info('[Nid:chan:org:id=%d:%s:%s:%d ordererReconnect] Orderer reconnect (%s)', Nid, channel.getName(), org, pid, ordererList[currOrdererId]._url);
+}
+
 // update orderer
 function ordererFailover(channel, client) {
     var currId = currOrdererId;
@@ -1636,6 +1643,7 @@ function invoke_move_latency() {
 
     inv_m++;
     tx_stats[tx_sent]++;
+    logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_latency] send transaction ', Nid, channelName, org, pid, inv_m);
 
     getMoveRequest();
 
@@ -1659,7 +1667,16 @@ function invoke_move_latency() {
                 var toe = new Date().getTime();
                 latency_update(inv_m, toe-tos, latency_orderer);
             }).catch((err) => {
+                tx_stats[tx_txFail]++;
+                delete txidList[tx_id.getTransactionID().toString()];
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_latency] Failed to send transaction due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+                if (ordererFO == 'TRUE') {
+                    ordererFailover(channel, client);
+                } else {
+                    ordererReconnect(channel, client, org);
+                    sleep (grpcTimeout);
+                }
+                invoke_move_latency();
             })
         },
         function(err) {
@@ -1668,6 +1685,7 @@ function invoke_move_latency() {
             var toe = new Date().getTime();
             latency_update(inv_m, toe-tos, latency_orderer);
             logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_latency] Failed to send proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+            invoke_move_latency();
         })
 }
 
