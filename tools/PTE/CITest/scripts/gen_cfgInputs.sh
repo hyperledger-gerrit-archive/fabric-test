@@ -76,6 +76,9 @@ usage () {
     echo -e "--chktxnum\tinvoke check transactions number [integer]"
     echo -e "\t\t(Default: 1)"
 
+    echo -e "--ordmethod\torderer option method [UserDefined|RoundRobin]"
+    echo -e "\t\t(Default: UserDefined)"
+
     echo -e "examples:"
     echo -e "./gen_cfgInputs.sh -d SCDir -n testorgschannel1 testorgschannel2 --org org1 org2 -c"
     echo -e "./gen_cfgInputs.sh -d SCDir -n testorgschannel1 testorgschannel2 --norg 2 -a marbles02 samplecc -i"
@@ -124,6 +127,7 @@ TARGETPEERS="ORGANCHOR"
 CHKPEERS="ORGANCHOR"
 CHKTX="LAST"
 CHKTXNUM=1
+ORDEREROPTMETHOD="UserDefined"
 
 # chaincode path
 CCPathsamplecc="github.com/hyperledger/fabric-test/chaincodes/samplecc/go"
@@ -254,6 +258,7 @@ PreTXProc() {
     chkpeers=${9}
     chktx=${10}
     chktxnum=${11}
+    ordereroptmethod=${12}
 
         sed -i -e "s/_INVOKETYPE_/$invokeType/g" $cfgTX
         sed -i -e "s/_NPROC_/$nproc/g" $cfgTX
@@ -265,6 +270,7 @@ PreTXProc() {
         sed -i -e "s/_CHKPEERS_/$chkpeers/g" $cfgTX
         sed -i -e "s/_CHKTX_/$chktx/g" $cfgTX
         sed -i -e "s/_CHKTXNUM_/$chktxnum/g" $cfgTX
+        sed -i -e "s/_ORDEREROPTMETHOD_/$ordereroptmethod/g" $cfgTX
         rm -f $cfgTX"-e"
 }
 
@@ -400,7 +406,7 @@ TransactionProc() {
 
                 # create PTE transaction configuration input json
                 PreCFGProc $pteCfgTX $scfile.json $chan $chaincode
-                PreTXProc $pteTXopt $INVOKETYPE $NPROC $FREQ $NREQ $RUNDUR $TXMODE $TARGETPEERS $CHKPEERS $CHKTX $CHKTXNUM
+                PreTXProc $pteTXopt $INVOKETYPE $NPROC $FREQ $NREQ $RUNDUR $TXMODE $TARGETPEERS $CHKPEERS $CHKTX $CHKTXNUM $ORDEREROPTMETHOD
 
                 runCaseTX=runCasesTX-$fname".txt"
                 tmp=$runDir/$pteCfgTX
@@ -591,6 +597,13 @@ while [[ $# -gt 0 ]]; do
           shift
           CHKTXNUM=$1
           echo -e "\t- Specify invoke check transaction number: $CHKTXNUM\n"
+          shift
+          ;;
+
+      --ordmethod)
+          shift
+          ORDEREROPTMETHOD=$1
+          echo -e "\t- Specify ordererOpt method: $ORDEREROPTMETHOD\n"
           shift
           ;;
 
