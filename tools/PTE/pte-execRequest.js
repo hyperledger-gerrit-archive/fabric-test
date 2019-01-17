@@ -990,7 +990,7 @@ function ordererReconnect(channel, client, org) {
     logger.info('[Nid:chan:org:id=%d:%s:%s:%d ordererReconnect] Orderer reconnect (%s)', Nid, channel.getName(), org, pid, ordererList[currOrdererId]._url);
 }
 
-// update orderer
+// orderer failover
 function ordererFailover(channel, client) {
     var currId = currOrdererId;
     channel.removeOrderer(ordererList[currOrdererId]);
@@ -1638,6 +1638,21 @@ function eventRegister(tx) {
 }
 
 
+// orderer handler:
+//    failover if failover is set
+//    reconnect if reconn=1
+function ordererHdlr(reconn) {
+
+    if (ordererFO == 'TRUE') {
+        ordererFailover(channel, client);
+    } else {
+        if (reconn == 1) {
+        ordererReconnect(channel, client, org);
+        }
+        sleep (grpcTimeout);
+    }
+}
+
 // invoke_move_latency
 function invoke_move_latency() {
 
@@ -1671,7 +1686,7 @@ function invoke_move_latency() {
                     logger.warn('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_latency] Failed to send transaction due to invalid status: ', Nid, channelName, org, pid, results.status);
                     isExecDone('Move');
                     if ( IDone != 1 ) {
-                        sleep (grpcTimeout);
+                        ordererHdlr(0);
                         invoke_move_latency();
                     }
                 }
@@ -1679,14 +1694,9 @@ function invoke_move_latency() {
                 tx_stats[tx_txFail]++;
                 delete txidList[tx_id.getTransactionID().toString()];
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_latency] Failed to send transaction due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-                if (ordererFO == 'TRUE') {
-                    ordererFailover(channel, client);
-                } else {
-                    ordererReconnect(channel, client, org);
-                    sleep (grpcTimeout);
-                }
                 isExecDone('Move');
                 if ( IDone != 1 ) {
+                    ordererHdlr(1);
                     invoke_move_latency();
                 }
             })
@@ -1696,14 +1706,14 @@ function invoke_move_latency() {
             var te = new Date().getTime();
             latency_update(inv_m, te-ts, latency_peer);
             logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_latency] Failed to send proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-            if (peerFO == 'TRUE') {
-                peerFailover(channel, client);
-            }
             isExecDone('Move');
             if ( IDone != 1 ) {
+                if (peerFO == 'TRUE') {
+                    peerFailover(channel, client);
+                }
                 invoke_move_latency();
             }
-        })
+        });
 }
 
 
@@ -1741,12 +1751,22 @@ function invoke_move_simple(freq) {
 
             getTxRequest(results);
             eventRegister(request_invoke.txId);
+            txidList[tx_id.getTransactionID().toString()] = new Date().getTime();
 
             var sendPromise = channel.sendTransaction(txRequest);
             return Promise.all([sendPromise].concat(eventPromises))
             .then((results) => {
 
                 isExecDone('Move');
+                if ( results.status != 'SUCCESS' ) {
+                    tx_stats[tx_txFail]++;
+                    delete txidList[tx_id.getTransactionID().toString()];
+                    logger.warn('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_simple] Failed to send transaction due to invalid status: ', Nid, channelName, org, pid, results.status);
+                    if ( IDone != 1 ) {
+                        ordererHdlr(0);
+                    }
+                }
+
                 if ( IDone != 1 ) {
                     setTimeout(function(){
                         invoke_move_simple(freq);
@@ -1758,11 +1778,33 @@ function invoke_move_simple(freq) {
                 return results[0];
 
             }).catch((err) => {
+                tx_stats[tx_txFail]++;
+                delete txidList[tx_id.getTransactionID().toString()];
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_simple] Failed to send transaction due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-                evtDisconnect();
-                return;
+                isExecDone('Move');
+                if ( IDone != 1 ) {
+                    ordererHdlr(1);
+                    setTimeout(function(){
+                        invoke_move_simple(freq);
+                    },freq);
+                }
             })
 
+        },
+        function(err) {
+            tx_stats[tx_pFail]++;
+            var te = new Date().getTime();
+            latency_update(inv_m, te-ts, latency_peer);
+            logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_simple] Failed to send proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+            isExecDone('Move');
+            if ( IDone != 1 ) {
+                if (peerFO == 'TRUE') {
+                    peerFailover(channel, client);
+                }
+                setTimeout(function(){
+                    invoke_move_simple(freq);
+                },freq);
+            }
         });
 }
 
@@ -1956,13 +1998,14 @@ function invoke_move_dist_evtBlock(backoffCalculator) {
                         reConnectEvtHub=0;
                     }
 
+                    isExecDone('Move');
                     if ( results.status != 'SUCCESS' ) {
+                        tx_stats[tx_txFail]++;
+                        delete txidList[tx_id.getTransactionID().toString()];
                         logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_dist_evtBlock] failed to sendTransaction status: %j ', Nid, channelName, org, pid, results);
-                        if (ordererFO == 'TRUE') {
-                            ordererFailover(channel, client);
+                        if ( IDone != 1 ) {
+                            ordererHdlr(0);
                         }
-                        invoke_move_dist_go_evtBlock(t1, backoffCalculator);
-                        return;
                     }
 
                     // hist output
@@ -1976,7 +2019,6 @@ function invoke_move_dist_evtBlock(backoffCalculator) {
                         })
                     }
 
-                    isExecDone('Move');
                     if ( IDone != 1 ) {
                         invoke_move_dist_go_evtBlock(t1, backoffCalculator);
                     } else {
@@ -1988,35 +2030,31 @@ function invoke_move_dist_evtBlock(backoffCalculator) {
                         }
                         return;
                     }
-                    //return results[0];
 
                 },(err) => {
                     tx_stats[tx_txFail]++;
-                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_dist_evtBlock] transaction failed %d, %j', Nid, channelName, org, pid, tx_stats[tx_txFail], tx_id.getTransactionID().toString());
                     delete txidList[tx_id.getTransactionID().toString()];
                     var toe = new Date().getTime();
                     latency_update(inv_m, toe-tos, latency_orderer);
 
                     logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_dist_evtBlock] Failed to send transaction due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-                    if (ordererFO == 'TRUE') {
-                        ordererFailover(channel, client);
+                    isExecDone('Move');
+                    if ( IDone != 1 ) {
+                        ordererHdlr(1);
+                        invoke_move_dist_go_evtBlock(t1, backoffCalculator);
                     }
-                    invoke_move_dist_go_evtBlock(t1, backoffCalculator);
-                    //evtDisconnect();
-                    //return;
                 })
         },(err) => {
                 tx_stats[tx_pFail]++;
                 var te = new Date().getTime();
                 latency_update(inv_m, te-ts, latency_peer);
-
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_dist_evtBlock] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-                if (peerFO == 'TRUE') {
-                    peerFailover(channel, client);
-                }
 
                 isExecDone('Move');
                 if ( IDone != 1 ) {
+                    if (peerFO == 'TRUE') {
+                        peerFailover(channel, client);
+                    }
                     invoke_move_dist_go_evtBlock(t1, backoffCalculator);
                 }
         });
@@ -2075,14 +2113,14 @@ function invoke_move_dist(backoffCalculator) {
                 var toe = new Date().getTime();
                 latency_update(inv_m, toe-tos, latency_orderer);
 
-
+                isExecDone('Move');
                 if ( results[0].status != 'SUCCESS' ) {
-                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_dist] failed to sendTransaction status: %j ', Nid, channelName, org, pid, results[0]);
-                    if (ordererFO == 'TRUE') {
-                        ordererFailover(channel, client);
+                    tx_stats[tx_txFail]++;
+                    delete txidList[tx_id.getTransactionID().toString()];
+                    logger.warn('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_dist] Failed to send transaction due to invalid status: ', Nid, channelName, org, pid, results.status);
+                    if ( IDone != 1 ) {
+                        ordererHdlr(0);
                     }
-                    invoke_move_dist_go(t1, backoffCalculator);
-                    return;
                 }
 
                 // hist output
@@ -2096,7 +2134,6 @@ function invoke_move_dist(backoffCalculator) {
                     })
                 }
 
-                isExecDone('Move');
                 if ( IDone != 1 ) {
                     invoke_move_dist_go(t1, backoffCalculator);
                 } else {
@@ -2108,31 +2145,32 @@ function invoke_move_dist(backoffCalculator) {
                     }
                     return;
                 }
-                //return results[0];
 
             }).catch((err) => {
                 tx_stats[tx_pFail]++;
+                delete txidList[tx_id.getTransactionID().toString()];
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_dist] Failed to send transaction due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-                if (ordererFO == 'TRUE') {
-                    ordererFailover(channel, client);
+
+                isExecDone('Move');
+                if ( IDone != 1 ) {
+                    ordererHdlr(1);
+                    invoke_move_dist_go(t1, backoffCalculator);
                 }
-                invoke_move_dist_go(t1, backoffCalculator);
-                //evtDisconnect();
-                //return;
             })
 
         }).catch((err) => {
             tx_stats[tx_pFail]++;
+            delete txidList[tx_id.getTransactionID().toString()];
             var te = new Date().getTime();
             latency_update(inv_m, te-ts, latency_peer);
 
             logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_dist] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-            if (peerFO == 'TRUE') {
-                peerFailover(channel, client);
-            }
 
             isExecDone('Move');
             if ( IDone != 1 ) {
+                if (peerFO == 'TRUE') {
+                    peerFailover(channel, client);
+                }
                 invoke_move_dist_go(t1, backoffCalculator);
             }
         });
@@ -2335,15 +2373,20 @@ function invoke_move_mix(freq) {
 
             getTxRequest(results);
             eventRegister(request_invoke.txId);
+            txidList[tx_id.getTransactionID().toString()] = new Date().getTime();
 
             var sendPromise = channel.sendTransaction(txRequest);
             return Promise.all([sendPromise].concat(eventPromises))
             .then((results) => {
 
+                isExecDone('Move');
                 if ( results[0].status != 'SUCCESS' ) {
-                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_mix] sendTransaction status: %d', Nid, channelName, org, pid, results[0]);
-                    invoke_move_mix_go(freq);
-                    return;
+                    tx_stats[tx_txFail]++;
+                    delete txidList[tx_id.getTransactionID().toString()];
+                    logger.warn('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_mix] Failed to send transaction due to invalid status: ', Nid, channelName, org, pid, results.status);
+                    if ( IDone != 1 ) {
+                        ordererHdlr(0);
+                    }
                 }
 
                 if ( IDone != 1 ) {
@@ -2355,15 +2398,25 @@ function invoke_move_mix(freq) {
                 return results[0];
 
             }).catch((err) => {
+                tx_stats[tx_txFail]++;
+                delete txidList[tx_id.getTransactionID().toString()];
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_mix] Failed to send transaction due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-                invoke_move_mix_go(freq);
+                isExecDone('Move');
+                if ( IDone != 1 ) {
+                    ordererHdlr(1);
+                    invoke_move_mix_go(freq);
+                }
             })
 
         }).catch((err) => {
+                tx_stats[tx_pFail]++;
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_mix] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
 
                 isExecDone('Move');
                 if ( IDone != 1 ) {
+                    if (peerFO == 'TRUE') {
+                        peerFailover(channel, client);
+                    }
                     invoke_move_mix_go(freq);
                 }
         });
@@ -2577,16 +2630,16 @@ function invoke_move_burst_evtBlock() {
                     var toe = new Date().getTime();
                     latency_update(inv_m, toe-tos, latency_orderer);
 
+                    isExecDone('Move');
                     if ( results.status != 'SUCCESS' ) {
-                        logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_burst_evtBlock] failed to sendTransaction status: %j ', Nid, channelName, org, pid, results);
-                        if (ordererFO == 'TRUE') {
-                            ordererFailover(channel, client);
+                        tx_stats[tx_txFail]++;
+                        delete txidList[tx_id.getTransactionID().toString()];
+                        logger.warn('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_burst_evtBlock] Failed to send transaction due to invalid status: ', Nid, channelName, org, pid, results.status);
+                        if ( IDone != 1 ) {
+                            ordererHdlr(0);
                         }
-                        invoke_move_burst_go(t1, bCurrFreq);
-                        return;
                     }
 
-                    isExecDone('Move');
                     if ( IDone != 1 ) {
                         invoke_move_burst_go(t1, bCurrFreq);
                     } else {
@@ -2603,23 +2656,27 @@ function invoke_move_burst_evtBlock() {
                     var toe = new Date().getTime();
                     latency_update(inv_m, toe-tos, latency_orderer);
 
+                    tx_stats[tx_txFail]++;
+                    delete txidList[tx_id.getTransactionID().toString()];
                     logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_burst_evtBlock] Failed to send transaction due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-                    if (ordererFO == 'TRUE') {
-                        ordererFailover(channel, client);
+                    isExecDone('Move');
+                    if ( IDone != 1 ) {
+                        ordererHdlr(1);
+                        invoke_move_burst_go(t1, bCurrFreq);
                     }
-                    invoke_move_burst_go(t1, bCurrFreq);
                 })
         }).catch((err) => {
                 var te = new Date().getTime();
                 latency_update(inv_m, te-ts, latency_peer);
 
+                tx_stats[tx_pFail]++;
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_burst_evtBlock] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-                if (peerFO == 'TRUE') {
-                    peerFailover(channel, client);
-                }
 
                 isExecDone('Move');
                 if ( IDone != 1 ) {
+                    if (peerFO == 'TRUE') {
+                        peerFailover(channel, client);
+                    }
                     invoke_move_burst_go(t1, bCurrFreq);
                 }
         });
@@ -2660,13 +2717,17 @@ function invoke_move_burst() {
                 var toe = new Date().getTime();
                 latency_update(inv_m, toe-tos, latency_orderer);
 
+                isExecDone('Move');
                 if ( results[0].status != 'SUCCESS' ) {
-                    logger.info('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_burst] sendTransactionProposal status: %d', Nid, channelName, org, pid, results[0]);
-                    invoke_move_burst_go(t1, bCurrFreq);
-                    return;
+                    tx_stats[tx_txFail]++;
+                    delete txidList[tx_id.getTransactionID().toString()];
+                    logger.warn('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_burst] Failed to send transaction due to invalid status: ', Nid, channelName, org, pid, results.status);
+                    if ( IDone != 1 ) {
+                        ordererHdlr(0);
+                        invoke_move_burst_go(t1, bCurrFreq);
+                    }
                 }
 
-                isExecDone('Move');
                 if ( IDone != 1 ) {
                     invoke_move_burst_go(t1, bCurrFreq);
                 } else {
@@ -2680,16 +2741,26 @@ function invoke_move_burst() {
                 }
 
             }).catch((err) => {
+                tx_stats[tx_txFail]++;
+                delete txidList[tx_id.getTransactionID().toString()];
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_burst] Failed to send transaction due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-                invoke_move_burst_go(t1, bCurrFreq);
+                isExecDone('Move');
+                if ( IDone != 1 ) {
+                    ordererHdlr(1);
+                    invoke_move_burst_go(t1, bCurrFreq);
+                }
                 return;
             })
 
         }).catch((err) => {
+                tx_stats[tx_pFail]++;
                 logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_burst] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
 
                 isExecDone('Move');
                 if ( IDone != 1 ) {
+                    if (peerFO == 'TRUE') {
+                        peerFailover(channel, client);
+                    }
                     invoke_move_burst_go(t1, bCurrFreq);
                 }
         });
