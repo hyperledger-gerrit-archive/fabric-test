@@ -804,6 +804,15 @@ class CLIInterface(InterfaceBase):
             url = "{2}://{0}@ca.{1}:7054".format(userpass, org, proto)
             output = context.composition.docker_exec(["fabric-ca-client enroll -d -u {0} -M /var/hyperledger/msp --caname ca.{1} --csr.cn ca.{1} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(url, org)], [node])
             print("Output Enroll: {}".format(output))
+            if "exec failed" in output[node]:
+                containers = subprocess.check_output(["docker ps -a"], shell=True)
+                print("Containers->> {}".format(containers))
+                output = context.composition.docker_exec(["which fabric-ca-client"], [node])
+                print("which result: {}".format(output))
+                output = context.composition.docker_exec(["ls /var/hyperledger/msp/cacerts/"], [node])
+                print("certificate dir: {}".format(output))
+                output = context.composition.docker_exec(["ls /var/hyperledger/msp/cacerts/ca.{}-cert.pem".format(org)], [node])
+                print("certificate result: {}".format(output))
 
     def registerUser(self, context, user, org, passwd, role, peer):
         command = "fabric-ca-client register -d --id.name {0} --id.secret {2} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(user, org, passwd)
