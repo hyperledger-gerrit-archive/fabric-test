@@ -9,12 +9,13 @@ import sys
 import os
 import json
 import time
-import os
+import re
 import random
 import string
 import struct
 import marshal
 import subprocess
+
 import config_util
 from endorser_util import CLIInterface, ToolInterface, SDKInterface
 
@@ -56,7 +57,7 @@ def step_impl(context, path, args, name, language, peer, channel, timeout):
     deploy_impl(context, path, args, name, language, peer, channel, timeout=timeout)
 
 @when(u'an admin deploys chaincode at path "{path}" with version "{version}" with args {args} with name "{name}" with language "{language}" to "{peer}" on channel "{channel}" within {timeout:d} seconds')
-def deploy_impl(context, path, args, name, language, peer, channel, version=0, timeout=300, username="Admin", policy=None):
+def deploy_impl(context, path, args, name, language, peer, channel, version=0, timeout=10, username="Admin", policy=None):
     context.interface.deploy_chaincode(context, path, args, name, language, peer, username, timeout, channel, version, policy=policy)
 
 @when(u'an admin deploys chaincode at path "{path}" with version "{version}" with args {args} with name "{name}" with language "{language}" to "{peer}" on channel "{channel}"')
@@ -69,11 +70,11 @@ def step_impl(context, path, args, name, language, channel, version):
 
 @when(u'an admin deploys chaincode at path "{path}" with args {args} with policy {policy}')
 def step_impl(context, path, args, policy):
-    deploy_impl(context, path, args, "mycc", "GOLANG", "peer0.org1.example.com", context.interface.TEST_CHANNEL_ID, 300, policy=policy)
+    deploy_impl(context, path, args, "mycc", "GOLANG", "peer0.org1.example.com", context.interface.TEST_CHANNEL_ID, policy=policy)
 
 @when(u'an admin deploys chaincode at path "{path}" with args {args} with name "{name}" with language "{language}" to "{peer}" on channel "{channel}"')
 def step_impl(context, path, args, name, language, peer, channel):
-    deploy_impl(context, path, args, name, language, peer, channel, 300)
+    deploy_impl(context, path, args, name, language, peer, channel)
 
 @when(u'an admin deploys chaincode at path "{path}" with args {args} with name "{name}" to "{peer}" on channel "{channel}" within {timeout:d} seconds')
 def step_impl(context, path, args, name, peer, channel, timeout):
@@ -612,6 +613,16 @@ def step_impl(context, name, args, targs):
 def step_impl(context, name, args, peer):
     invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, str(peer))
 
+@when(u'a user invokes on the chaincode named "{name}" with args {args} on both orgs')
+def step_impl(context, name, args):
+    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org1.example.com")
+    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, name, args, "peer0.org2.example.com")
+
+@when(u'a user invokes on the chaincode with args {args} on both orgs')
+def step_impl(context, args):
+    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, "mycc", args, "peer0.org1.example.com")
+    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, "mycc", args, "peer0.org2.example.com")
+
 @when(u'a user invokes on the chaincode with args {args} on "{peer}"')
 def step_impl(context, args, peer):
     invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, "mycc", args, str(peer))
@@ -680,7 +691,7 @@ def step_impl(context, count, length, name):
     chaincode = {"args": '["put",{}]'.format(keyValStr),
                  "chaincodeId": str(name),
                  "name": str(name)}
-    print("chaincode: {}".format(chaincode))
+    #print("chaincode: {}".format(chaincode))
     context.result = context.interface.invoke_chaincode(context, chaincode, "orderer0.example.com", "peer0.org1.example.com", context.interface.TEST_CHANNEL_ID)
 
 @when(u'a user invokes on the channel "{channel}" using chaincode named "{name}" with random args {args} of length {length:d} on peer "{peer}" using orderer "{orderer}"')
@@ -886,9 +897,79 @@ def step_impl(context, ddoc_name, cc_name, ch_name, couchdb_instance):
     context.result=subprocess.check_output(cmd, env=os.environ)
     print("result is: "+context.result+"\n")
 
-@then(u'a user receives {status} response of [{response}] from the couchDB container')
+@when('an admin packages chaincode at path "{path}" as version "{version}" with name "{name}" written in "{lang}" using peer "{peer}"')
+def build_impl(context, version, lang, path, name, peer):
+    context.interface.pre_deploy_chaincode(context, path, "", name, lang, version=version)
+    #context.tarball = context.interface.build_tarball(context)
+    context.tarball = "{0}-chaincode-package.tar.gz".format(context.chaincode['name'])
+    ret = context.interface.package_chaincode(context, peer, context.tarball, user="Admin")
+    print(ret)
+
+@when('an admin packages chaincode at path "{path}" as version "{version}" with name "{name}"')
+def step_impl(context, path, version, name):
+    build_impl(context, version, "GOLANG", path, name, "peer0.org1.example.com")
+
+@when(u'an admin packages chaincode at path "{path}" with name "{name}"')
+def step_impl(context, path, name):
+    build_impl(context, "0", "GOLANG", path, name, "peer0.org1.example.com")
+
+@when('an admin packages a chaincode')
+def step_impl(context):
+    build_impl(context, "0", "GOLANG", "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd", "mycc", "peer0.org1.example.com")
+
+@when('the organization admins install the chaincode package on all peers')
+def step_impl(context):
+    peers = context.interface.get_peers(context)
+    context.result = context.interface.install_chaincode(context, peers, "Admin", context.tarball)
+
+@when('the organization admins install the built "{name}" chaincode package on all peers')
+def step_impl(context, name):
+    peers = context.interface.get_peers(context)
+    tarball = "{0}-chaincode-package.tar.gz".format(name)
+    context.result = context.interface.install_chaincode(context, peers, "Admin", tarball)
+
+@when('each organization admin approves the "{name}" chaincode package on "{channel}" with policy "{policy}"')
+def step_impl(context, name, channel, policy):
+    peers = context.interface.get_peers(context)
+    context.chaincode['channelID'] = channel
+    context.chaincode['name'] = name
+    context.result = context.interface.approve_chaincode(context, peers, user="Admin", upgrade=False, policy=policy, collections=None)
+
+@when('each organization admin approves the chaincode package with policy {policy}')
+def step_impl(context, policy):
+    peers = context.interface.get_peers(context)
+    context.result = context.interface.approve_chaincode(context, peers, user="Admin", upgrade=False, policy=policy, collections=None)
+
+@when('each organization admin approves the chaincode package')
+def step_impl(context):
+    peers = context.interface.get_peers(context)
+    context.result = context.interface.approve_chaincode(context, peers, user="Admin", upgrade=False, policy=None, collections=None)
+
+@when('each organization admin approves the upgraded chaincode package with policy "{policy}"')
+def step_impl(context, policy):
+    peers = context.interface.get_peers(context)
+    context.result = context.interface.approve_chaincode(context, peers, user="Admin", upgrade=True, policy=policy, collections=None)
+
+@when('each organization admin approves the upgraded chaincode package')
+def step_impl(context):
+    peers = context.interface.get_peers(context)
+    context.result = context.interface.approve_chaincode(context, peers, user="Admin", upgrade=True, policy=None, collections=None)
+
+@when('an admin commits the chaincode package to the channel "{channel}"')
+def step_impl(context, channel):
+    context.chaincode['channelID'] = channel
+    context.result = context.interface.commit_chaincode(context, "peer0.org1.example.com", user="Admin", policy=None, collections=None)
+
+@when('an admin commits the chaincode package to the channel on peer "{peer}"')
+def commit_impl(context, peer):
+    context.result = context.interface.commit_chaincode(context, peer, user="Admin", policy=None, collections=None)
+
+@when('an admin commits the chaincode package to the channel')
+def step_impl(context):
+    context.result = context.interface.commit_chaincode(context, "peer0.org1.example.com", user="Admin", policy=None, collections=None)
+
+@then('a user receives {status} response of [{response}] from the couchDB container')
 def step_impl(context, status, response):
-    print("response is: "+response)
     if status == "success":
         assert "error" not in context.result, "Error, recieved unexpected error message from CouchDB container: "+context.result
     elif status == "error":
@@ -997,3 +1078,17 @@ def step_impl(context, peer):
 def step_impl(context, fileName, peer):
     info = fileName.split('.')
     block_found_impl(context, info[0], peer, None)
+
+@then(u'a hash value is received on all peers')
+def step_impl(context):
+    if not hasattr(context, "hash"):
+        context.hash = {}
+    peers = context.interface.get_peers(context)
+    hashPat = r"Get installed chaincodes on peer:\nName: (?P<name>.*), Version: (?P<version>.*), Hash: (?P<hash>.*)\n"
+    for peer in peers:
+        peerParts = peer.split('.')
+        org = '.'.join(peerParts[1:])
+        hashMatch = re.match(hashPat, context.result[peer])
+        assert hashMatch is not None, "There was no hash returned for the chaincode install on peer '{}'".format(peer)
+        hashRes = hashMatch.groupdict()['hash']
+        context.hash[org] = hashRes
