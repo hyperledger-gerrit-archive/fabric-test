@@ -54,13 +54,13 @@ class InterfaceBase:
         peers = self.get_peers(context)
         assert orderers != [], "There are no active orderers in this network"
 
-        context.chaincode={"path": path,
-                           "language": language,
-                           "name": name,
-                           "version": str(version),
-                           "args": args,
-                           "orderers": orderers,
-                           "channelID": channelId,
+        context.chaincode = {"path": path,
+                             "language": language,
+                             "name": name,
+                             "version": str(version),
+                             "args": args,
+                             "orderers": orderers,
+                             "channelID": channelId,
                            }
         if policy:
             context.chaincode['policy'] = policy
@@ -98,6 +98,8 @@ class InterfaceBase:
                             print("initial leader is "+context.initial_leader[org])
                             break
                     time.sleep(waittime)
+        except:
+            pass
         finally:
             assert org in context.initial_leader, "Error: After polling for " + str(max_waittime) + " seconds, no gossip-leader found by looking at the logs, for "+org
         return context.initial_leader[org]
@@ -121,6 +123,31 @@ class InterfaceBase:
         for item in sorted(dictionary.keys(), key = len, reverse = True):
             string = re.sub(item, str(dictionary[item]), string)
         return string
+
+    def build_tarball(self, context):
+        chaincodeName = context.chaincode["name"]
+        chaincodePath = context.chaincode["path"]
+
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        setup = self.get_env_vars(context, "peer0.org1.example.com")
+        cmd = ["cd $GOPATH/src;",
+               "tar -czvf {0}.tar.gz {1};".format(chaincodeName, chaincodePath),
+               "cp {0}.tar.gz {1}/.".format(chaincodeName, configDir)]
+               #"tar -czvf Code-Package.tar.gz {1};".format(chaincodeName, chaincodePath),
+               #"cp Code-Package.tar.gz {1}/.".format(chaincodeName, configDir)]
+        cmd.append('"')
+        ret = context.composition.docker_exec(setup + cmd, ["cli"])
+
+        with open("./configs/{}/Chaincode-Package-Metadata.json".format(context.composition.projectName), "w") as fd:
+            json.dump({"Type": context.chaincode["language"], "Path": chaincodePath}, fd, indent = 4)
+
+        ret = context.composition.docker_exec(setup + ["pwd"], ["cli"])
+        cmd = ["cd {0};".format(configDir),
+               "tar -czvf {0}-chaincode-package.tar.gz {0}.tar.gz Chaincode-Package-Metadata.json;".format(chaincodeName)]
+               #"tar -czvf {0}-chaincode-package.tar.gz Code-Package.tar.gz Chaincode-Package-Metadata.json;".format(chaincodeName)]
+        cmd.append('"')
+        ret = context.composition.docker_exec(setup + cmd, ["cli"])
+        return "{0}/{1}-chaincode-package.tar.gz".format(configDir, chaincodeName)
 
     def wait_for_deploy_completion(self, context, chaincode_container, seconds):
         pass
@@ -339,6 +366,8 @@ class SDKInterface(InterfaceBase):
                 while chaincode_container not in containers:
                     containers = subprocess.check_output(["docker ps -a"], shell=True)
                     time.sleep(1)
+        except:
+            pass
         finally:
             assert chaincode_container in containers, "The expected chaincode container {0} is not running\n{1}".format(chaincode_container, containers)
 
@@ -488,7 +517,146 @@ class CLIInterface(InterfaceBase):
             ccDeploymentSpec.ParseFromString(f.read())
         return ccDeploymentSpec
 
-    def install_chaincode(self, context, peers, user="Admin"):
+    def package_chaincode(self, context, peer, tarfile, user="Admin"):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        output = {}
+        setup = self.get_env_vars(context, peer, user=user)
+        cmd = ["peer", "chaincode", "package",
+                     "{0}/{1}".format(configDir, tarfile),
+                     "--lang", context.chaincode["language"],
+                     "--path", context.chaincode["path"]]
+        if context.newlifecycle:
+            cmd = ["peer", "lifecycle", "chaincode", "package",
+                     "{0}/{1}".format(configDir, tarfile),
+                     "--lang", context.chaincode["language"],
+                     "--path", context.chaincode["path"]]
+        cmd.append('"')
+        return context.composition.docker_exec(setup + cmd, ['cli'])
+
+    def approve_chaincode(self, context, peers, user="Admin", upgrade=False, policy=None, collections=None, sequence=1, initRequired=True):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        output = {}
+        pat = r"Committed chaincode definition for chaincode '(?P<name>.*)' on channel '(?P<channel>.*)':\nVersion: (?P<vers>.*), Sequence: (?P<seq>\d*), Hash: (?P<hash>.*), Endorsement Plugin: (?P<escc>.*), Validation Plugin: (?P<vscc>.*)\n"
+
+        # set policy
+        if policy is None:
+            policy = context.chaincode.get('policy', None)
+        else:
+            context.chaincode['policy'] = policy
+
+        # set collections
+        if collections:
+            context.chaincode['collections'] = collections
+
+        for peer in peers:
+            peerParts = peer.split('.')
+            org = '.'.join(peerParts[1:])
+            setup = self.get_env_vars(context, peer, user=user)
+
+            # Initial deploy starts at 1
+            context.sequence = sequence
+            if upgrade:
+                res = self.list_chaincode(context, peer, user, "querycommitted")
+                committed = re.match(pat, res[peer])
+                assert committed is not None, "There was no definition returned for the chaincode '{0}'".format(context.chaincode['name'])
+                # set context.sequence to received context.sequence number +1
+                context.sequence = int(committed.groupdict()['seq']) + 1
+
+            peer_addresses = [peer, peer.replace("peer0", "peer1")]
+            if peer_addresses[1] in peers:
+                peers.remove(peer.replace("peer0", "peer1"))
+
+            command = ["peer", "lifecycle", "chaincode", "approveformyorg",
+                       "--name", context.chaincode['name'],
+                       "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID)),
+                       "--version", str(context.chaincode.get('version', 0)),
+                       "--peerAddresses", "{0}:7051".format(peer_addresses[0]),
+                       "--peerAddresses", "{0}:7051".format(peer_addresses[1]),
+                       "--hash", context.hash.get(org, "0"),
+                       "--sequence", str(context.sequence),
+
+#                       "--escc", "escc",
+#                       "--vscc", "vscc",
+                       "--waitForEvent",
+                       "--orderer", 'orderer0.example.com:7050',
+                       ]
+            if initRequired:
+                command = command + ["--init-required"]
+            if policy is not None:
+                command = command + ["--policy", policy.replace('"', r'\"')]
+            if collections:
+                command = command + ["--collections-config", collections]
+            command.append('"')
+
+            #output.update(context.composition.docker_exec(setup + command, [peer]))
+            ret, err = context.composition.docker_exec(setup + command, [peer], returnError=True)
+            print("Error: ", err)
+            output.update(ret)
+        print("[{0}]: {1}".format(" ".join(setup + command), output))
+        return output
+
+    def commit_chaincode(self, context, peer, user="Admin", policy=None, collections=None, initRequired=True):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        output = {}
+        peerParts = peer.split('.')
+        org = '.'.join(peerParts[1:])
+        setup = self.get_env_vars(context, peer, user=user)
+
+        if policy is None:
+            policy = context.chaincode.get('policy', None)
+
+        peer_addresses = [peer, peer.replace("org1", "org2")]
+
+        command = ["peer", "lifecycle", "chaincode", "commit",
+                   "--name", context.chaincode['name'],
+                   "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID)),
+                   "--version", str(context.chaincode.get('version', 0)),
+                   "--hash", context.hash.get(org, 0),
+                   "--sequence", str(context.sequence),
+
+#                   "--escc", "escc",
+#                   "--vscc", "vscc",
+
+                   "--waitForEvent",
+                   "--peerAddresses", "{0}:7051".format(peer_addresses[0]),
+                   "--peerAddresses", "{0}:7051".format(peer_addresses[1]),
+                   ]
+        if initRequired:
+            command = command + ["--init-required"]
+        if "orderers" in context.chaincode:
+            command = command + ["--orderer", 'orderer0.example.com:7050']
+        if policy is not None:
+            command = command + ["--policy", policy.replace('"', r'\"')]
+        if collections:
+            command = command + ["--collections-config", collections]
+        command.append('"')
+
+        output, err = context.composition.docker_exec(setup + command, [peer], returnError=True)
+        print("Error: ", err)
+        print("[{0}]: {1}".format(" ".join(setup + command), output))
+
+        return output
+
+    def list_chaincode(self, context, peer, user="Admin", list_type="installed"):
+        setup = self.get_env_vars(context, peer, user=user)
+        command = ["peer", "chaincode", "list",
+                   "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID)),
+                   ]
+        command = command + ["--{}".format(list_type)]
+        if context.newlifecycle:
+            command = ["peer", "lifecycle", "chaincode", list_type]
+        if list_type in ("committed", "querycommitted"):
+            command = command + ["--name", context.chaincode['name'],
+                       "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID)),
+                       ]
+
+        command.append('"')
+
+        output = context.composition.docker_exec(setup + command, [peer])
+        print("[{0}]: {1}".format(" ".join(setup + command), output))
+        return output
+
+    def install_chaincode(self, context, peers, user="Admin", tarball=""):
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
         output = {}
         for peer in peers:
@@ -497,9 +665,17 @@ class CLIInterface(InterfaceBase):
             setup = self.get_env_vars(context, peer, user=user)
             command = ["peer", "chaincode", "install",
                        "--name",context.chaincode['name'],
-                       "--lang", context.chaincode['language'],
+                       "--version", str(context.chaincode.get('version', 0))]
+            if context.newlifecycle:
+                command = ["peer", "lifecycle", "chaincode", "install",
+                       "--name",context.chaincode['name'],
                        "--version", str(context.chaincode.get('version', 0)),
+                        "{0}/{1}".format(configDir, tarball)]
+            else:
+                command = command + [
+                       "--lang", context.chaincode['language'],
                        "--path", context.chaincode['path']]
+
             if context.tls:
                 command = command + ["--tls",
                                      "--cafile",
@@ -515,16 +691,24 @@ class CLIInterface(InterfaceBase):
             if "user" in context.chaincode:
                 command = command + ["--username", context.chaincode["user"]]
             command.append('"')
-            ret = context.composition.docker_exec(setup+command, ['cli'])
-            assert "Error occurred" not in ret['cli'], "The install failed with the following error: {}".format(ret['cli'])
-            output[peer] = ret['cli']
+            # stderr contains the result of the install not stdout
+            #ret = context.composition.docker_exec(setup+command, ['cli'])
+            ret, err = context.composition.docker_exec(setup+command, ['cli'], returnError=True)
+            print("[{0}]: {1}".format(" ".join(setup + command), ret))
+            print("Error: ", err)
+
+            #assert "Error occurred" not in ret['cli'], "The install failed with the following error: {}".format(ret['cli'])
+#            if context.newlifecycle:
+#                ret = self.list_chaincode(context, peer, user, list_type="queryinstalled")
+#            else:
+#                ret = self.list_chaincode(context, peer, user, list_type="installed")
+            output.update({peer: ret['cli']})
         print("[{0}]: {1}".format(" ".join(setup + command), output))
         return output
 
     def instantiate_chaincode(self, context, peer="peer0.org1.example.com", user="Admin"):
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
         args = context.chaincode.get('args', '[]').replace('"', r'\"')
-        #output = {}
         peerParts = peer.split('.')
         org = '.'.join(peerParts[1:])
         setup = self.get_env_vars(context, peer, user=user)
@@ -733,6 +917,7 @@ class CLIInterface(InterfaceBase):
         command = ["peer", "chaincode", "invoke",
                    "--name", chaincode['name'],
                    "--ctor", r"""'{\"Args\": %s}'""" % (args),
+                   "--waitForEvent",
                    "--channelID", channelId]
         if context.tls:
             command = command + ["--tls",
@@ -752,8 +937,20 @@ class CLIInterface(InterfaceBase):
             command = command + ["--transient", targs]
 
         command = command + ["--orderer", '{0}:7050'.format(orderer)]
-        command.append('"')
-        output = context.composition.docker_exec(setup+command, [peer])
+        if context.newlifecycle and "init" in args:
+#            command = command + ["--peerAddresses", "{0}:7051".format(context.composition.getIPFromName(peer, context.composition.containerDataList)),
+#                       "--peerAddresses", "{0}:7051".format(context.composition.getIPFromName(peer.replace("peer0", "peer1"), context.composition.containerDataList))]
+            command = command + [
+                       "--peerAddresses", "{0}:7051".format(peer),
+                       "--peerAddresses", "{0}:7051".format(peer.replace("peer0", "peer1"))]
+            command.append('"')
+            output, err = context.composition.docker_exec(setup + command, ["cli"], returnError=True)
+            #output = context.composition.docker_exec(setup+command, ['cli'])
+            print("Error", err)
+            output[peer] = output['cli']
+        else:
+            command.append('"')
+            output = context.composition.docker_exec(setup+command, [peer])
         print("Invoke[{0}]: {1}".format(" ".join(setup+command), str(output)))
         output = self.retry(context, output, peer, setup, command)
         return output
@@ -794,34 +991,114 @@ class CLIInterface(InterfaceBase):
 
         for node in nodes:
             org = node.split(".", 1)[1]
+#            userpass = context.composition.getEnvFromContainer("ca.{}".format(org), 'BOOTSTRAP_USER_PASS')
+#            url = "{2}://{0}@ca.{1}:7054".format(userpass, org, proto)
+            #####################################
+            caName = "ca.{}".format(org)
+            for container in context.composition.containerDataList:
+                if container.containerName == caName:
+                    print(container.ports['7054/tcp'][0])
+                    local = container.ports['7054/tcp'][0]
             userpass = context.composition.getEnvFromContainer("ca.{}".format(org), 'BOOTSTRAP_USER_PASS')
-            url = "{2}://{0}@ca.{1}:7054".format(userpass, org, proto)
-            output = context.composition.docker_exec(["fabric-ca-client enroll -d -u {0} -M /var/hyperledger/msp --caname ca.{1} --csr.cn ca.{1} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(url, org)], [node])
+            url = "{0}://{1}@{2}:{3}".format(proto, userpass, local['HostIp'], local['HostPort'])
+##                   "--peerAddresses", "{0}:7051".format(context.composition.getIPFromName("peer0.org2.example.com", context.composition.containerDataList)),
+            #####################################
+
+            #output = context.composition.docker_exec(["fabric-ca-client enroll -d -u {0} -M /var/hyperledger/msp --caname ca.{1} --csr.cn ca.{1} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(url, org)], [node])
+            context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}/user/Admin@{0}".format(org, context.projectName)
+            context.composition.environ["FABRIC_CA_CLIENT_TLS_CERTFILES"] = "./configs/{1}/peerOrganizations/{0}/msp/cacerts/ca.{0}-cert.pem".format(org, context.projectName)
+            #command = ["fabric-ca-client enroll -d -u {0} -M configs/{2}/peerOrganizations/{1}/msp --caname ca.{1} --csr.cn ca.{1} --tls.certfiles configs/{2}/peerOrganizations/{1}/msp/cacerts/ca.{1}-cert.pem".format(url, org, context.projectName)]
+            command = ["fabric-ca-client enroll -d -u {0} -M msp --caname ca.{1} --csr.cn ca.{1} --tls.certfiles msp/cacerts/ca.{1}-cert.pem".format(url, org, context.projectName)]
+
+            newEnv = os.environ.copy()
+            newEnv.update(context.composition.environ)
+#            output = context.composition.docker_exec(command, ["cli"])
+
+            #####################################
+            process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newEnv)
+            output, err = process.communicate()
+            #output = subprocess.check_output(command, shell=True, env=newEnv)
+            #####################################
+
             print("Output Enroll: {}".format(output))
+            print("Err Enroll: {}".format(err))
+            #if "exec failed" in output[node]:
+            if "exec failed" in output:
+                containers = subprocess.check_output(["docker ps -a"], shell=True)
+                print("Containers->> {}".format(containers))
+                output = subprocess.check_output(["which fabric-ca-client"], shell=True)
+                print("which result: {}".format(output))
+                output = subprocess.check_output(["ls configs/{0}/peerOrganizations/{1}/msp/cacerts/".format(context.projectName, org)], shell=True)
+                print("certificate dir: {}".format(output))
+                output = subprocess.check_output(["ls configs/{0}/peerOrganizations/{1}/msp/cacerts/ca.{1}-cert.pem".format(context.projectName,org)], shell=True)
+                print("certificate result: {}".format(output))
 
     def registerUser(self, context, user, org, passwd, role, peer):
-        command = "fabric-ca-client register -d --id.name {0} --id.secret {2} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(user, org, passwd)
+        context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{2}/peerOrganizations/{1}/users/{0}@{1}".format(user, org, context.projectName)
+        #command = "fabric-ca-client register -d --id.name {0} --id.secret {2} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(user, org, passwd)
+        command = "fabric-ca-client register -d --id.name {0} --id.secret {2} --tls.certfiles msp/cacerts/ca.{1}-cert.pem".format(user, org, passwd, context.projectName)
         if role.lower() == u'admin':
             command += ''' --id.attrs '"hf.Registrar.Roles=peer,client"' --id.attrs hf.Registrar.Attributes=*,hf.Revoker=true,hf.GenCRL=true,admin=true:ecert'''
 
-        context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "/var/hyperledger/users/{0}@{1}".format(user, org)
-        output = context.composition.docker_exec([command], [peer])
+        #context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "/var/hyperledger/users/{0}@{1}".format(user, org)
+        context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}/user/{2}@{0}".format(org, context.projectName, user)
+        context.composition.environ["FABRIC_CA_CLIENT_TLS_CERTFILES"] = "./configs/{1}/peerOrganizations/{0}/msp/cacerts/ca.{0}-cert.pem".format(org, context.projectName)
+
+        newEnv = os.environ.copy()
+        newEnv.update(context.composition.environ)
+#        output = context.composition.docker_exec([command], ["cli"])
+        #####################################
+        process = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newEnv)
+        output, err = process.communicate()
+        #output = context.composition.docker_exec([command], [peer])
+        #####################################
         print("user register: {}".format(output))
+        print("user err: {}".format(err))
 
     def enrollUser(self, context, user, org, passwd, enrollType, peer):
         fca = 'ca.{}'.format(org)
         proto = "http"
         if context.tls:
             proto = "https"
+#        url = "{0}://{1}:{2}@{3}:7054".format(proto, user, passwd, fca)
+        #####################################
+        for container in context.composition.containerDataList:
+            if container.containerName == fca:
+                print(container.ports['7054/tcp'][0])
+                local = container.ports['7054/tcp'][0]
+        url = "{0}://{1}:{2}@localhost:{4}".format(proto, user, passwd, local['HostIp'], local['HostPort'])
+        #####################################
 
         adminUser = context.composition.getEnvFromContainer(fca, "BOOTSTRAP_USER_PASS")
-        command = "fabric-ca-client enroll -d --enrollment.profile tls -u {7}://{0}:{1}@{3}:7054 -M /var/hyperledger/users/{0}@{2}/tls --csr.hosts {4} --enrollment.type {5} --tls.certfiles /var/hyperledger/configs/{6}/peerOrganizations/{2}/ca/ca.{2}-cert.pem".format(user, passwd, org, fca, peer, enrollType, context.projectName, proto)
-        output = context.composition.docker_exec([command], [peer])
-        print("Output: {}".format(output))
+        #command = "fabric-ca-client enroll -d --enrollment.profile tls -u {7}://{0}:{1}@{3}:7054 -M /var/hyperledger/users/{0}@{2}/tls --csr.hosts {4} --enrollment.type {5} --tls.certfiles /var/hyperledger/configs/{6}/peerOrganizations/{2}/ca/ca.{2}-cert.pem".format(user, passwd, org, fca, peer, enrollType, context.projectName, proto)
+        context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}".format(org, context.projectName)
 
-        command = "fabric-ca-client certificate list -d --id {0} --store /var/hyperledger/users/{0}@{1}/tls/ --caname {3} --csr.cn {3} --tls.certfiles /var/hyperledger/configs/{2}/peerOrganizations/{1}/ca/ca.{1}-cert.pem".format(user, org, context.projectName, fca)
-        output = context.composition.docker_exec([command], [peer])
+        #####################################
+        context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}/user/{2}@{0}".format(org, context.projectName, user)
+        context.composition.environ["FABRIC_CA_CLIENT_TLS_CERTFILES"] = "./configs/{1}/peerOrganizations/{0}/msp/cacerts/ca.{0}-cert.pem".format(org, context.projectName)
+        #####################################
+
+        command = "fabric-ca-client enroll -d --enrollment.profile tls -u {8} -M users/{0}@{2}/tls --csr.hosts {4} --enrollment.type {5} --tls.certfiles ca/ca.{2}-cert.pem".format(user, passwd, org, fca, peer, enrollType, context.projectName, proto, url)
+        newEnv = os.environ.copy()
+        newEnv.update(context.composition.environ)
+
+        #####################################
+        process = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newEnv)
+        output, err = process.communicate()
+        #output = context.composition.docker_exec([command], [peer])
+        print("Output: {}".format(output))
+        print("Err: {}".format(err))
+
+        #command = "fabric-ca-client certificate list -d --id {0} --store /var/hyperledger/users/{0}@{1}/tls/ --caname {3} --csr.cn {3} --tls.certfiles /var/hyperledger/configs/{2}/peerOrganizations/{1}/ca/ca.{1}-cert.pem".format(user, org, context.projectName, fca)
+        command = "fabric-ca-client certificate list -d --id {0} --store users/{0}@{1}/tls/ --caname {3} --csr.cn {3} --tls.certfiles ca/ca.{1}-cert.pem".format(user, org, context.projectName, fca)
+        newEnv = os.environ.copy()
+        newEnv.update(context.composition.environ)
+        process = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newEnv)
+        output, err = process.communicate()
+        #output = context.composition.docker_exec([command], [peer])
         print("Cert Output: {}".format(output))
+        print("Err Output: {}".format(err))
+        #####################################
 
     def enrollUsersFabricCA(self, context):
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
@@ -841,9 +1118,9 @@ class CLIInterface(InterfaceBase):
                 self.addIdemixIdentities(context, user, passwd, role, org)
 
             # Place the certificates in the set directory structure
-            self.placeCertsInDirStruct(context, user, org, peer)
+            self.placeCertsInDirStruct(context, user, org, peer, role)
 
-    def placeCertsInDirStruct(self, context, user, org, peer):
+    def placeCertsInDirStruct(self, context, user, org, peer, role):
         fca = 'ca.{}'.format(org)
         proto = "http"
         if context.tls:
@@ -861,10 +1138,14 @@ class CLIInterface(InterfaceBase):
             context.printEnvWarning = True
             output = context.composition.docker_exec(['chown -R {2}:{3} /var/hyperledger/users/{0}@{1}'.format(user, org, out[0], out[1])], [peer])
 
-        os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp".format(user, org, context.projectName))
-        os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/signcerts".format(user, org, context.projectName))
-        os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/keystore".format(user, org, context.projectName))
-        os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/admincerts".format(user, org, context.projectName))
+        if not os.path.exists("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp".format(user, org, context.projectName)):
+            os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp".format(user, org, context.projectName))
+        if not os.path.exists("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/signcerts".format(user, org, context.projectName)):
+            os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/signcerts".format(user, org, context.projectName))
+        if not os.path.exists("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/keystore".format(user, org, context.projectName)):
+            os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/keystore".format(user, org, context.projectName))
+        if not os.path.exists("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/admincerts".format(user, org, context.projectName)):
+            os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/admincerts".format(user, org, context.projectName))
 
         shutil.copy("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/tls/{0}.pem".format(user, org, context.projectName),
                     "configs/{2}/peerOrganizations/{1}/users/{0}@{1}/tls/client.crt".format(user, org, context.projectName))
@@ -876,25 +1157,54 @@ class CLIInterface(InterfaceBase):
         shutil.copy("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/tls/keystore/{3}".format(user, org, context.projectName, keyfile),
                     "configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/keystore/{3}".format(user, org, context.projectName, keyfile))
 
-        shutil.copy("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/signcerts/{0}@{1}-cert.pem".format(user, org, context.projectName),
-                    "configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/admincerts/{0}@{1}-cert.pem".format(user, org, context.projectName))
+        if role.lower() == u'admin':
+            os.mkdir("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/admincerts".format(user, org, context.projectName))
+            shutil.copy("configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/signcerts/{0}@{1}-cert.pem".format(user, org, context.projectName),
+                        "configs/{2}/peerOrganizations/{1}/users/{0}@{1}/msp/admincerts/{0}@{1}-cert.pem".format(user, org, context.projectName))
 
-        command = "fabric-ca-client getcacert -d -u {3}://{0}:7054 -M /var/hyperledger/users/{1}@{2}/msp --tls.certfiles /var/hyperledger/msp/cacerts/ca.{2}-cert.pem".format(fca, user, org, proto)
-        output = context.composition.docker_exec([command], [peer])
+        url = "{0}://{1}:7054".format(proto, fca)
+        #####################################
+#        for container in context.composition.containerDataList:
+#            if container.containerName == fca:
+#                print(container.ports['7054/tcp'][0])
+#                local = container.ports['7054/tcp'][0]
+#        url = "{0}://localhost:{2}".format(proto, local['HostIp'], local['HostPort'])
+        #####################################
+
+        context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}".format(org, context.projectName)
+        #command = "fabric-ca-client getcacert -d -u {3}://{0}:7054 -M /var/hyperledger/users/{1}@{2}/msp --tls.certfiles /var/hyperledger/msp/cacerts/ca.{2}-cert.pem".format(fca, user, org, proto)
+        command = "fabric-ca-client getcacert -d -u {4} -M users/{1}@{2}/msp --tls.certfiles msp/cacerts/ca.{2}-cert.pem".format(fca, user, org, proto, context.projectName, url)
+        newEnv = os.environ.copy()
+        newEnv.update(context.composition.environ)
+        process = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newEnv)
+        output, err = process.communicate()
+        #output = context.composition.docker_exec([command], [peer])
         print("CACert Output: {}".format(output))
-        output = context.composition.docker_exec(['chown -R {2}:{3} /var/hyperledger/users/{0}@{1}'.format(user, org, out[0], out[1])], [peer])
+        output = context.composition.docker_exec(['chown -R {2}:{3} ./configs/{4}/peerOrganizations/{1}/users/{0}@{1}'.format(user, org, out[0], out[1], context.projectName)], [peer])
+        #output = context.composition.docker_exec(['chown -R {2}:{3} /var/hyperledger/users/{0}@{1}'.format(user, org, out[0], out[1])], [peer])
 
     def addIdemixIdentities(self, context, user, passwd, role, org):
         peer = 'peer0.{}'.format(org)
         d = {"passwd": passwd, "role": role, "org": org, "username": user, "attrib": [{"name": "hf.Revoker", "value": "true"}]}
         if role.lower() == u'admin':
             d["attrib"].append({"name": "admin", "value": "true:ecert"})
-        commandStr = "fabric-ca-client identity add {0} --json '{\"secret\": \"passwd\", \"type\": \"user\", \"affiliation\": \"org\", \"max_enrollments\": 1, \"attrs\": attrib}' --id.name username --id.secret passwd --tls.certfiles /var/hyperledger/msp/cacerts/ca.org-cert.pem"
+
+        context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}".format(org, context.projectName)
+        #commandStr = "fabric-ca-client identity add {0} --json '{\"secret\": \"passwd\", \"type\": \"user\", \"affiliation\": \"org\", \"max_enrollments\": 1, \"attrs\": attrib}' --id.name username --id.secret passwd --tls.certfiles /var/hyperledger/msp/cacerts/ca.org-cert.pem"
+        commandStr = "fabric-ca-client identity add {0} --json '{\"secret\": \"passwd\", \"type\": \"user\", \"affiliation\": \"org\", \"max_enrollments\": 1, \"attrs\": attrib}' --id.name username --id.secret passwd --tls.certfiles msp/cacerts/ca.org-cert.pem"
         command = self.find_replace_multi_ordered(commandStr, d)
-        output = context.composition.docker_exec([command], [peer])
+        newEnv = os.environ.copy()
+        newEnv.update(context.composition.environ)
+        process = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newEnv)
+        output, err = process.communicate()
+        #output = context.composition.docker_exec([command], [peer])
         print("Idemix Output: {}".format(output))
 
-        output = context.composition.docker_exec(["fabric-ca-client identity list"], [peer])
+        newEnv = os.environ.copy()
+        newEnv.update(context.composition.environ)
+        process = subprocess.Popen(["fabric-ca-client identity list"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newEnv)
+        output, err = process.communicate()
+        #output = context.composition.docker_exec(["fabric-ca-client identity list"], [peer])
         print("Ident List: {}".format(output))
 
     def wait_for_deploy_completion(self, context, chaincode_container, seconds):
