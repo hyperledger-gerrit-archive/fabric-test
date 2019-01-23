@@ -98,6 +98,8 @@ class InterfaceBase:
                             print("initial leader is "+context.initial_leader[org])
                             break
                     time.sleep(waittime)
+        except:
+            pass
         finally:
             assert org in context.initial_leader, "Error: After polling for " + str(max_waittime) + " seconds, no gossip-leader found by looking at the logs, for "+org
         return context.initial_leader[org]
@@ -121,6 +123,31 @@ class InterfaceBase:
         for item in sorted(dictionary.keys(), key = len, reverse = True):
             string = re.sub(item, str(dictionary[item]), string)
         return string
+
+    def build_tarball(self, context):
+        chaincodeName = context.chaincode["name"]
+        chaincodePath = context.chaincode["path"]
+
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        setup = self.get_env_vars(context, "peer0.org1.example.com")
+        cmd = ["cd $GOPATH/src;",
+               "tar -czvf {0}.tar.gz {1};".format(chaincodeName, chaincodePath),
+               "cp {0}.tar.gz {1}/.".format(chaincodeName, configDir)]
+               #"tar -czvf Code-Package.tar.gz {1};".format(chaincodeName, chaincodePath),
+               #"cp Code-Package.tar.gz {1}/.".format(chaincodeName, configDir)]
+        cmd.append('"')
+        ret = context.composition.docker_exec(setup + cmd, ["cli"])
+
+        with open("./configs/{}/Chaincode-Package-Metadata.json".format(context.composition.projectName), "w") as fd:
+            json.dump({"Type": context.chaincode["language"], "Path": chaincodePath}, fd, indent = 4)
+
+        ret = context.composition.docker_exec(setup + ["pwd"], ["cli"])
+        cmd = ["cd {0};".format(configDir),
+               "tar -czvf {0}-chaincode-package.tar.gz {0}.tar.gz Chaincode-Package-Metadata.json;".format(chaincodeName)]
+               #"tar -czvf {0}-chaincode-package.tar.gz Code-Package.tar.gz Chaincode-Package-Metadata.json;".format(chaincodeName)]
+        cmd.append('"')
+        ret = context.composition.docker_exec(setup + cmd, ["cli"])
+        return "{0}/{1}-chaincode-package.tar.gz".format(configDir, chaincodeName)
 
     def wait_for_deploy_completion(self, context, chaincode_container, seconds):
         pass
@@ -339,6 +366,8 @@ class SDKInterface(InterfaceBase):
                 while chaincode_container not in containers:
                     containers = subprocess.check_output(["docker ps -a"], shell=True)
                     time.sleep(1)
+        except:
+            pass
         finally:
             assert chaincode_container in containers, "The expected chaincode container {0} is not running\n{1}".format(chaincode_container, containers)
 
@@ -488,7 +517,130 @@ class CLIInterface(InterfaceBase):
             ccDeploymentSpec.ParseFromString(f.read())
         return ccDeploymentSpec
 
-    def install_chaincode(self, context, peers, user="Admin"):
+    def package_chaincode(self, context, peer, tarfile, user="Admin"):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        output = {}
+        setup = self.get_env_vars(context, peer, user=user)
+        cmd = ["peer", "chaincode", "package",
+                     "{0}/{1}".format(configDir, tarfile),
+                     "--lang", context.chaincode["language"],
+                     "--path", context.chaincode["path"]]
+        if context.newlifecycle:
+            cmd.append("--newLifecycle")
+        cmd.append('"')
+        return context.composition.docker_exec(setup + cmd, ['cli'])
+
+    def approve_chaincode(self, context, peers, user="Admin", upgrade=False, policy=None, collections=None):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        output = {}
+        pat = r"Get committed chaincode definition for chaincode '(?P<name>.*)' on channel '(?P<channel>.*)':\nSequence: (?P<seq>\d*), Version: (?P<vers>.*), Hash: (?P<hash>.*), Endorsement Plugin: escc, Validation Plugin: vscc\n"
+
+        # set policy
+        if policy is not None:
+            context.chaincode['policy'] = policy
+
+        # set collections
+        if collections:
+            context.chaincode['collections'] = collections
+
+        for peer in peers:
+            peerParts = peer.split('.')
+            org = '.'.join(peerParts[1:])
+            setup = self.get_env_vars(context, peer, user=user)
+
+            # Initial deploy starts at 1
+            context.sequence = 1
+            if upgrade:
+                res = self.list_chaincode(context, peer, user, "committed")
+                committed = re.match(pat, res)
+                assert committed is not None, "There was no definition returned for the chaincode '{0}'".format(context.chaincode['name'])
+                # set context.sequence to received context.sequence number +1
+                context.sequence = int(committed.groupdict()['seq']) + 1
+
+            peer_addresses = [peer, peer.replace("peer0", "peer1")]
+            peers.remove(peer.replace("peer0", "peer1"))
+
+            command = ["peer", "chaincode", "approveformyorg",
+                       "--name", context.chaincode['name'],
+                       "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID)),
+                       "--version", str(context.chaincode.get('version', 0)),
+                       "--peerAddresses", "{0}:7051".format(context.composition.getIPFromName(peer_addresses[0], context.composition.containerDataList)),
+                       "--peerAddresses", "{0}:7051".format(context.composition.getIPFromName(peer_addresses[1], context.composition.containerDataList)),
+                       "--hash", context.hash.get(org, "0"),
+                       "--sequence", str(context.sequence),
+                       "--init-required",
+                       ]
+            if policy is not None:
+                command = command + ["--policy", context.chaincode["policy"].replace('"', r'\"')]
+            if collections:
+                command = command + ["--collections", collections]
+            command.append('"')
+
+            output.update(context.composition.docker_exec(setup + command, [peer]))
+        print("[{0}]: {1}".format(" ".join(setup + command), output))
+        return output
+
+    def commit_chaincode(self, context, peer, user="Admin", policy=None, collections=None):
+        configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
+        output = {}
+        peerParts = peer.split('.')
+        org = '.'.join(peerParts[1:])
+        setup = self.get_env_vars(context, peer, user=user)
+
+        if not policy:
+            policy = context.chaincode.get('policy', None)
+
+        command = ["peer", "chaincode", "commit",
+                   "--name", context.chaincode['name'],
+                   "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID)),
+                   "--version", str(context.chaincode.get('version', 0)),
+                   "--hash", context.hash.get(org, 0),
+                   "--sequence", str(context.sequence),
+                   "--init-required",
+                   ]
+        if policy is not None:
+            command = command + ["--policy", policy.replace('"', r'\"')]
+        if collections:
+            command = command + ["--collections", collections]
+        command.append('"')
+
+        output = context.composition.docker_exec(setup + command, [peer])
+        print("[{0}]: {1}".format(" ".join(setup + command), output))
+
+        # Now wait for the chaincode to be committed
+        try:
+            ret = self.list_chaincode(context, peer, user, list_type="committed")
+            with timeout(10, exception=Exception):
+                while context.hash[org] not in ret[peer]:
+                    ret = self.list_chaincode(context, peer, user, list_type="committed")
+                    time.sleep(1)
+        except:
+            print("Error occurred: {0}".format(sys.exc_info()[1]))
+        finally:
+            assert context.hash[org] in ret[peer], "The chaincode {0} has not been committed\n{1}".format(context.chaincode['name'], ret)
+
+        return output
+
+    def list_chaincode(self, context, peer, user="Admin", list_type="installed"):
+        setup = self.get_env_vars(context, peer, user=user)
+        command = ["peer", "chaincode", "list",
+                   "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID)),
+                   ]
+        command = command + ["--{}".format(list_type)]
+        if list_type == "committed":
+            command = command + ["--name", context.chaincode['name']]
+
+        if context.newlifecycle:
+            command = command + [
+                        "--newLifecycle",
+                        ]
+        command.append('"')
+
+        output = context.composition.docker_exec(setup + command, [peer])
+        print("[{0}]: {1}".format(" ".join(setup + command), output))
+        return output
+
+    def install_chaincode(self, context, peers, user="Admin", tarball=""):
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
         output = {}
         for peer in peers:
@@ -497,9 +649,16 @@ class CLIInterface(InterfaceBase):
             setup = self.get_env_vars(context, peer, user=user)
             command = ["peer", "chaincode", "install",
                        "--name",context.chaincode['name'],
+                       "--version", str(context.chaincode.get('version', 0))]
+            if context.newlifecycle:
+                command = command + [
+                        "--newLifecycle",
+                        "{0}/{1}".format(configDir, tarball)]
+            else:
+                command = command + [
                        "--lang", context.chaincode['language'],
-                       "--version", str(context.chaincode.get('version', 0)),
                        "--path", context.chaincode['path']]
+
             if context.tls:
                 command = command + ["--tls",
                                      "--cafile",
@@ -515,9 +674,13 @@ class CLIInterface(InterfaceBase):
             if "user" in context.chaincode:
                 command = command + ["--username", context.chaincode["user"]]
             command.append('"')
+            # stderr contains the result of the install not stdout
             ret = context.composition.docker_exec(setup+command, ['cli'])
+            print("[{0}]: {1}".format(" ".join(setup + command), ret))
+
             assert "Error occurred" not in ret['cli'], "The install failed with the following error: {}".format(ret['cli'])
-            output[peer] = ret['cli']
+            ret = self.list_chaincode(context, peer, user, list_type="installed")
+            output.update(ret)
         print("[{0}]: {1}".format(" ".join(setup + command), output))
         return output
 
@@ -752,8 +915,15 @@ class CLIInterface(InterfaceBase):
             command = command + ["--transient", targs]
 
         command = command + ["--orderer", '{0}:7050'.format(orderer)]
-        command.append('"')
-        output = context.composition.docker_exec(setup+command, [peer])
+        if context.newlifecycle and "init" in args:
+            command = command + ["--peerAddresses", "{0}:7051".format(context.composition.getIPFromName(peer, context.composition.containerDataList)),
+                       "--peerAddresses", "{0}:7051".format(context.composition.getIPFromName(peer.replace("peer0", "peer1"), context.composition.containerDataList))]
+            command.append('"')
+            output = context.composition.docker_exec(setup+command, ['cli'])
+            output[peer] = output['cli']
+        else:
+            command.append('"')
+            output = context.composition.docker_exec(setup+command, [peer])
         print("Invoke[{0}]: {1}".format(" ".join(setup+command), str(output)))
         output = self.retry(context, output, peer, setup, command)
         return output
@@ -798,6 +968,15 @@ class CLIInterface(InterfaceBase):
             url = "{2}://{0}@ca.{1}:7054".format(userpass, org, proto)
             output = context.composition.docker_exec(["fabric-ca-client enroll -d -u {0} -M /var/hyperledger/msp --caname ca.{1} --csr.cn ca.{1} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(url, org)], [node])
             print("Output Enroll: {}".format(output))
+            if "exec failed" in output[node]:
+                containers = subprocess.check_output(["docker ps -a"], shell=True)
+                print("Containers->> {}".format(containers))
+                output = context.composition.docker_exec(["which fabric-ca-client"], [node])
+                print("which result: {}".format(output))
+                output = context.composition.docker_exec(["ls /var/hyperledger/msp/cacerts/"], [node])
+                print("certificate dir: {}".format(output))
+                output = context.composition.docker_exec(["ls /var/hyperledger/msp/cacerts/ca.{}-cert.pem".format(org)], [node])
+                print("certificate result: {}".format(output))
 
     def registerUser(self, context, user, org, passwd, role, peer):
         command = "fabric-ca-client register -d --id.name {0} --id.secret {2} --tls.certfiles /var/hyperledger/msp/cacerts/ca.{1}-cert.pem".format(user, org, passwd)
