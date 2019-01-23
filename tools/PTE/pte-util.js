@@ -457,3 +457,35 @@ module.exports.getOrdererID=function(pid, orgName, org, txCfgPtr, svcFile, metho
 
     return ordererID;
 }
+
+// get peerID for transactions
+module.exports.getPeerID=function(pid, orgName, org, txCfgPtr, svcFile, method) {
+    hfc.addConfigFile(svcFile);
+    ORGS = hfc.getConfigSetting('test-network');
+    var peerID="UNKNOWN";
+
+    logger.info('[org:id=%s:%d getPeerID] peer method: %s', org, pid, method);
+    // find peerID
+    if ( method == 'ROUNDROBIN' ) {
+        // Round Robin
+        var nProcPerOrg = parseInt(txCfgPtr.nProcPerOrg);
+        var orgNameLen=orgName.length;
+        var orgIdx=orgName.indexOf(org);
+        var SCordList=[];
+        for (var key in ORGS[org]) {
+            if (ORGS[org][key].requests) {
+                SCordList.push(key);
+            }
+        }
+        logger.info('[org:id=%s:%d getPeerID] SC peer list: %j', org, pid, SCordList);
+        logger.info('[org:id=%s:%d getPeerID] SC peer length: %j', org, pid, SCordList.length);
+        var peerLen=SCordList.length;
+        //var peerIdx=(pid*orgNameLen+orgIdx)%peerLen;
+        var peerIdx=(pid)%peerLen;
+        peerID=SCordList[peerIdx];
+    }
+
+    logger.info('[org:id=%s:%d getPeerID] peer assigned to the test: %s %s', org, pid, org, peerID);
+
+    return peerID;
+}
