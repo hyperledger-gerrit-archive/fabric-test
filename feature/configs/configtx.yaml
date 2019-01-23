@@ -71,13 +71,16 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('example.com.member')"
+                Rule: OR('example.com.member')
             Writers:
                 Type: Signature
-                Rule: "OR('example.com.member')"
+                Rule: OR('example.com.member')
             Admins:
                 Type: Signature
-                Rule: "OR('example.com.admin')"
+                Rule: OR('example.com.admin')
+            Endorsement:
+                Type: Signature
+                Rule: OR('example.com.member')
 
     - &Org1ExampleCom
         Name: Org1ExampleCom
@@ -90,13 +93,16 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('org1.example.com.member')"
+                Rule: OR('org1.example.com.member')
             Writers:
                 Type: Signature
-                Rule: "OR('org1.example.com.member')"
+                Rule: OR('org1.example.com.member')
             Admins:
                 Type: Signature
-                Rule: "OR('org1.example.com.admin')"
+                Rule: OR('org1.example.com.admin')
+            Endorsement:
+                Type: Signature
+                Rule: OR('org1.example.com.member')
 
     - &Org2ExampleCom
         Name: Org2ExampleCom
@@ -109,13 +115,16 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('org2.example.com.member')"
+                Rule: OR('org2.example.com.member')
             Writers:
                 Type: Signature
-                Rule: "OR('org2.example.com.member')"
+                Rule: OR('org2.example.com.member')
             Admins:
                 Type: Signature
-                Rule: "OR('org2.example.com.admin')"
+                Rule: OR('org2.example.com.admin')
+            Endorsement:
+                Type: Signature
+                Rule: OR('org3.example.com.member')
 
 ################################################################################
 #
@@ -180,18 +189,18 @@ Orderer: &OrdererDefaults
     Policies:
         Readers:
             Type: ImplicitMeta
-            Rule: "ANY Readers"
+            Rule: ANY Readers
         Writers:
             Type: ImplicitMeta
-            Rule: "ANY Writers"
+            Rule: ANY Writers
         Admins:
             Type: ImplicitMeta
-            Rule: "MAJORITY Admins"
+            Rule: MAJORITY Admins
         # BlockValidation specifies what signatures must be included in the block
         # from the orderer for the peer to validate it.
         BlockValidation:
             Type: ImplicitMeta
-            Rule: "ANY Writers"
+            Rule: ANY Writers
 
     # Capabilities describes the orderer level capabilities, see the
     # dedicated Capabilities section elsewhere in this file for a full
@@ -215,15 +224,15 @@ Channel: &ChannelDefaults
         # Who may invoke the 'Deliver' API
         Readers:
             Type: ImplicitMeta
-            Rule: "ANY Readers"
+            Rule: ANY Readers
         # Who may invoke the 'Broadcast' API
         Writers:
             Type: ImplicitMeta
-            Rule: "ANY Writers"
+            Rule: ANY Writers
         # By default, who may modify elements at this config level
         Admins:
             Type: ImplicitMeta
-            Rule: "MAJORITY Admins"
+            Rule: MAJORITY Admins
 
 
     # Capabilities describes the channel level capabilities, see the
@@ -250,6 +259,17 @@ Application: &ApplicationDefaults
         #
         # User's can override these defaults with their own policy mapping by defining the
         # mapping under ACLs in their channel definition
+
+        #---New Lifecycle System Chaincode (_lifecycle) function to policy mapping for access control--#
+
+        # ACL policy for _lifecycle's "CommitChaincodeDefinition" function
+        _lifecycle/CommitChaincodeDefinition: /Channel/Application/Writers
+
+        # ACL policy for _lifecycle's "QueryChaincodeDefinition" function
+        _lifecycle/QueryChaincodeDefinition: /Channel/Application/Readers
+
+        # ACL policy for _lifecycle's "QueryNamespaceDefinitions" function
+        _lifecycle/QueryNamespaceDefinitions: /Channel/Application/Readers
 
         #---Lifecycle System Chaincode (lscc) function to policy mapping for access control---#
 
@@ -317,6 +337,12 @@ Application: &ApplicationDefaults
     # For Application policies, their canonical path is
     #   /Channel/Application/<PolicyName>
     Policies: &ApplicationDefaultPolicies
+        LifecycleEndorsement:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Endorsement"
+        Endorsement:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Endorsement"
         Readers:
             Type: ImplicitMeta
             Rule: "ANY Readers"
@@ -363,6 +389,22 @@ Profiles:
                 - *ExampleCom
             Capabilities:
                 <<: *ApplicationCapabilities
+            Policies:
+                Readers:
+                  Type: ImplicitMeta
+                  Rule: ANY Readers
+                Writers:
+                  Type: ImplicitMeta
+                  Rule: ANY Writers
+                Admins:
+                  Type: ImplicitMeta
+                  Rule: MAJORITY Admins
+                LifecycleEndorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
+                Endorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
         Consortiums:
             SampleConsortium:
                 Organizations:
@@ -390,6 +432,22 @@ Profiles:
                 - *ExampleCom
             Capabilities:
                 <<: *ApplicationCapabilities
+            Policies:
+                Readers:
+                  Type: ImplicitMeta
+                  Rule: ANY Readers
+                Writers:
+                  Type: ImplicitMeta
+                  Rule: ANY Writers
+                Admins:
+                  Type: ImplicitMeta
+                  Rule: MAJORITY Admins
+                LifecycleEndorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
+                Endorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
         Consortiums:
             SampleConsortium:
                 Organizations:
@@ -413,6 +471,22 @@ Profiles:
                 - *ExampleCom
             Capabilities:
                 <<: *ApplicationCapabilities
+            Policies:
+                Readers:
+                  Type: ImplicitMeta
+                  Rule: ANY Readers
+                Writers:
+                  Type: ImplicitMeta
+                  Rule: ANY Writers
+                Admins:
+                  Type: ImplicitMeta
+                  Rule: MAJORITY Admins
+                LifecycleEndorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
+                Endorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
         Consortiums:
             SampleConsortium:
                 Organizations:
@@ -431,9 +505,26 @@ Profiles:
                 - *ExampleCom
             Capabilities:
                 <<: *ApplicationCapabilities
+            Policies:
+                Readers:
+                  Type: ImplicitMeta
+                  Rule: ANY Readers
+                Writers:
+                  Type: ImplicitMeta
+                  Rule: ANY Writers
+                Admins:
+                  Type: ImplicitMeta
+                  Rule: MAJORITY Admins
+                LifecycleEndorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
+                Endorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
 
     # SysTestChannel defines a channel for use with the System Test Orgs
     SysTestChannel:
+        <<: *ChannelDefaults
         Capabilities:
             <<: *ChannelCapabilities
         Consortium: SampleConsortium
@@ -444,11 +535,28 @@ Profiles:
                 - *Org2ExampleCom
             Capabilities:
                 <<: *ApplicationCapabilities
+            Policies:
+                Readers:
+                  Type: ImplicitMeta
+                  Rule: ANY Readers
+                Writers:
+                  Type: ImplicitMeta
+                  Rule: ANY Writers
+                Admins:
+                  Type: ImplicitMeta
+                  Rule: MAJORITY Admins
+                LifecycleEndorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
+                Endorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
 
     # SampleSingleMSPChannel defines a channel with only the sample org as a
     # member.  It is designed to be used in conjunction with SampleSingleMSPSolo
     # and SampleSingleMSPKafka orderer profiles
     SampleSingleMSPChannel:
+        <<: *ChannelDefaults
         Capabilities:
             <<: *ChannelCapabilities
         Consortium: SampleConsortium
@@ -459,4 +567,20 @@ Profiles:
                 - *Org2ExampleCom
             Capabilities:
                 <<: *ApplicationCapabilities
+            Policies:
+                Readers:
+                  Type: ImplicitMeta
+                  Rule: ANY Readers
+                Writers:
+                  Type: ImplicitMeta
+                  Rule: ANY Writers
+                Admins:
+                  Type: ImplicitMeta
+                  Rule: MAJORITY Admins
+                LifecycleEndorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
+                Endorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
 
