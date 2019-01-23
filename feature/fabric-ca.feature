@@ -7,8 +7,16 @@
 Feature: Fabric-CA Service
     As a user I want to be able to use the Fabric-CA for generation of certificates
 
+<<<<<<< Updated upstream
 @doNotDecompose
 @smoke
+=======
+<<<<<<< Updated upstream
+#@doNotDecompose
+=======
+@doNotDecompose
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 @interop
 @daily
 Scenario Outline: FAB-6489: Interoperability Test using <type> based orderer with a <database> db using the <interface> with <language> chaincode
@@ -17,15 +25,16 @@ Scenario Outline: FAB-6489: Interoperability Test using <type> based orderer wit
     And I enroll the following users using fabric-ca
          | username  |   organization   | password |  role  | certType |
          |  latitia  | org1.example.com |  h3ll0   | admin  |   x509   |
-         |   scott   | org2.example.com |  th3r3   | member |   x509   |
-         |   adnan   | org1.example.com |  wh@tsup | member |   x509   |
+         |   scott   | org2.example.com |  th3r3   |  user  |   x509   |
+         |   adnan   | org1.example.com |  wh@tsup |  user  |   x509   |
     When an admin sets up a channel
     And an admin deploys chaincode at path "<path>" with args ["init","a","1000","b","2000"] with name "mycc" with language "<language>"
     And I wait "5" seconds
     When a user "adnan" queries on the chaincode with args ["query","a"]
     Then a user receives a success response of 1000
     And I wait "5" seconds
-    When a user "adnan" invokes on the chaincode with args ["invoke","a","b","10"]
+    #When a user "adnan" invokes on the chaincode with args ["invoke","a","b","10"]
+    When a user invokes on the chaincode with args ["invoke","a","b","10"]
     And I wait "5" seconds
     When a user "scott" queries on the chaincode with args ["query","a"] from "peer0.org2.example.com"
     Then a user receives a success response of 990 from "peer0.org2.example.com"
@@ -35,11 +44,25 @@ Scenario Outline: FAB-6489: Interoperability Test using <type> based orderer wit
     Then a user receives a success response of 980
     # We should use the JavaSDK once the TLS version of this is working correctly
 Examples:
+<<<<<<< Updated upstream
     | type  | database | interface  |                          path                                  | language |
     #| solo  | leveldb  |  Java SDK  | github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd |  GOLANG  |
     | solo  | leveldb  | NodeJS SDK | github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd |  GOLANG  |
     #| kafka | couchdb  |    CLI     |        ../../fabric-test/chaincodes/example02/node             |   NODE   |
     #| solo  | leveldb  | NodeJS SDK |   ../../fabric-samples/chaincode/chaincode_example02/java         |   JAVA   |
+=======
+    | type  | database | interface  |                          path                                     | language |
+    #| solo  | leveldb  |  Java SDK  | github.com/hyperledger/fabric/examples/chaincode/go/example02/cmd |  GOLANG  |
+<<<<<<< Updated upstream
+    | solo  | leveldb  | NodeJS SDK | github.com/hyperledger/fabric/examples/chaincode/go/example02/cmd |  GOLANG  |
+    | kafka | couchdb  |    CLI     |        ../../fabric-test/chaincodes/example02/node                |   NODE   |
+    | solo  | leveldb  | NodeJS SDK |   ../../fabric-samples/chaincode/chaincode_example02/java         |   JAVA   |
+=======
+    #| solo  | leveldb  | NodeJS SDK | github.com/hyperledger/fabric/examples/chaincode/go/example02/cmd |  GOLANG  |
+    | kafka | couchdb  |    CLI     |        ../../fabric-test/chaincodes/example02/node                |   NODE   |
+    #| solo  | leveldb  | NodeJS SDK |   ../../fabric-samples/chaincode/chaincode_example02/java         |   JAVA   |
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
 
 @daily
@@ -49,8 +72,8 @@ Scenario Outline: FAB-11621: JavaSDK interoperability Test using <language> chai
     And I enroll the following users using fabric-ca
          | username  |   organization   | password |  role  |
          |  latitia  | org1.example.com |  h3ll0   | admin  |
-         |   scott   | org2.example.com |  th3r3   | member |
-         |   adnan   | org1.example.com |  wh@tsup | member |
+         |   scott   | org2.example.com |  th3r3   |  user  |
+         |   adnan   | org1.example.com |  wh@tsup |  user  |
     When an admin sets up a channel
     And an admin deploys chaincode at path "<path>" with args ["init","a","1000","b","2000"] with name "mycc" with language "<language>"
     And I wait "5" seconds
@@ -79,8 +102,8 @@ Examples:
     #    And I enroll the following users using fabric-ca
     #         | username  |   organization   | password |  role  | certType |
     #         |  latitia  | org1.example.com |  h3ll0   | admin  |  idemix  |
-    #         |   scott   | org2.example.com |  th3r3   | member |  idemix  |
-    #         |   adnan   | org1.example.com |  wh@tsup | member |  idemix  |
+    #         |   scott   | org2.example.com |  th3r3   |  user  |  idemix  |
+    #         |   adnan   | org1.example.com |  wh@tsup |  user  |  idemix  |
     #    When an admin sets up a channel
     #    And an admin deploys chaincode at path "<path>" with args ["init","a","1000","b","2000"] with name "mycc" with language "<language>"
     #    And I wait "5" seconds
