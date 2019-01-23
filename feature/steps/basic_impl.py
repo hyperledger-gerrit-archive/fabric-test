@@ -42,6 +42,32 @@ def wait_impl(context, seconds, peer):
                                                    context.chaincode.get("version", 0))
     context.interface.wait_for_deploy_completion(context, chaincode_container, seconds)
 
+@given(u'I wait up to "{seconds:d}" seconds for the chaincode to be committed')
+@when(u'I wait up to "{seconds:d}" seconds for the chaincode to be committed')
+@then(u'I wait up to "{seconds:d}" seconds for the chaincode to be committed')
+def step_impl(context, seconds):
+    peer = "peer0.org1.example.com"
+    user = "Admin"
+    org = "org1.example.com"
+
+    assert "Error occurred" not in context.result[peer], "There was an error in the chaincode commit: {}".format(context.result[peer])
+    #assert "chaincode definition not agreed to by this org" not in context.result[peer], "There was an error in the chaincode commit: {}".format(context.result[peer])
+
+    # Now wait for the chaincode to be committed
+    try:
+        count = 0
+        ret = context.interface.list_chaincode(context, peer, user, list_type="committed")
+        with ic_timeout(seconds, exception=Exception):
+            while context.hash[org] not in ret[peer] and count <= seconds:
+                ret = context.interface.list_chaincode(context, peer, user, list_type="committed")
+                time.sleep(1)
+                count = count + 1
+    except:
+        print("Error occurred: {0}".format(sys.exc_info()[1]))
+    finally:
+        assert context.hash[org] in ret[peer], "The chaincode {0} has not been committed\n{1}".format(context.chaincode['name'], ret)
+
+
 @given(u'I wait up to "{seconds:d}" seconds for instantiation to complete')
 @when(u'I wait up to "{seconds:d}" seconds for instantiation to complete')
 @then(u'I wait up to "{seconds:d}" seconds for instantiation to complete')
