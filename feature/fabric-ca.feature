@@ -8,6 +8,7 @@ Feature: Fabric-CA Service
     As a user I want to be able to use the Fabric-CA for generation of certificates
 
 #@doNotDecompose
+@smoke
 @interop
 @daily
 Scenario Outline: FAB-6489: Interoperability Test using <type> based orderer with a <database> db using the <interface> with <language> chaincode
