@@ -132,7 +132,7 @@ class Composition:
             fileLoc = ofileLoc
         else:
             fileLoc = pfileLoc
-        assert os.path.exists(fileLoc),'File "{0}" does not exist'.format(fileLoc)
+        assert os.path.exists(fileLoc),'Dirs "{0}" and "{1} do not exist'.format(ofileLoc, pfileLoc)
         filename = self.lookForKeyFile(fileLoc)
 
         keyVals = []
@@ -205,6 +205,10 @@ class Composition:
                 break
         return container
 
+    def getIPFromName(self, containerName, containerList):
+        container = self.getContainerFromName(containerName, containerList)
+        return container.ipAddress
+
     def issueCommand(self, command, components=[]):
         componentList = []
         useCompose = True
@@ -250,6 +254,7 @@ class Composition:
                     raise Exception(_error)
         except:
             err = "Error occurred {0}: {1}".format(cmd, sys.exc_info()[1])
+            print(err)
             output = err
 
         # Don't rebuild if ps command
