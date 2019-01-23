@@ -239,6 +239,7 @@ class Composition:
 
         try:
             if cmd[0].startswith("docker exec"):
+                print("****Command****: {}".format(cmd))
                 process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.getEnv())
                 output, _error = process.communicate()
                 if "Error: " in _error or "CRIT " in _error:
