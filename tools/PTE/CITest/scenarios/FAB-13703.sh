@@ -13,6 +13,9 @@
 # tx 10,000 per thread
 # traffic mode: Latency
 
+# source PTE CI utils
+source PTECIutils.sh
+
 myTESTCASE="PTEScaleTest"
 myLog="FAB-13703"
 
@@ -30,12 +33,9 @@ myMaxTh=1
 myThIncr=1
 
 myKey0=0
+myKeyIncr=$myNREQ
 
 CWD=$PWD
-
-FabricTestDir=$GOPATH"/src/github.com/hyperledger/fabric-test"
-PTEDir=$FabricTestDir"/tools/PTE"
-LOGDir=$PTEDir"/CITest/Logs"
 
 CIpteReport=$LOGDir/$myTESTCASE"-pteReport.log"
 echo "CIpteReport=$CIpteReport"
@@ -44,22 +44,10 @@ if [ -e $CIpteReport ]; then
     rm -f $CIpteReport
 fi
 
-# channels loop
-for (( myNCHAN = $myMinChan; myNCHAN <= $myMaxChan; myNCHAN+=$myChanIncr )); do
-    # threads loop
-    for (( myNTHREAD = $myMinTh; myNTHREAD <= $myMaxTh; myNTHREAD+=$myThIncr )); do
-        cd $CWD
-        set -x
-        ./runScaleTraffic.sh  -a $myCC --nchan $myNCHAN --norg $myNORG --nproc $myNTHREAD --nreq $myNREQ --keystart $myKey0 --txmode $myTXMODE -i
-        CMDResult="$?"
-        set +x
-        if [ $CMDResult -ne "0" ]; then
-            echo "Error: Failed to execute runScaleTraffic.sh"
-            exit 1
-        fi
-        myKey0=$(( myKey0+myNREQ ))
-    done
-done
+# execute PTE
+optString="-a $myCC --norg $myNORG --nreq $myNREQ --keystart $myKey0 --txmode $myTXMODE -i"
+echo "[FAB-13703.sh] optString=$optString"
+PTEExecLoop $myMinChan $myMaxChan $myChanIncr $myMinTh $myMaxTh $myThIncr $myKeyIncr "${optString[@]}"
 
 mv $CIpteReport $LOGDir/$myLog"-pteReport.log"
 

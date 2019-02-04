@@ -6,25 +6,28 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# testcase: FAB-13641
+# testcase: FAB-13810
 # channels: 1
-# org: 3
-# threads: 3 (1 per org)
-# tx 10,000 per thread
+# org: 1
+# threads: 1 (1 per org)
+# tx duration: 3 days
 # traffic mode: Constant
+# frequency: 10 per second per thread
 
 # source PTE CI utils
 source PTECIutils.sh
 
 myTESTCASE="PTEScaleTest"
-myLog="FAB-13641"
+myLog="FAB-13810"
 
 myCC="samplecc"
 myTXMODE="Constant"
-myNORG=3
 
-myNREQ=10000
+myRundur=259200
+myNREQ=0
+myFREQ=100
 
+myNORG=1
 myMinChan=1
 myMaxChan=1
 myChanIncr=1
@@ -33,7 +36,7 @@ myMaxTh=1
 myThIncr=1
 
 myKey0=0
-myKeyIncr=$myNREQ
+myKeyIncr=0
 
 CWD=$PWD
 
@@ -45,8 +48,8 @@ if [ -e $CIpteReport ]; then
 fi
 
 # execute PTE
-optString="-a $myCC --norg $myNORG --nreq $myNREQ --keystart $myKey0 --txmode $myTXMODE -i"
-echo "[FAB-13641.sh] optString=$optString"
+optString="-a $myCC --norg $myNORG --nreq $myNREQ --rundur $myRundur --freq $myFREQ --keystart $myKey0 --txmode $myTXMODE -i"
+echo "[FAB-13810.sh] optString=$optString"
 PTEExecLoop $myMinChan $myMaxChan $myChanIncr $myMinTh $myMaxTh $myThIncr $myKeyIncr "${optString[@]}"
 
 mv $CIpteReport $LOGDir/$myLog"-pteReport.log"
