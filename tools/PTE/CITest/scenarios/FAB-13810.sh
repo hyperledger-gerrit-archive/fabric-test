@@ -6,27 +6,30 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# testcase: FAB-13703
-# channels: 3
+# testcase: FAB-13641
+# channels: 1
 # org: 1
-# thread: 1 (1 per org)
-# tx 10,000 per thread
-# traffic mode: Latency
+# threads: 1 (1 per org)
+# tx duration: 3 days
+# traffic mode: Constant
+# frequency: 10 per second per thread
 
 # source PTE CI utils
 source PTECIutils.sh
 
 myTESTCASE="PTEScaleTest"
-myLog="FAB-13703"
+myLog="FAB-13810"
 
 myCC="samplecc"
-myTXMODE="Latency"
+myTXMODE="Constant"
+
+myRundur=259200
+myNREQ=0
+myFREQ=100
+
 myNORG=1
-
-myNREQ=10000
-
-myMinChan=3
-myMaxChan=3
+myMinChan=1
+myMaxChan=1
 myChanIncr=1
 myMinTh=1
 myMaxTh=1
@@ -49,7 +52,7 @@ for (( myNCHAN = $myMinChan; myNCHAN <= $myMaxChan; myNCHAN+=$myChanIncr )); do
     for (( myNTHREAD = $myMinTh; myNTHREAD <= $myMaxTh; myNTHREAD+=$myThIncr )); do
         cd $CWD
         set -x
-        ./runScaleTraffic.sh  -a $myCC --nchan $myNCHAN --norg $myNORG --nproc $myNTHREAD --nreq $myNREQ --keystart $myKey0 --txmode $myTXMODE -i
+        ./runScaleTraffic.sh  -a $myCC --nchan $myNCHAN --norg $myNORG --nproc $myNTHREAD --nreq $myNREQ --rundur $myRundur --freq $myFREQ --keystart $myKey0 --txmode $myTXMODE -i
         CMDResult="$?"
         set +x
         if [ $CMDResult -ne "0" ]; then

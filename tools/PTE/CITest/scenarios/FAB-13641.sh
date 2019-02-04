@@ -13,6 +13,9 @@
 # tx 10,000 per thread
 # traffic mode: Constant
 
+# source PTE CI utils
+source PTECIutils.sh
+
 myTESTCASE="PTEScaleTest"
 myLog="FAB-13641"
 
@@ -32,10 +35,6 @@ myThIncr=1
 myKey0=0
 
 CWD=$PWD
-
-FabricTestDir=$GOPATH"/src/github.com/hyperledger/fabric-test"
-PTEDir=$FabricTestDir"/tools/PTE"
-LOGDir=$PTEDir"/CITest/Logs"
 
 CIpteReport=$LOGDir/$myTESTCASE"-pteReport.log"
 echo "CIpteReport=$CIpteReport"
