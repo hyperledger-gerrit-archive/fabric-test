@@ -56,6 +56,12 @@ usage () {
     echo -e "\t--nreq\tnumber of transactions per process [integer]"
     echo -e "\t\tDefault: 10000."
     echo
+    echo -e "\t--rundur\tduration of execution in sec [integer]"
+    echo -e "\t\tDefault: 0."
+    echo
+    echo -e "\t--freq\ttransaction sending frequency in ms [integer]"
+    echo -e "\t\tDefault: 0."
+    echo
     echo -e "\t--keystart\tstarting key of transactions [integer]"
     echo -e "\t\tDefault: 0."
     echo
@@ -87,8 +93,9 @@ printVars() {
     echo "input parameters: TESTCASE=$TESTCASE"
     echo "input parameters: NETWORK=$NETWORK, chaincode=$chaincode, PRECONFIG=$PRECONFIG"
     echo "input parameters: NCHAN=$NCHAN, NORG=$NORG"
-    echo "input parameters: TXMODE=$TXMODE, NPROC=$NPROC, key0=$key0"
+    echo "input parameters: TXMODE=$TXMODE, NPROC=$NPROC"
     echo "input parameters: targetpeers=$targetpeers, targetorderers=$targetorderers"
+    echo "input parameters: NREQ=$NREQ, RUNDUR=$RUNDUR, FREQ=$FREQ, key0=$key0"
     echo "input parameters: PRIME=$PRIME, INVOKE=$INVOKE, QUERY=$QUERY"
     echo ""
 }
@@ -110,6 +117,8 @@ NTHREAD=1
 NCHAN=1
 CHANPREFIX="testorgschannel"
 NREQ=10000
+RUNDUR=0
+FREQ=0
 NORG=1
 targetpeers="RoundRobin"
 targetorderers="RoundRobin"
@@ -181,6 +190,18 @@ while [[ $# -gt 0 ]]; do
       --nreq)
           shift
           NREQ=$1                  # number of transactions per process
+          shift
+          ;;
+
+      --rundur)
+          shift
+          RUNDUR=$1                # execution duration
+          shift
+          ;;
+
+      --freq)
+          shift
+          FREQ=$1                  # transaction sending freq
           shift
           ;;
 
@@ -264,7 +285,7 @@ function PTEexec() {
     fi
 
     set -x
-    ./gen_cfgInputs.sh -d $LSCDir --nchan $NCHAN --chanprefix $CHANPREFIX --norg $NORG -a $chaincode --nreq $NREQ --keystart $key0 --targetpeers $targetpeers --targetorderers $targetorderers --nproc $NTHREAD --txmode $TXMODE -t $invoke >& $PTELOG
+    ./gen_cfgInputs.sh -d $LSCDir --nchan $NCHAN --chanprefix $CHANPREFIX --norg $NORG -a $chaincode --nreq $NREQ --rundur $RUNDUR --freq $FREQ --keystart $key0 --targetpeers $targetpeers --targetorderers $targetorderers --nproc $NTHREAD --txmode $TXMODE -t $invoke >& $PTELOG
     set +x
     sleep 30
 
@@ -344,7 +365,11 @@ echo "                                      PTE: CHANNELS=$NCHAN THREADS=$NTHREA
 echo "          *****************************************************************************"
 echo ""
 timestamp=`date`
-echo "[$0] $TESTCASE with $NCHAN channels, each channel has $NTHREAD threads x $NREQ transactions start at $timestamp"
+if [ $NREQ > 0 ]; then
+    echo "[$0] $TESTCASE with $NCHAN channels, each channel has $NTHREAD threads x $NREQ transactions start at $timestamp"
+else
+    echo "[$0] $TESTCASE with $NCHAN channels, each channel has $NTHREAD threads x $RUNDUR seconds start at $timestamp"
+fi
 
 cd $CMDDir
 
@@ -361,4 +386,8 @@ fi
 cd $CWD
 
 timestamp=`date`
-echo "[$0] $TESTCASE with $NCHAN channels, each channel has $NTHREAD threads x $NREQ transactions end at $timestamp"
+if [ $NREQ > 0 ]; then
+    echo "[$0] $TESTCASE with $NCHAN channels, each channel has $NTHREAD threads x $NREQ transactions end at $timestamp"
+else
+    echo "[$0] $TESTCASE with $NCHAN channels, each channel has $NTHREAD threads x $RUNDUR seconds start at $timestamp"
+fi
