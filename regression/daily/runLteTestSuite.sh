@@ -9,7 +9,7 @@ cd $DAILYDIR
 
 archiveLTE() {
 if [ ! -z $GERRIT_BRANCH ] && [ ! -z $WORKSPACE ]; then
-# GERRIT_BRANCH is a Jenkins parameter and WORKSPACE is a Jenkins directory.This function is used only when the test is run in Jenkins to archive the log files.
+# GERRIT_BRANCH is a Jenkins Parameter and WORKSPACE is a Jenkins directory.This function is used only when the test is run in Jenkins to archive the log files.
     echo "------> Archiving generated logs"
     df -h
     rm -rf $WORKSPACE/archives
