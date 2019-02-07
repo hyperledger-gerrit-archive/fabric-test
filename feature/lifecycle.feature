@@ -119,7 +119,6 @@ Scenario: FAB-13958: Test new chaincode lifecycle - upgrade from old to new
   When a user queries on the chaincode named "mycc2" with args ["query","a"]
   Then a user receives a success response of 990
 
-@doNotDecompose
 @daily
 Scenario: FAB-13983: Test new chaincode lifecycle - Chaincode calling chaincode
   Given I changed the "Application" capability to version "V2_0"
@@ -129,8 +128,6 @@ Scenario: FAB-13983: Test new chaincode lifecycle - Chaincode calling chaincode
   When an admin sets up a channel named "channel2"
 
   And an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example04/cmd" with name "ex04"
-  And an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" with name "ex02"
-
   And the organization admins install the built "ex04" chaincode package on all peers
   Then a hash value is received on all peers
   #When each organization admin approves the "ex04" chaincode package on "channel1"
@@ -138,6 +135,7 @@ Scenario: FAB-13983: Test new chaincode lifecycle - Chaincode calling chaincode
   And an admin commits the chaincode package to the channel "channel1"
   And a user invokes on the chaincode with args ["init","Event","1"] on channel "channel1"
 
+  And an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" with name "ex02"
   And the organization admins install the built "ex02" chaincode package on all peers
   Then a hash value is received on all peers
   #When each organization admin approves the "ex02" chaincode package on "channel2"
