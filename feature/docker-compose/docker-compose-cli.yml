@@ -11,6 +11,7 @@ networks:
 services:
     cli:
         container_name: cli
+        #image: hyperledger/fabric-ca-tools
         image: hyperledger/fabric-tools
         tty: true
         environment:
