@@ -32,7 +32,6 @@ Capabilities:
         # Thus, those like V1_1 need not be set if V1_3 or later is set true.
         # But keep them, to allow disabling V1_3 when bringing up a new test
         # network, if desired, possibly in anticipation of an upgrade test.
-        V1_1: true
 
     # Orderer capabilities apply only to the orderers, and may be safely
     # manipulated without concern for upgrading peers.  Set the value of the
@@ -47,14 +46,12 @@ Capabilities:
     # capability to true to require it.
     Application: &ApplicationCapabilities
         V1_3: true
-        V1_2: true
         # Note: older ones are superceded, e.g. V1_2 capabilities include V1_1.
         # Thus, older ones like V1_1 need not be set if we set V1_2 or later.
         # But keep them all; that would allow tester to override and disable
         # newer ones like Capabilities.Global.V1_3 and
         # Capabilities.Application.V1_3 when bringing up a new test network,
         # if desired, possibly in anticipation of an upgrade test.
-        V1_1: true
 
 ################################################################################
 #
