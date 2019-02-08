@@ -40,7 +40,7 @@ If you would like to update the git submodules, use the following command:
 
 ### Set up git hooks and git review (Optional)
 
-If you are new to fabric-test repository, and if you plan to make changes to the tests and scripts herein, then after cloning the fabric-test repo, set up the git hooks and install and configure git review. In the following statements, replace < LFID > with your
+If you are new to fabric-test repository, and if you plan to make some changes to the tests and scripts herein, then after cloning the fabric-test repo, set up the git hooks and install and configure git review. In the following statements, replace < LFID > with your
 Linux Foundation Account ID.
 
 ```
