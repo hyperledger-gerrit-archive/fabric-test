@@ -5,8 +5,8 @@ REPO=$1
 # Set the working directory
 WD=$GOPATH/src/github.com/hyperledger/fabric-test
 cd $WD
-
-RELEASE_VERSION=${RELEASE_VERSION:=1.4.0-stable}
+BASE_VERSION=$(cat Makefile | grep "BASE_VERSION =" | cut -d "=" -f2 | tr -d '[:space:]')
+RELEASE_VERSION=${RELEASE_VERSION:=$BASE_VERSION-stable}
 # Get the arch value
 ARCH=$(dpkg --print-architecture)
 if [ "$ARCH" = "amd64" ]; then
