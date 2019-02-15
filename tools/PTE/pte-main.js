@@ -1359,9 +1359,9 @@ async function performance_main() {
                 workerProcess.on('close', function (code) {
                 });
 
-                workerProcess.on('exit', function (code) {
+                workerProcess.on('exit', function (code, signal) {
                     procDone = procDone+1;
-                    logger.info("Child proc exited, procId=%d ,exit code=%d",procDone, code );
+                    logger.info("Child proc exited, procId= " + procDone + ", exit with code= " + code + " and signal= " + signal);
 
                     if ( procDone === nProcPerOrg*channelOrgName.length ) {
 
