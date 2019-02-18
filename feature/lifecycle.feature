@@ -321,3 +321,20 @@ Scenario: FAB-13961: install command with mismatched packages
 
   And the organization admins install the built "mycc2" chaincode package on all peers
   Then a user receives a response containing 'no such file or directory' from "peer0.org1.example.com"
+
+
+@daily
+Scenario: FAB-13963: An admin from an org approves a different the chaincode definition
+  Given I changed the "Application" capability to version "V2_0"
+  And I have a bootstrapped fabric network of type solo
+  And I want to use the new chaincode lifecycle
+  When an admin sets up a channel
+  And an admin packages a chaincode
+  And the organization admins install the chaincode package on all peers
+  Then a hash value is received on all peers
+
+  When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org1.example.com"
+  When each organization admin approves the chaincode package with policy "AND ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org2.example.com"
+  And an admin commits the chaincode package to the channel with policy "AND ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org2.example.com"
+  And a user invokes on the chaincode with args ["init","a","1000","b","2000"] on "peer0.org1.example.com"
+  Then a user receives a response containing 'chaincode definition not agreed to by this org' from "peer0.org1.example.com"
