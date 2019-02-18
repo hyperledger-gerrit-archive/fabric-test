@@ -499,6 +499,10 @@ def step_impl(context, name, args):
 def step_impl(context, channel, name, args):
     query_impl(context, channel, name, args, "peer0.org1.example.com")
 
+@when(u'a user queries on the channel "{channel}" with args {args}')
+def step_impl(context, channel, args):
+    query_impl(context, channel, "mycc", args, "peer0.org1.example.com")
+
 @when(u'a user "{user}" queries on the channel "{channel}" using chaincode named "{name}" with args {args}')
 def step_impl(context, user, channel, name, args):
     query_impl(context, channel, name, args, "peer0.org1.example.com", user=user)
@@ -642,9 +646,9 @@ def step_impl(context, args, peer):
 def step_impl(context, user, args, peer):
     invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, "mycc", args, str(peer), user=user)
 
-@when(u'a user invokes on the chaincode with args {args}')
-def step_impl(context, args):
-    invokes_impl(context, 1, context.interface.TEST_CHANNEL_ID, context.chaincode["name"], args, "peer0.org1.example.com")
+@when('a user invokes on the channel "{channel}" with args {args} on "{peer}"')
+def step_impl(context, channel, args, peer):
+    invokes_impl(context, 1, channel, "mycc", args, peer)
 
 @when(u'a user "{user}" invokes on the chaincode with args {args}')
 def step_impl(context, user, args):
@@ -653,6 +657,10 @@ def step_impl(context, user, args):
 @when(u'a user invokes on the channel "{channel}" using chaincode named "{name}" with args {args}')
 def step_impl(context, channel, name, args):
     invokes_impl(context, 1, channel, name, args, "peer0.org1.example.com")
+
+@when('a user invokes on the channel "{channel}" with args {args}')
+def step_impl(context, channel, args):
+    invokes_impl(context, 1, channel, "mycc", args, "peer0.org1.example.com")
 
 @when(u'a user invokes on the chaincode named "{name}" with args {args} on the initial leader peer of "{org}"')
 def step_impl(context, name, args, org):
@@ -947,6 +955,12 @@ def step_impl(context, name):
 def step_impl(context, name, peer):
     tarball = "{0}-chaincode-package.tar.gz".format(name)
     context.result = context.interface.install_chaincode(context, [peer], "Admin", tarball)
+
+@when('each organization admin approves the chaincode package on "{channel}" with policy {policy}')
+def step_impl(context, channel, policy):
+    peers = context.interface.get_peers(context)
+    context.chaincode['channelID'] = channel
+    context.result = context.interface.approve_chaincode(context, peers, user="Admin", upgrade=False, policy=policy, collections=None)
 
 @when('each organization admin approves the "{name}" chaincode package on "{channel}" with policy {policy}')
 def step_impl(context, name, channel, policy):

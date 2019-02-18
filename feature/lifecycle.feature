@@ -32,7 +32,7 @@ Scenario: FAB-13701: Test new chaincode lifecycle - Basic workflow
 
 
 @daily
-Scenario: FAB-13701a: Test new chaincode lifecycle - no policy set *************************FAILS
+Scenario: FAB-13701a: Test new chaincode lifecycle - no policy set
   Given I changed the "Application" capability to version "V2_0"
   And I have a bootstrapped fabric network of type solo
   And I want to use the new chaincode lifecycle
@@ -55,7 +55,7 @@ Scenario: FAB-13701a: Test new chaincode lifecycle - no policy set *************
 
 #@doNotDecompose
 @daily
-Scenario: FAB-13701b: Test new chaincode lifecycle - upgrade both using new *************************FAILS
+Scenario: FAB-13701b: Test new chaincode lifecycle - upgrade both using new
   Given I changed the "Application" capability to version "V2_0"
   And I have a bootstrapped fabric network of type solo
   And I want to use the new chaincode lifecycle
@@ -374,3 +374,34 @@ Scenario: FAB-13963: An admin from an org approves a different the chaincode def
   And an admin commits the chaincode package to the channel with policy "AND ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org2.example.com"
   And a user invokes on the chaincode with args ["init","a","1000","b","2000"] on "peer0.org1.example.com"
   Then a user receives a response containing 'chaincode definition not agreed to by this org' from "peer0.org1.example.com"
+
+
+@daily
+Scenario: FAB-13965: Install same chaincode on different channels with different chaincode definitions
+  Given I changed the "Application" capability to version "V2_0"
+  And I have a bootstrapped fabric network of type solo
+  And I want to use the new chaincode lifecycle
+  When an admin sets up a channel named "channel1"
+  When an admin sets up a channel named "channel2"
+
+  And an admin packages a chaincode
+  And the organization admins install the chaincode package on all peers
+  Then a hash value is received on all peers
+
+  When each organization admin approves the chaincode package on "channel1" with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  And an admin commits the chaincode package to the channel "channel1"
+  And I wait up to "10" seconds for the chaincode to be committed
+  And a user invokes on the channel "channel1" with args ["init","a","100","b","200"]
+  And I wait up to "30" seconds for deploy to complete
+
+  When each organization admin approves the chaincode package on "channel2" with policy "AND ('org1.example.com.member','org2.example.com.member')"
+  And an admin commits the chaincode package to the channel "channel2"
+  And I wait up to "10" seconds for the chaincode to be committed
+  And a user invokes on the channel "channel2" with args ["init","a","1000","b","2000"]
+  And I wait up to "30" seconds for deploy to complete
+
+  When a user queries on the channel "channel1" with args ["query","a"]
+  Then a user receives a success response of 100
+
+  When a user queries on the channel "channel2" with args ["query","b"]
+  Then a user receives a success response of 2000
