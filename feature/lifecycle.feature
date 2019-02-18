@@ -298,3 +298,36 @@ Scenario: FAB-13959: An admin from an org does not install chaincode package
   #  And I wait up to "10" seconds for the chaincode to be committed
   #  Then a user receives a response containing 'error endorsing proposal' from "peer0.org2.example.com"
   #  Then a user receives a response containing '<Error Message>' from "peer1.org2.example.com"
+
+
+@daily
+Scenario: FAB-13968: Upgrade chaincode for different orgs, but committing the chaincode definition with older version of chaincode
+  Given I changed the "Application" capability to version "V2_0"
+  And I have a bootstrapped fabric network of type solo
+  And I want to use the new chaincode lifecycle
+  When an admin sets up a channel
+  And an admin packages a chaincode
+  And the organization admins install the chaincode package on all peers
+  Then a hash value is received on all peers
+  #When each organization admin approves the chaincode package
+  When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  And an admin commits the chaincode package to the channel
+  And I wait up to "10" seconds for the chaincode to be committed
+
+  And a user invokes on the chaincode with args ["init","a","1000","b","2000"]
+  When a user queries on the chaincode with args ["query","a"]
+  Then a user receives a success response of 1000
+
+  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "mycc2"
+  And the organization admins install the built "mycc2" chaincode package on all peers
+  Then a hash value is received on all peers
+
+  # Note the approval below is for the originally installed chaincode
+  # Simulates the installation of an upgrade, but no one wants to use it
+  #    at this time. 
+
+  When each organization admin approves the version "0" upgraded chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  And an admin commits the version "0" chaincode package to the channel
+  And a user invokes on the chaincode with args ["init","a","1000","b","2000"]
+  When a user queries on the chaincode with args ["query","a"]
+  Then a user receives a success response of 1000
