@@ -34,6 +34,10 @@
 #   - pte                      - builds pte docker image
 #   - test-viewer              - builds test-viewer docker image
 #   - clean                    - cleans the docker containers and images.
+#   - git-log                  - displays the last two commits
+#   - jenkins-clean            - cleans the docker containers and images in Jenkins machines (This target is limited to use in Jenkins environment)
+#   - jenkins-info             - displays the system information in Jenkins machines (This target is limited to use in Jenkins environment)
+#
 #
 # ------------------------------------------------------------------
 
@@ -73,8 +77,6 @@ pre-setup:
 	@bash $(PRE_SETUP)
 #	@bash $(INSTALL_BEHAVE_DEPS)
 
-.PHONY: ci-daily
-ci-daily: fabric pull-images pull-binaries pull-thirdparty-images build-sdk-wrapper daily-tests
 
 .PHONY: fabric
 fabric:
@@ -244,3 +246,15 @@ clean:
 	-docker ps -aq | xargs -I '{}' docker rm -f '{}' || true
 	@make docker-clean -C $(FABRIC_DIR) || true
 	@make docker-clean -C $(CA_DIR) || true
+
+.PHONY: git-log
+git-log:
+	@git log -n2 --pretty=oneline --abbrev-commit
+
+.PHONY: jenkins-info
+jenkins-info:
+	cd $(HYPERLEDGER_DIR)/fabric-test/scripts/Jenkins_Scripts && ./JenkinsenvScript.sh --env_Info
+
+.PHONY: jenkins-clean
+jenkins-clean:
+	cd $(HYPERLEDGER_DIR)/fabric-test/scripts/Jenkins_Scripts && ./JenkinsenvScript.sh --clean_Environment
