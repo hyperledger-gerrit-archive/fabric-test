@@ -702,3 +702,17 @@ Scenario: FAB-13974: An org admin should be able to recover after sending a wron
 
   When a user queries on the chaincode with args ["query","a"] from "peer0.org3.example.com"
   Then a user receives a success response of 970 from "peer0.org3.example.com"
+
+
+@daily
+Scenario: FAB-13975: Different chaincode version used in install and approve
+  Given I changed the "Application" capability to version "V2_0"
+  And I have a bootstrapped fabric network of type solo
+  And I want to use the new chaincode lifecycle
+  When an admin sets up a channel
+  And an admin packages a chaincode
+
+  And the organization admins install version "17.0.1" of the chaincode package on all peers
+  Then a hash value is received on all peers
+  When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  Then a user receives a response containing '<Error Message>'
