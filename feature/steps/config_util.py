@@ -563,3 +563,22 @@ def configUpdate(context, config, group, channel):
                                         env=updated_env)
 
     return "{0}/update{1}.pb".format(testConfigs, channel)
+
+def generateCollections(context, collectionsFile):
+    template = "./configs/collections.json"
+
+    structure = {}
+    structure["name"] = context.chaincode["name"]
+    structure["policy"] = str(context.chaincode["policy"].replace(" ", "").replace("\'", "'"))
+    print(structure)
+
+    with open(template, "r") as tfd:
+        #collectionConfig = tfd.read() % context.chaincode
+        collectionConfig = json.loads(tfd.read() % (structure))
+
+    finalConfig = "configs/{0}/{1}".format(context.projectName, collectionsFile)
+    with open(finalConfig, "w") as fd:
+        fd.write(json.dumps(collectionConfig, indent=2))
+        #fd.write(collectionConfig)
+
+    return "/var/hyperledger/{}".format(finalConfig)

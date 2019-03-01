@@ -297,7 +297,7 @@ def step_impl(context, fileName, name, policy):
     context.chaincode['name'] = name
     context.chaincode['policy'] = policy
     print(context.chaincode)
-    database_util.generateCollections(context, fileName)
+    config_util.generateCollections(context, fileName)
 
 @given(u'I have a bootstrapped fabric network of type {ordererType} with tls')
 def step_impl(context, ordererType):
