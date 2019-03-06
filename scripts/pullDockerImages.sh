@@ -70,15 +70,15 @@ fabric-ca)
   ;;
 fabric-sdk-node)
   echo "Pull all images except fabric-sdk-node"
-  dockerTag peer orderer ccenv tools ca ca-tools ca-peer ca-orderer ca-fvt javaenv
+  dockerTag peer orderer ccenv tools ca javaenv
   ;;
 fabric-sdk-java)
   echo "Pull all images except fabric-sdk-java"
-  dockerTag peer orderer ccenv tools ca ca-tools ca-peer ca-orderer ca-fvt javaenv
+  dockerTag peer orderer ccenv tools ca javaenv
   ;;
 fabric-javaenv)
   echo "Pull all images except fabric-javaenv"
-  dockerTag peer orderer ccenv tools ca ca-tools ca-peer ca-orderer ca-fvt
+  dockerTag peer orderer ccenv tools ca
   ;;
 third-party)
   echo "Pull all third-party docker images"
@@ -86,7 +86,7 @@ third-party)
   ;;
 *)
   echo "Pull all images"
-  dockerTag peer orderer ccenv tools ca ca-tools ca-peer ca-orderer ca-fvt javaenv
+  dockerTag peer orderer ccenv tools ca javaenv
   ;;
 esac
 
