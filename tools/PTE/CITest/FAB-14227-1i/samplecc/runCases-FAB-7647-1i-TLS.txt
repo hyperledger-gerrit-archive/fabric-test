@@ -1,0 +1,3 @@
+sdk=node CITest/FAB-7647-1i/samplecc/samplecc-chan1-FAB-7647-1i-TLS.json
+sdk=node CITest/FAB-7647-1i/samplecc/samplecc-chan2-FAB-7647-1i-TLS.json
+sdk=node CITest/FAB-7647-1i/samplecc/samplecc-chan3-FAB-7647-1i-TLS.json
