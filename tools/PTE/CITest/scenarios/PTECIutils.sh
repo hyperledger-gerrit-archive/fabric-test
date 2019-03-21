@@ -167,6 +167,9 @@ AddOrderer() {
     configtxlator proto_encode --input config.json --type common.Config --output config.pb
     configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
     configtxlator compute_update --channel_id $CHANNEL_NAME --original config.pb --updated modified_config.pb --output addOrderer_update.pb
+    if [ "$?" != 0 ]; then
+        exit 1
+    fi
     configtxlator proto_decode --input addOrderer_update.pb --type common.ConfigUpdate | jq . > addOrderer_update.json
     echo '{"payload":{"header":{"channel_header":{"channel_id":"'$CHANNEL_NAME'", "type":2}},"data":{"config_update":'$(cat addOrderer_update.json)'}}}' | jq . > addOrderer_update_in_envelope.json
     configtxlator proto_encode --input addOrderer_update_in_envelope.json --type common.Envelope --output addOrderer_update_in_envelope.pb
@@ -236,7 +239,7 @@ RemoveOrderer(){
         hostName=$(echo $(jq '.channel_group.groups.Orderer.values.ConsensusType.value.metadata.consenters['${i}'].host' config.json))
         if [ $hostName = "\"${RemoveOrderer}\"" ]; then
             concenter=$(jq '.channel_group.groups.Orderer.values.ConsensusType.value.metadata.consenters[0]' config.json)
-            jq '.channel_group.groups.Orderer.values.ConsensusType.value.metadata.consenters -= ['"${concenter}"']' config.json >& cfgTmp.json
+            jq '.channel_group.groups.Orderer.values.ConsensusType.value.metadata.consenters -= ['"${concenter}"']' cfgTmp.json >& modified_config.json
         fi
     done
 
@@ -244,6 +247,9 @@ RemoveOrderer(){
     configtxlator proto_encode --input config.json --type common.Config --output config.pb
     configtxlator proto_encode --input modified_config.json --type common.Config --output modified_config.pb
     configtxlator compute_update --channel_id $CHANNEL_NAME --original config.pb --updated modified_config.pb --output removeOrderer_update.pb
+    if [ "$?" != 0 ]; then
+        exit 1
+    fi
     configtxlator proto_decode --input removeOrderer_update.pb --type common.ConfigUpdate | jq . > removeOrderer_update.json
     echo '{"payload":{"header":{"channel_header":{"channel_id":"'$CHANNEL_NAME'", "type":2}},"data":{"config_update":'$(cat removeOrderer_update.json)'}}}' | jq . > removeOrderer_update_in_envelope.json
     configtxlator proto_encode --input removeOrderer_update_in_envelope.json --type common.Envelope --output removeOrderer_update_in_envelope.pb
