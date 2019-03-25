@@ -146,7 +146,7 @@ class Composition:
         fullOrg = name[1].split('.')
         org = fullOrg[0]
 
-        self.environ['FABRIC_CA_SERVER_{}_TLS_KEYFILE'.format(org.upper())] = '/var/hyperledger/fabric-ca-server/ca/{}'.format(filename)
+        #self.environ['FABRIC_CA_SERVER_{}_TLS_KEYFILE'.format(org.upper())] = '/var/hyperledger/fabric-ca-server/ca/{}'.format(filename)
         self.environ['FABRIC_CA_SERVER_{}_CA_KEYFILE'.format(org.upper())] = '/var/hyperledger/fabric-ca-server/ca/{}'.format(filename)
 
         #copy keyfile to msp/keystore
