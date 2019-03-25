@@ -62,8 +62,15 @@ PEER_ORG_STR = '''
   - Name: {name}
     Domain: {domain}
     EnableNodeOUs: {ouEnable}
+    CA:
+      Hostname: ca
+      SANS:
+        - 0.0.0.0
+        - localhost
     Template:
       Count: {numPeers}
+      SANS:
+        - 0.0.0.0
     Users:
       Count: {numUsers}
 '''
@@ -348,9 +355,12 @@ def mspandtlsCheck(path, tlsExist):
 
 def fileExistWithExtension(path, message, fileExt=''):
     for root, dirnames, filenames in os.walk(path):
-        assert len(filenames) > 0, "{0}: len: {1}".format(message, len(filenames))
+        assert len(filenames) > 0, "{0}: [{1}] len: {2}".format(message, path, len(filenames))
         fileCount = [filename.endswith(fileExt) for filename in filenames]
+        #assert fileCount.count(True) >= 1, message
         assert fileCount.count(True) >= 1
+        if "tls" in dirnames:
+            break
 
 def rolebasedCertificate(path):
     adminpath = path + "admincerts/"
@@ -359,8 +369,8 @@ def rolebasedCertificate(path):
     capath = path + "cacerts/"
     fileExistWithExtension(capath, "There is not .pem cert in {0}.".format(capath), '.pem')
 
-    signcertspath = path + "signcerts/"
-    fileExistWithExtension(signcertspath, "There is not .pem cert in {0}.".format(signcertspath), '.pem')
+#    signcertspath = path + "signcerts/"
+#    fileExistWithExtension(signcertspath, "There is not .pem cert in {0}.".format(signcertspath), '.pem')
 
     tlscertspath = path + "tlscerts/"
     fileExistWithExtension(tlscertspath, "There is not .pem cert in {0}.".format(tlscertspath), '.pem')

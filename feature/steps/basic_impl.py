@@ -7,6 +7,7 @@
 from behave import *
 import time
 import os
+import re
 import sys
 import subprocess
 import json
@@ -40,6 +41,29 @@ def wait_impl(context, seconds, peer):
                                                    peer,
                                                    context.chaincode['name'],
                                                    context.chaincode.get("version", 0))
+    if context.newlifecycle:
+        peerParts = peer.split('.')
+        org = '.'.join(peerParts[1:])
+        packageId = context.packageId.get(org, "0")
+
+        pat = r"{}:(?P<hash>.*)".format(context.chaincode['name'])
+        pkgMatch = re.match(pat, packageId)
+        #assert pkgMatch is not None, "The packageId is not formatted as expected: '{}'".format(packageId)
+        if pkgMatch is None:
+            pat = r"(?P<label>.*):(?P<hash>.*)"
+            pkgMatch = re.match(pat, packageId)
+            assert pkgMatch is not None, "The packageId is not formatted as expected: '{}'".format(packageId)
+            pkgLabel = pkgMatch.groupdict()['label']
+            print("Using the label '{0}' instead of the name '{1}'".format(pkgLabel, context.chaincode['name']))
+#        else:
+#            pkgLabel = context.chaincode['name']
+        pkgRes = pkgMatch.groupdict()['hash']
+
+        chaincode_container = "{0}-{1}-{2}-{3}".format(context.projectName,
+                                                       peer,
+                                                       #pkgLabel,
+                                                       context.chaincode['name'],
+                                                       pkgRes)
     context.interface.wait_for_deploy_completion(context, chaincode_container, seconds)
 
 @given(u'I wait up to "{seconds:d}" seconds for the chaincode to be committed on peer "{peer}"')
