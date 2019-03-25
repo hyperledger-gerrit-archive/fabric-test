@@ -528,6 +528,7 @@ class CLIInterface(InterfaceBase):
         if context.newlifecycle:
             cmd = ["peer", "lifecycle", "chaincode", "package",
                      "{0}/{1}".format(configDir, tarfile),
+                     "--label", context.chaincode["name"],
                      "--lang", context.chaincode["language"],
                      "--path", context.chaincode["path"]]
         cmd.append('"')
@@ -536,7 +537,6 @@ class CLIInterface(InterfaceBase):
     def approve_chaincode(self, context, peers, user="Admin", upgrade=False, policy=None, collections=None, sequence=1, initRequired=True):
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
         output = {}
-        pat = r"Committed chaincode definition for chaincode '(?P<name>.*)' on channel '(?P<channel>.*)':\nVersion: (?P<vers>.*), Sequence: (?P<seq>\d*), Endorsement Plugin: (?P<escc>.*), Validation Plugin: (?P<vscc>.*)\n"
 
         # set policy
         if policy is None:
@@ -549,6 +549,7 @@ class CLIInterface(InterfaceBase):
             context.chaincode['collections'] = collections
 
         for peer in peers:
+            pat = r"Committed chaincode definition for chaincode '(?P<name>.*)' on channel '(?P<channel>.*)':\nVersion: (?P<vers>.*), Sequence: (?P<seq>\d*), Endorsement Plugin: (?P<escc>.*), Validation Plugin: (?P<vscc>.*)\n"
             peerParts = peer.split('.')
             org = '.'.join(peerParts[1:])
             setup = self.get_env_vars(context, peer, user=user)
@@ -560,19 +561,24 @@ class CLIInterface(InterfaceBase):
                 committed = re.match(pat, res[peer])
                 assert committed is not None, "There was no definition returned for the chaincode '{0}'".format(context.chaincode['name'])
                 # set context.sequence to received context.sequence number +1
+                print(committed.groupdict())
                 context.sequence = int(committed.groupdict()['seq']) + 1
 
             peer_addresses = [peer, peer.replace("peer0", "peer1")]
             if peer_addresses[1] in peers:
                 peers.remove(peer.replace("peer0", "peer1"))
 
+            pat = r"(?P<label>.*):(?P<hash>.*)"
+            pkgMatch = re.match(pat, context.packageId.get(org, "0:0"))
+            hashVal= pkgMatch.groupdict()['hash']
+
             command = ["peer", "lifecycle", "chaincode", "approveformyorg",
-                       "--name", context.chaincode['name'],
+                       "--package-id", "{0}:{1}".format(context.chaincode['name'], hashVal),
                        "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID)),
+                       "--name", context.chaincode['name'],
                        "--version", str(context.chaincode.get('version', 0)),
                        "--peerAddresses", "{0}:7051".format(peer_addresses[0]),
                        "--peerAddresses", "{0}:7051".format(peer_addresses[1]),
-                       "--hash", context.hash.get(org, "0"),
                        "--sequence", str(context.sequence),
 
 #                       "--escc", "escc",
@@ -588,10 +594,10 @@ class CLIInterface(InterfaceBase):
                 command = command + ["--collections-config", collections]
             command.append('"')
 
-            #output.update(context.composition.docker_exec(setup + command, [peer]))
-            ret, err = context.composition.docker_exec(setup + command, [peer], returnError=True)
-            print("Error: ", err)
-            output.update(ret)
+            output.update(context.composition.docker_exec(setup + command, [peer]))
+#            ret, err = context.composition.docker_exec(setup + command, [peer], returnError=True)
+#            print("Error: ", err)
+#            output.update(ret)
         print("[{0}]: {1}".format(" ".join(setup + command), output))
         return output
 
@@ -611,7 +617,6 @@ class CLIInterface(InterfaceBase):
                    "--name", context.chaincode['name'],
                    "--channelID", str(context.chaincode.get('channelID', self.TEST_CHANNEL_ID)),
                    "--version", str(context.chaincode.get('version', 0)),
-#                   "--hash", context.hash.get(org, 0),
                    "--sequence", str(context.sequence),
 
                    "--waitForEvent",
@@ -661,12 +666,12 @@ class CLIInterface(InterfaceBase):
             org = '.'.join(peerParts[1:])
             setup = self.get_env_vars(context, peer, user=user)
             command = ["peer", "chaincode", "install",
-                       "--name",context.chaincode['name'],
+                       "--name", context.chaincode['name'],
                        "--version", str(context.chaincode.get('version', 0))]
             if context.newlifecycle:
                 command = ["peer", "lifecycle", "chaincode", "install",
-                       "--name",context.chaincode['name'],
-                       "--version", str(context.chaincode.get('version', 0)),
+#                       "--name",context.chaincode['name'],
+#                       "--version", str(context.chaincode.get('version', 0)),
                         "{0}/{1}".format(configDir, tarball)]
             else:
                 command = command + [
@@ -695,11 +700,6 @@ class CLIInterface(InterfaceBase):
             print("[{0}]: {1}".format(" ".join(setup + command), ret))
             print("Error: ", err)
 
-            #assert "Error occurred" not in ret['cli'], "The install failed with the following error: {}".format(ret['cli'])
-#            if context.newlifecycle:
-#                ret = self.list_chaincode(context, peer, user, list_type="queryinstalled")
-#            else:
-#                ret = self.list_chaincode(context, peer, user, list_type="installed")
             output.update({peer: ret['cli']})
         print("[{0}]: {1}".format(" ".join(setup + command), output))
         return output
@@ -720,10 +720,7 @@ class CLIInterface(InterfaceBase):
             command = command + ["--tls",
                                  common_util.convertBoolean(context.tls),
                                  "--cafile",
-                                 #'{0}/ordererOrganizations/example.com/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir),
                                  '{0}/ordererOrganizations/example.com/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir)]
-#                                 "--cafile",
-#                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/ca.crt'.format(configDir, org, user)]
         if collectionConfig is not None:
             command = command + ["--collections-config", "/var/hyperledger/configs/{0}/{1}".format(context.projectName, collectionConfig)]
         if hasattr(context, "mutual_tls") and context.mutual_tls:
@@ -740,7 +737,6 @@ class CLIInterface(InterfaceBase):
             command = command + ["--policy", context.chaincode["policy"].replace('"', r'\"')]
         command.append('"')
 
-        #output[peer] = context.composition.docker_exec(setup + command, [peer])
         output = context.composition.docker_exec(setup + command, [peer])
         print("[{0}]: {1}".format(" ".join(setup + command), output))
         return output
@@ -762,7 +758,6 @@ class CLIInterface(InterfaceBase):
                                  "--cafile",
                                  '{0}/peerOrganizations/{2}/users/{3}@{2}/tls/ca.crt'.format(configDir, orderer, org, user),
                                  "--cafile",
-                                 #'{0}/ordererOrganizations/example.com/orderers/{1}/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir, orderer),
                                  '{0}/ordererOrganizations/example.com/orderers/{1}/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir, orderer, org, user)]
         if hasattr(context, "mutual_tls") and context.mutual_tls:
             command = command + ["--clientauth",
@@ -924,7 +919,7 @@ class CLIInterface(InterfaceBase):
         print("[{0}]: {1}".format(" ".join(setup + command), output))
         return output
 
-    def invoke_chaincode(self, context, chaincode, orderer, peer, channelId=TEST_CHANNEL_ID, targs="", user="User1", opts={}):
+    def invoke_chaincode(self, context, chaincode, orderer, peer, channelId=TEST_CHANNEL_ID, targs="", user="User1", opts={}, orgs=[]):
         # channelId, targs, user and opts are optional parameters with defaults set if they are not included
         configDir = "/var/hyperledger/configs/{0}".format(context.composition.projectName)
         peerParts = peer.split('.')
@@ -933,25 +928,36 @@ class CLIInterface(InterfaceBase):
         setup = self.get_env_vars(context, peer, user=user)
         command = ["peer", "chaincode", "invoke",
                    "--name", chaincode['name'],
+                   "--orderer", '{0}:7050'.format(orderer),
                    "--ctor", r"""'{\"Args\": %s}'""" % (args),
                    "--waitForEvent",
                    "--channelID", channelId]
         if context.tls:
             command = command + ["--tls",
-                                 "--cafile",
-                                 '{0}/peerOrganizations/{1}/tlsca/tlsca.{1}-cert.pem'.format(configDir, org),
-                                 "--cafile",
-                                 '{0}/peerOrganizations/{1}/ca/ca.{1}-cert.pem'.format(configDir, org),
-                                 "--cafile",
-                                 '{0}/ordererOrganizations/example.com/orderers/{1}/tls/ca.crt'.format(configDir, orderer),
+                                 "--tlsRootCertFiles",
+                                 "{0}/ordererOrganizations/example.com/ca/tls/server.crt".format(configDir, org),
+#                                 '{0}/ordererOrganizations/example.com/orderers/{1}/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir, orderer),
+#                                 "--tlsRootCertFiles",
+#                                 "{0}/peerOrganizations/{1}/peers/peer0.{1}/tls/ca.crt".format(configDir, org),
                                  "--cafile",
                                  '{0}/ordererOrganizations/example.com/orderers/{1}/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir, orderer),
+##                                 "--cafile",
+##                                 '{0}/ordererOrganizations/example.com/orderers/{1}/tls/ca.crt'.format(configDir, orderer),
+##                                 "--cafile",
+##                                 '{0}/peerOrganizations/{1}/tlsca/tlsca.{1}-cert.pem'.format(configDir, org),
+##                                 "--cafile",
+##                                 '{0}/peerOrganizations/{1}/ca/tls/server.crt'.format(configDir, org),
+##                                 "--cafile",
+##                                 '{0}/peerOrganizations/{1}/ca/ca.{1}-cert.pem'.format(configDir, org),
                                  "--cafile",
-                                 "{0}/ordererOrganizations/example.com/ca/ca.example.com-cert.pem",
+                                 '{0}/ordererOrganizations/example.com/ca/tls/server.crt'.format(configDir, org),
+##                                 "--cafile",
+##                                 "{0}/ordererOrganizations/example.com/ca/ca.example.com-cert.pem",
                                  "--cafile",
-                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/ca.crt'.format(configDir, org, user),
-                                 "--certfile",
-                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.crt'.format(configDir, org, user)]
+                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/ca.crt'.format(configDir, org, user)]
+#                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/ca.crt'.format(configDir, org, user),
+#                                 "--certfile",
+#                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.crt'.format(configDir, org, user)]
 
         if hasattr(context, "mutual_tls") and context.mutual_tls:
             command = command + ["--clientauth",
@@ -964,14 +970,21 @@ class CLIInterface(InterfaceBase):
             targs = targs.replace('"', r'\"')
             command = command + ["--transient", targs]
 
-        command = command + ["--orderer", '{0}:7050'.format(orderer)]
+#        command = command + ["--orderer", '{0}:7050'.format(orderer)]
+        print(">>>>{}".format(orgs))
+        for o in orgs:
+            command = command + ["--peerAddresses", "peer0.{0}:7051".format(o)]
+
         if context.newlifecycle and "init" in args:
 #            command = command + ["--peerAddresses", "{0}:7051".format(context.composition.getIPFromName(peer, context.composition.containerDataList)),
 #                       "--peerAddresses", "{0}:7051".format(context.composition.getIPFromName(peer.replace("peer0", "peer1"), context.composition.containerDataList))]
             command = command + [
                        "--isInit",
-                       "--peerAddresses", "{0}:7051".format(peer),
-                       "--peerAddresses", "{0}:7051".format(peer.replace("peer0", "peer1"))]
+                       "--tlsRootCertFiles",
+                       "{0}/peerOrganizations/{1}/peers/peer0.{1}/tls/ca.crt".format(configDir, org)]
+#                       "{0}/peerOrganizations/{1}/peers/peer0.{1}/tls/ca.crt".format(configDir, org),
+#                       "--peerAddresses", "{0}:7051".format(peer),
+#                       "--peerAddresses", "{0}:7051".format(peer.replace("peer0", "peer1"))]
             command.append('"')
             output, err = context.composition.docker_exec(setup + command, ["cli"], returnError=True)
             #output = context.composition.docker_exec(setup+command, ['cli'])
@@ -979,7 +992,9 @@ class CLIInterface(InterfaceBase):
             output[peer] = output['cli']
         else:
             command.append('"')
-            output = context.composition.docker_exec(setup+command, [peer])
+            output = context.composition.docker_exec(setup+command, ['cli'])
+            #output = context.composition.docker_exec(setup+command, [peer])
+            output[peer] = output['cli']
         print("Invoke[{0}]: {1}".format(" ".join(setup+command), str(output)))
         output = self.retry(context, output, peer, setup, command)
         return output
@@ -1009,10 +1024,11 @@ class CLIInterface(InterfaceBase):
                                  "--cafile",
                                  '{0}/ordererOrganizations/example.com/orderers/orderer0.example.com/msp/tlscacerts/tlsca.example.com-cert.pem'.format(configDir),
                                  "--cafile",
-                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/ca.crt'.format(configDir, org, user),
+                                 #'{0}/peerOrganizations/{1}/users/{2}@{1}/tls/ca.crt'.format(configDir, org, user),
+                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/ca.crt'.format(configDir, org, user)]
                                  #'{0}/peerOrganizations/{1}/tlsca/tlsca.{1}-cert.pem'.format(configDir, org),
-                                 "--certfile",
-                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.crt'.format(configDir, org, user)]
+#                                 "--certfile",
+#                                 '{0}/peerOrganizations/{1}/users/{2}@{1}/tls/client.crt'.format(configDir, org, user)]
         command.append('"')
         #result = context.composition.docker_exec(setup+command, [peer])
         result, err = context.composition.docker_exec(setup+command, [peer], returnError=True)
@@ -1042,39 +1058,43 @@ class CLIInterface(InterfaceBase):
             org = node.split(".", 1)[1]
             userpass = context.composition.getEnvFromContainer("ca.{}".format(org), 'BOOTSTRAP_USER_PASS')
             url = self.getCAUrl(context, org, userpass)
+            url = url.replace("0.0.0.0", "localhost")
 
-            #context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}/users/Admin@{0}".format(org, context.projectName)
             context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}/ca".format(org, context.projectName)
+            #context.composition.environ["FABRIC_CA_CLIENT_TLS_CERTFILES"] = "tls/server.crt".format(org, context.projectName)
             context.composition.environ["FABRIC_CA_CLIENT_TLS_CERTFILES"] = "ca.{0}-cert.pem".format(org, context.projectName)
             #command = ["fabric-ca-client enroll -d -u {0} -M msp --tls.certfiles msp/cacerts/ca.{1}-cert.pem".format(url, org, context.projectName)]
-            command = ["fabric-ca-client enroll -d -u {0}".format(url, org, context.projectName)]
+            command = ["fabric-ca-client enroll --csr.hosts ca.{1},localhost -d -u {0}".format(url, org, context.projectName)]
 
             newEnv = os.environ.copy()
             newEnv.update(context.composition.environ)
 
             process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newEnv)
             output, err = process.communicate()
+            print("Env: {}".format(newEnv))
+            print("Cmd: {}".format(command))
             print("Output Enroll: {}".format(output))
             print("Err Enroll: {}".format(err))
 
     def registerUser(self, context, user, org, passwd, role, peer):
         url = self.getCAUrl(context, org)
-        #command = "fabric-ca-client register -d --id.name {0} --id.secret {2} --tls.certfiles msp/cacerts/ca.{1}-cert.pem -u {4}".format(user, org, passwd, context.projectName, url)
+        #command = "fabric-ca-client register -d --id.name {0} --id.secret {2} --tls.certfiles tls/server.crt,../ca/ca.{1}-cert.pem -u {4}".format(user, org, passwd, context.projectName, url)
         command = "fabric-ca-client register -d --id.name {0} --id.secret {2} --tls.certfiles ca.{1}-cert.pem -u {4}".format(user, org, passwd, context.projectName, url)
         if role.lower() == u'admin':
-            command += ''' --id.type admin --id.attrs '"hf.registrar.roles=client,hf.registrar.attributes=*,hf.revoker=true,hf.gencrl=true,admin=true:ecert,abac.init=true:ecert"' '''
-            #command += ''' --id.attrs '"hf.registrar.roles=client,hf.registrar.attributes=*,hf.revoker=true,hf.gencrl=true,admin=true:ecert,abac.init=true:ecert"' '''
-            #command += ''' --id.type user'''
+            #command += ''' --id.type admin --id.attrs "hf.registrar.roles=client,hf.registrar.attributes=*,hf.revoker=true,hf.gencrl=true,admin=true:ecert,abac.init=true:ecert" '''
+            command += ''' --id.type user'''
         else:
             command += ''' --id.type user'''
 
         context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}/ca".format(org, context.projectName)
+        #context.composition.environ["FABRIC_CA_CLIENT_TLS_CERTFILES"] = "tls/server.crt".format(org, context.projectName)
+        context.composition.environ["FABRIC_CA_CLIENT_TLS_CERTFILES"] = "ca.{0}-cert.pem".format(org, context.projectName)
         newEnv = os.environ.copy()
         newEnv.update(context.composition.environ)
         process = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newEnv)
         output, err = process.communicate()
         print("user register: {}".format(output))
-        print("user err: {}".format(err))
+        #print("user err: {}".format(err))
 
     def enrollUser(self, context, user, org, passwd, enrollType, peer):
         fca = 'ca.{}'.format(org)
@@ -1082,40 +1102,33 @@ class CLIInterface(InterfaceBase):
 
         adminUser = context.composition.getEnvFromContainer(fca, "BOOTSTRAP_USER_PASS")
         #command = "fabric-ca-client enroll -d --enrollment.profile tls -u {7}://{0}:{1}@{3}:7054 -M /var/hyperledger/users/{0}@{2}/tls --csr.hosts {4} --enrollment.type {5} --tls.certfiles /var/hyperledger/configs/{6}/peerOrganizations/{2}/ca/ca.{2}-cert.pem".format(user, passwd, org, fca, peer, enrollType, context.projectName, proto)
-        #context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}".format(org, context.projectName)
 
-        #####################################
-        #context.composition.environ["FABRIC_CA_CLIENT_MSPDIR"] = "./configs/{1}/peerOrganizations/{0}".format(org, context.projectName)
         context.composition.environ["FABRIC_CA_CLIENT_MSPDIR"] = "msp"
         context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}/users/{2}@{0}".format(org, context.projectName, user)
-        #context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}/users/Admin@{0}".format(org, context.projectName)
-        ##context.composition.environ["FABRIC_CA_CLIENT_TLS_CERTFILES"] = "./msp/cacerts/ca.{0}-cert.pem".format(org, context.projectName)
-        #context.composition.environ["FABRIC_CA_CLIENT_TLS_CERTFILES"] = "./configs/{1}/peerOrganizations/{0}/msp/cacerts/ca.{0}-cert.pem".format(org, context.projectName)
-        #context.composition.environ["FABRIC_CA_CLIENT_TLS_CERTFILES"] = "./configs/{1}/peerOrganizations/{0}/msp/cacerts/0.0.0.0-cert.pem".format(org, context.projectName)
-        #####################################
 
-        #command = "fabric-ca-client enroll -d --enrollment.profile tls -u {6} -M users/{0}@{2}/tls --csr.hosts {4} --enrollment.type {5} --tls.certfiles ca/ca.{2}-cert.pem".format(user, passwd, org, fca, peer, enrollType, url)
-        commandlist = ["fabric-ca-client enroll -d --enrollment.profile tls -u {6} -M tls --csr.hosts {4} --enrollment.type {5} --tls.certfiles ../../ca/ca.{2}-cert.pem".format(user, passwd, org, fca, peer, enrollType, url)]
-        commandlist.append("fabric-ca-client enroll -d -u {2} --enrollment.type {1} --tls.certfiles ../../ca/ca.{0}-cert.pem".format(org, enrollType, url))
+        #commandlist = ["fabric-ca-client enroll -d --enrollment.profile tls -u {6} -M tls --csr.hosts {4} --enrollment.type {5} --tls.certfiles ../../ca/tls/server.crt".format(user, passwd, org, fca, peer, enrollType, url)]
+        #commandlist = ["fabric-ca-client enroll -d --enrollment.profile tls -u {6} -M tls --csr.hosts {4} --enrollment.type {5} --tls.certfiles ../../ca/ca.{2}-cert.pem".format(user, passwd, org, fca, peer, enrollType, url)]
+        url = url.replace("0.0.0.0", "localhost")
+        commandlist = ["fabric-ca-client enroll -d --enrollment.profile tls -u {6} -M tls --csr.hosts {3},localhost,{4} --enrollment.type {5} --tls.certfiles ../../ca/ca.{2}-cert.pem".format(user, passwd, org, fca, peer, enrollType, url)]
+        #commandlist.append("fabric-ca-client enroll -d -u {2} --enrollment.type {1} --tls.certfiles ../../ca/tls/server.crt".format(org, enrollType, url))
+        commandlist.append("fabric-ca-client enroll -d -u {2} --enrollment.type {1} --csr.hosts {3},localhost,{4} --tls.certfiles ../../ca/ca.{0}-cert.pem".format(org, enrollType, url, fca, peer))
         newEnv = os.environ.copy()
         newEnv.update(context.composition.environ)
-        #####################################
         for command in commandlist:
             process = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newEnv)
             output, err = process.communicate()
             print("Output: {}".format(output))
             print("Err: {}".format(err))
-        #####################################
         for container in context.composition.containerDataList:
             if container.containerName == fca:
                 local = container.ports['7054/tcp'][0]
 
 
         userDir = "./configs/{1}/peerOrganizations/{0}/users/{2}@{0}".format(org, context.projectName, user)
-        shutil.copyfile("{0}/tls/tlscacerts/tls-{1}-{2}.pem".format(userDir, local['HostIp'].replace(".", "-"), local['HostPort']),
-                        "{0}/tls/tlscacerts/tls-{1}.pem".format(userDir, fca))
-        shutil.copy("{0}/msp/cacerts/{1}-{2}.pem".format(userDir, local['HostIp'].replace(".", "-"), local['HostPort']),
-                    "{0}/msp/cacerts/{1}.pem".format(userDir, fca))
+##        shutil.copyfile("{0}/tls/tlscacerts/tls-{1}-{2}.pem".format(userDir, local['HostIp'].replace(".", "-"), local['HostPort']),
+##                        "{0}/tls/tlscacerts/tls-{1}.pem".format(userDir, fca))
+##        shutil.copy("{0}/msp/cacerts/{1}-{2}.pem".format(userDir, local['HostIp'].replace(".", "-"), local['HostPort']),
+##                    "{0}/msp/cacerts/{1}.pem".format(userDir, fca))
         #command = "fabric-ca-client certificate list -d --id {0} --store /var/hyperledger/users/{0}@{1}/tls/ --caname {3} --csr.cn {3} --tls.certfiles /var/hyperledger/configs/{2}/peerOrganizations/{1}/ca/ca.{1}-cert.pem".format(user, org, context.projectName, fca)
         #command = "fabric-ca-client certificate list -d --id {0} --store users/{0}@{1}/tls/ --caname {3} --csr.cn {3} --tls.certfiles ca/ca.{1}-cert.pem".format(user, org, context.projectName, fca)
         #command = "fabric-ca-client certificate list -d --id {0} --store users/{0}@{1}/tls/ --caname {2} --csr.cn {2} --tls.certfiles ca/ca.{1}-cert.pem".format(user, org, fca)
@@ -1203,7 +1216,8 @@ class CLIInterface(InterfaceBase):
 
         url = self.getCAUrl(context, org)
         context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}".format(org, context.projectName)
-        command = "fabric-ca-client getcacert -d -u {3} -M users/{1}@{2}/msp --tls.certfiles msp/cacerts/{0}-cert.pem".format(fca, user, org, url)
+        #command = "fabric-ca-client getcacert -d -u {3} -M users/{1}@{2}/msp --tls.certfiles msp/cacerts/{0}-cert.pem".format(fca, user, org, url)
+        command = "fabric-ca-client getcacert -d -u {3} -M users/{1}@{2}/msp --tls.certfiles tls/server.crt".format(fca, user, org, url)
         newEnv = os.environ.copy()
         newEnv.update(context.composition.environ)
         process = subprocess.Popen([command], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=newEnv)
@@ -1220,7 +1234,8 @@ class CLIInterface(InterfaceBase):
 
         context.composition.environ["FABRIC_CA_CLIENT_HOME"] = "./configs/{1}/peerOrganizations/{0}".format(org, context.projectName)
         #commandStr = "fabric-ca-client identity add {0} --json '{\"secret\": \"passwd\", \"type\": \"user\", \"affiliation\": \"org\", \"max_enrollments\": 1, \"attrs\": attrib}' --id.name username --id.secret passwd --tls.certfiles /var/hyperledger/msp/cacerts/ca.org-cert.pem"
-        commandStr = "fabric-ca-client identity add {0} --json '{\"secret\": \"passwd\", \"type\": \"user\", \"affiliation\": \"org\", \"max_enrollments\": 1, \"attrs\": attrib}' --id.name username --id.secret passwd --tls.certfiles msp/cacerts/ca.org-cert.pem"
+        #commandStr = "fabric-ca-client identity add {0} --json '{\"secret\": \"passwd\", \"type\": \"user\", \"affiliation\": \"org\", \"max_enrollments\": 1, \"attrs\": attrib}' --id.name username --id.secret passwd --tls.certfiles msp/cacerts/ca.org-cert.pem"
+        commandStr = "fabric-ca-client identity add {0} --json '{\"secret\": \"passwd\", \"type\": \"user\", \"affiliation\": \"org\", \"max_enrollments\": 1, \"attrs\": attrib}' --id.name username --id.secret passwd --tls.certfiles tls/server.crt"
         command = self.find_replace_multi_ordered(commandStr, d)
         newEnv = os.environ.copy()
         newEnv.update(context.composition.environ)
@@ -1247,7 +1262,7 @@ class CLIInterface(InterfaceBase):
             assert chaincode_container in containers, "The expected chaincode container {0} is not running\n{1}".format(chaincode_container, containers)
 
         # Allow time for chaincode initialization to complete
-        time.sleep(10)
+        time.sleep(5)
 
     def retry(self, context, output, peer, setup, command):
         count = 0
