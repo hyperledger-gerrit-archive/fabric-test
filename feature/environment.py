@@ -23,7 +23,7 @@ def getLogFiles(containers, fileSuffix):
             namePart, sep, _ = container.rpartition("-")
             containerName = container
         else:
-            namePart = container.containerName
+            namePart = container.containerName.replace(":","_")
             containerName = container.containerName
         try:
             with open(namePart + fileSuffix, "w+") as logfile:
@@ -111,15 +111,16 @@ def before_all(context):
     shutil.rmtree("../chaincodes/enccc_example/vendor", ignore_errors=True)
 
     # Performing `npm install` before test suit not before test cases.
-    shutil.rmtree("./node_modules", ignore_errors=True)
-    shutil.rmtree("./package-lock.json", ignore_errors=True)
-    shutil.copyfile("package.json", "../../../package.json")
-    npminstall = subprocess.check_output(["npm install --silent"],
-                                            env=os.environ,
-                                            cwd="../../..",
-                                            shell=True)
-    print("npm install: {}".format(npminstall))
-    shutil.copytree("../../../node_modules", "./node_modules")
+#    shutil.rmtree("../../../node_modules", ignore_errors=True)
+#    shutil.rmtree("./node_modules", ignore_errors=True)
+#    shutil.rmtree("./package-lock.json", ignore_errors=True)
+#    shutil.copyfile("package.json", "../../../package.json")
+#    npminstall = subprocess.check_output(["npm install --silent"],
+#                                            env=os.environ,
+#                                            cwd="../../..",
+#                                            shell=True)
+#    print("npm install: {}".format(npminstall))
+#    shutil.copytree("../../../node_modules", "./node_modules")
     context.remote = False
     if context.config.userdata.get("network", None) is not None:
         context.network = context.config.userdata["network"]
@@ -130,11 +131,11 @@ def before_all(context):
 
 def after_all(context):
     # Removing Node modules at the end of the test suites
-    if os.path.exists("./node_modules"):
-        shutil.rmtree("./node_modules", ignore_errors=True)
-        shutil.rmtree("../../../node_modules", ignore_errors=True)
-        shutil.rmtree("../../../package-lock.json", ignore_errors=True)
-        subprocess.call(["npm cache clear --force"], shell=True)
-        subprocess.call(["npm i -g npm"], shell=True)
+#    if os.path.exists("./node_modules"):
+#        shutil.rmtree("./node_modules", ignore_errors=True)
+#        shutil.rmtree("../../../node_modules", ignore_errors=True)
+#        shutil.rmtree("../../../package-lock.json", ignore_errors=True)
+#        subprocess.call(["npm cache clear --force"], shell=True)
+#        subprocess.call(["npm i -g npm"], shell=True)
     mem = psutil.virtual_memory()
     print("\nEnding Memory Info:\n\tFree: {}\n\tUsed: {}\n\tPercentage: {}".format(mem.free, mem.used, mem.percent))
