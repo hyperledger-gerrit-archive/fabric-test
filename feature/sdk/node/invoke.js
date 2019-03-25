@@ -107,6 +107,7 @@ function _invoke(username, org, orgName, chaincode, peerNames, orderer, network_
         let all_good = true;
         for (var i in proposalResponses) {
             let one_good = false;
+            console.info('Proposal Response \'' + proposalResponses.length + '\'. ' + proposalResponses[i].response.status);
             if (proposalResponses && proposalResponses[i].response &&
                     proposalResponses[i].response.status === 200) {
                 one_good = true;
