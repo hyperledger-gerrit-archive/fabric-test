@@ -111,6 +111,7 @@ def before_all(context):
     shutil.rmtree("../chaincodes/enccc_example/vendor", ignore_errors=True)
 
     # Performing `npm install` before test suit not before test cases.
+    shutil.rmtree("../../../node_modules", ignore_errors=True)
     shutil.rmtree("./node_modules", ignore_errors=True)
     shutil.rmtree("./package-lock.json", ignore_errors=True)
     shutil.copyfile("package.json", "../../../package.json")

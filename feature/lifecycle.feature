@@ -15,7 +15,7 @@ Scenario: FAB-13701: Test new chaincode lifecycle - Basic workflow
   When an admin sets up a channel
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   #When each organization admin approves the chaincode package
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
@@ -39,7 +39,7 @@ Scenario: FAB-13701a: Test new chaincode lifecycle - no policy set
   When an admin sets up a channel
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   When each organization admin approves the chaincode package
   And an admin commits the chaincode package to the channel
   And I wait up to "10" seconds for the chaincode to be committed
@@ -63,7 +63,7 @@ Scenario: FAB-13701b: Test new chaincode lifecycle - upgrade both using new
 
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
 
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
 
@@ -76,16 +76,18 @@ Scenario: FAB-13701b: Test new chaincode lifecycle - upgrade both using new
   Then a user receives a success response of 1000
 
   Given the chaincode at location "example02/go/cmd" is upgraded
-  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "mycc"
+  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "mycc_02"
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received for version "2" on all peers
+  Then a packageId is received for chaincode "mycc_02" on all peers
   When an admin removes the previous chaincode docker containers
 
-  When each organization admin approves the upgraded chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  #When each organization admin approves the upgraded chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
 
   #And a user invokes on the chaincode with args ["init","a","1000","b","2000"] on both orgs
-  And a user invokes on the chaincode with args ["init","a","100","b","2000"] on both orgs
+  And a user invokes on the chaincode named "mycc_02" with args ["init","a","100","b","2000"] on both orgs
+  #When a user invokes on the chaincode named "mycc2" with args ["invoke","a","b","10"]
   And I wait up to "30" seconds for deploy to complete
   When a user queries on the chaincode with args ["query","a"]
   #Then a user receives a success response of 1000
@@ -105,7 +107,7 @@ Scenario: FAB-13701c: Test new chaincode lifecycle - Recover after chaincode goe
   When an admin sets up a channel
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
   And I wait up to "10" seconds for the chaincode to be committed
@@ -139,7 +141,7 @@ Scenario: FAB-13983: Test new chaincode lifecycle - Chaincode calling chaincode
   When an admin sets up a channel named "channel2"
   And an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" with name "ex02"
   And the organization admins install the built "ex02" chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   #When each organization admin approves the "ex02" chaincode package on "channel2"
   When each organization admin approves the "ex02" chaincode package on "channel2" with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel "channel2"
@@ -150,7 +152,7 @@ Scenario: FAB-13983: Test new chaincode lifecycle - Chaincode calling chaincode
   When an admin sets up a channel named "channel1"
   And an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example04/cmd" with name "ex04"
   And the organization admins install the built "ex04" chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   #When each organization admin approves the "ex04" chaincode package on "channel1"
   When each organization admin approves the "ex04" chaincode package on "channel1" with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel "channel1"
@@ -165,30 +167,32 @@ Scenario: FAB-13983: Test new chaincode lifecycle - Chaincode calling chaincode
 
   # Now upgrade chaincode on both channels
   Given the chaincode at location "example02/go/cmd" is upgraded
-  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "ex02"
-  And the organization admins install the built "ex02" chaincode package on all peers
-  Then a hash value is received for version "2" on all peers
+  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "ex02_02"
+  And the organization admins install the built "ex02_02" chaincode package on all peers
+  Then a packageId is received for chaincode "ex02_02" on all peers
   When an admin removes the previous chaincode docker containers
 
-  When each organization admin approves the upgraded "ex02" chaincode package on "channel2" with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  #When each organization admin approves the upgraded "ex02_02" chaincode package on "channel2" with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  When each organization admin approves the "ex02_02" chaincode package on "channel2" with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel "channel2"
-  And a user invokes on the channel "channel2" using chaincode named "ex02" with args ["init","a","1000","b","2000"]
+  And a user invokes on the channel "channel2" using chaincode named "ex02_02" with args ["init","a","1000","b","2000"]
   And I wait up to "30" seconds for deploy to complete
 
   Given the chaincode at location "example04/cmd" is upgraded
-  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example04/cmd" as version "2" with name "ex04"
-  And the organization admins install the built "ex04" chaincode package on all peers
-  Then a hash value is received for version "2" on all peers
+  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example04/cmd" as version "2" with name "ex04_02"
+  And the organization admins install the built "ex04_02" chaincode package on all peers
+  Then a packageId is received for chaincode "ex04_02" on all peers
   #When an admin removes the previous chaincode docker containers
 
-  When each organization admin approves the upgraded "ex04" chaincode package on "channel1" with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  #When each organization admin approves the upgraded "ex04_02" chaincode package on "channel1" with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  When each organization admin approves the "ex04_02" chaincode package on "channel1" with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel "channel1"
-  And a user invokes on the channel "channel1" using chaincode named "ex04" with args ["init","Event","1"]
+  And a user invokes on the channel "channel1" using chaincode named "ex04_02" with args ["init","Event","1"]
   And I wait up to "30" seconds for deploy to complete
 
-  When a user queries on the channel "channel2" using chaincode named "ex02" with args ["query","a"]
+  When a user queries on the channel "channel2" using chaincode named "ex02_02" with args ["query","a"]
   Then a user receives a success response of 1000
-  When a user queries on the channel "channel1" using chaincode named "ex04" with args ["query","Event","ex02","a","channel2"]
+  When a user queries on the channel "channel1" using chaincode named "ex04_02" with args ["query","Event","ex02","a","channel2"]
   Then a user receives a success response of 1000
 
 
@@ -231,7 +235,7 @@ Scenario: FAB-13971: Test adding new org using new chaincode lifecycle
   When an admin sets up a channel
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
   And I wait up to "10" seconds for the chaincode to be committed
@@ -267,18 +271,18 @@ Scenario: FAB-13971: Test adding new org using new chaincode lifecycle
   And an admin makes peer "peer1.org3.example.com" join the channel
 
   When the organization admins install the chaincode package on peer "peer0.org3.example.com"
-  Then a hash value is received on peer "peer0.org3.example.com"
+  Then a packageId is received on peer "peer0.org3.example.com"
   When the organization admins install the chaincode package on peer "peer1.org3.example.com"
-  Then a hash value is received on peer "peer1.org3.example.com"
+  Then a packageId is received on peer "peer1.org3.example.com"
 
   #When each organization admin approves the upgraded chaincode package with policy "OR (AND ('org1.example.com.member','org2.example.com.member'), AND ('org1.example.com.member','org3.example.com.member'), AND ('org2.example.com.member','org3.example.com.member'))"
   #When each organization admin approves the upgraded chaincode package with policy "OutOf(1,'org1.example.com.member','org2.example.com.member')"
-  When each organization admin approves the upgraded chaincode package with policy "OutOf(2,'org1.example.com.member','org2.example.com.member','org3.example.member')"
+  When each organization admin approves the upgraded chaincode package with policy "OutOf(1,'org1.example.com.member','org2.example.com.member','org3.example.member')"
 
   And an admin commits the chaincode package to the channel on peer "peer0.org3.example.com"
   And I wait up to "10" seconds for the chaincode to be committed on peer "peer0.org3.example.com"
   And a user invokes on the chaincode with args ["init","a","1000","b","2000"] on "peer0.org3.example.com"
-  And I wait up to "30" seconds for deploy to complete
+  And I wait up to "30" seconds for deploy to complete on peer "peer0.org3.example.com"
 
   When a user queries on the chaincode with args ["query","a"] from "peer0.org3.example.com"
   Then a user receives a success response of 980 from "peer0.org3.example.com"
@@ -333,17 +337,19 @@ Scenario: FAB-13959: An admin from an org does not install chaincode package
   When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "17.0.1" with name "helloNurse"
   #When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "17.0.1" with name "helloNurse" written in "GOLANG" using peer "peer0.org1.example.com"
   And the organization admins install the built "helloNurse" chaincode package on peer "peer0.org1.example.com"
-  Then a hash value is received on peer "peer0.org1.example.com"
+  Then a packageId is received on peer "peer0.org1.example.com"
   When the organization admins install the built "helloNurse" chaincode package on peer "peer1.org1.example.com"
-  Then a hash value is received on peer "peer1.org1.example.com"
+  Then a packageId is received on peer "peer1.org1.example.com"
   # Note install does not take place on org2 peers
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
-  # Failed: peer lifecycle chaincode approveformyorg --name mycc2 --channelID behavesystest --version 2 --peerAddresses 192.168.240.6:7051 --peerAddresses 192.168.240.7:7051 --hash 730045c6268d8b4dc31800b0bee475b3c9776d59734f91ac8e130b03d4a025c5 --sequence 1 --init-required --waitForEvent --orderer orderer0.example.com:7050 --policy \\"OR (\'org1.example.com.member\',\'org2.example.com.member\')\\" "']: Error: error endorsing proposal: rpc error: code = Unknown desc = access denied: channel [behavesystest] creator org [org1.example.com]
-  And an admin commits the chaincode package to the channel
-  Then a user receives a response containing 'Error: could not assemble transaction: ProposalResponsePayloads do not match' from "peer0.org1.example.com"
-  #  And I wait up to "10" seconds for the chaincode to be committed
-  #  Then a user receives a response containing 'error endorsing proposal' from "peer0.org2.example.com"
-  #  Then a user receives a response containing '<Error Message>' from "peer1.org2.example.com"
+  #And an admin commits the chaincode package to the channel
+  And an admin commits the chaincode package to the channel on peer "peer0.org2.example.com"
+  #  Then a user receives a response containing 'Error: could not assemble transaction: ProposalResponsePayloads do not match' from "peer0.org1.example.com"
+  #And I wait up to "10" seconds for the chaincode to be committed on peer "peer0.org2.example.com"
+  And I wait up to "10" seconds for the chaincode to attempt to be committed on peer "peer0.org2.example.com"
+  Then a user receives a response containing "Error: bad response: 500 - failed to invoke backing implementation of 'QueryChaincodeDefinition': namespace helloNurse is not defined" from "peer0.org2.example.com"
+  #Then a user receives a response containing 'error endorsing proposal' from "peer0.org2.example.com"
+  #Then a user receives a response containing '<Error Message>' from "peer1.org2.example.com"
 
 
 @daily
@@ -354,7 +360,7 @@ Scenario: FAB-13968: Upgrade chaincode for different orgs, but committing the ch
   When an admin sets up a channel
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   #When each organization admin approves the chaincode package
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
@@ -366,9 +372,9 @@ Scenario: FAB-13968: Upgrade chaincode for different orgs, but committing the ch
 
 
   Given the chaincode at location "example02/go/cmd" is upgraded
-  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "mycc"
-  And the organization admins install the chaincode package on all peers
-  Then a hash value is received for version "2" on all peers
+  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "mycc_02"
+  And the organization admins install the built "mycc_02" chaincode package on all peers
+  Then a packageId is received for chaincode "mycc_02" on all peers
   When an admin removes the previous chaincode docker containers
 
 
@@ -376,25 +382,29 @@ Scenario: FAB-13968: Upgrade chaincode for different orgs, but committing the ch
   # Simulates the installation of an upgrade, but no one wants to use it
   #    at this time. 
 
-  When each organization admin approves the version "0" upgraded chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
-  And an admin commits the version "0" chaincode package to the channel
+  #When each organization admin approves the version "0" upgraded chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  #When each organization admin approves the version "0" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  When each organization admin approves the "mycc_02" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
+
+  And an admin commits the "mycc" labeled chaincode package to the channel
   And a user invokes on the chaincode with args ["init","a","1000","b","2000"]
   When a user queries on the chaincode with args ["query","a"]
   Then a user receives a success response of 1000
 
 
 @daily
-Scenario: FAB-13960: Using the wrong hash in approveformyorg
+Scenario: FAB-13960: Using the wrong packageID in approveformyorg
   Given I changed the "Application" capability to version "V2_0"
   And I have a bootstrapped fabric network of type solo
   And I want to use the new chaincode lifecycle
   When an admin sets up a channel
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
-  When an admin approves the chaincode package on peer "peer0.org1.example.com" using hash "1234567890" with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  Then a packageId is received on all peers
+  When an admin approves the chaincode package on peer "peer0.org1.example.com" using packageId "mycc:1234567890" with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
-  Then a user receives a response containing 'Error: could not assemble transaction: ProposalResponsePayloads do not match' from "peer0.org1.example.com"
+  #Then a user receives a response containing 'Error: could not assemble transaction: ProposalResponsePayloads do not match' from "peer0.org1.example.com"
+  Then a user receives a response containing "Error: bad response: 500 - failed to invoke backing implementation of 'CommitChaincodeDefinition': chaincode definition not agreed to by this org (org1.example.com)" from "peer0.org1.example.com"
 
 
 @daily
@@ -417,7 +427,7 @@ Scenario: FAB-13963: An admin from an org approves a different the chaincode def
   When an admin sets up a channel
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
 
   When each organization admin approves the chaincode package with policy "AND ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org1.example.com"
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org2.example.com"
@@ -435,7 +445,7 @@ Scenario: FAB-13965: All admins from different orgs approve different the chainc
 
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
 
   When each organization admin approves the chaincode package on "channel1" with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel "channel1"
@@ -485,7 +495,7 @@ Scenario: FAB-13958: Test new chaincode lifecycle - upgrade from old to new
 
   When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "mycc2"
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
   And I wait up to "10" seconds for the chaincode to be committed
@@ -507,7 +517,7 @@ Scenario: FAB-13964: Install same chaincode on different channels with different
 
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
 
   When each organization admin approves the chaincode package with policy "AND ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org1.example.com"
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org2.example.com"
@@ -532,7 +542,7 @@ Scenario: FAB-13966: Different orgs use different version label during upgrade
   When an admin sets up a channel
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   #When each organization admin approves the chaincode package
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
@@ -546,15 +556,24 @@ Scenario: FAB-13966: Different orgs use different version label during upgrade
 
 
   Given the chaincode at location "example02/go/cmd" is upgraded
-  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "mycc"
-  And the organization admins install the chaincode package on all peers
-  Then a hash value is received for version "2" on all peers
+  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "mycc_02"
+  And the organization admins install the built "mycc_02" chaincode package on all peers
+  Then a packageId is received for chaincode "mycc_02" on all peers
   When an admin removes the previous chaincode docker containers
 
 
   #When each organization admin approves the upgraded chaincode package
-  When an admin approves the upgraded version "1.5" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org1.example.com"
-  When an admin approves the upgraded version "2.0" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org2.example.com"
+  #When an admin approves the upgraded version "1.5" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org1.example.com"
+  #When an admin approves the version "1.5" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org1.example.com"
+  #When each organization admin approves the "mycc_03" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org1.example.com"
+  When an admin approves the "mycc" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org1.example.com"
+  #When an admin approves the "mycc_03" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org1.example.com"
+
+  #When an admin approves the upgraded version "2.0" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org2.example.com"
+  #When an admin approves the version "2.0" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org2.example.com"
+  #When each organization admin approves the "mycc_02" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org2.example.com"
+  When an admin approves the "mycc_02" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org2.example.com"
+
   And an admin commits the chaincode package to the channel
   Then a user receives a response containing 'chaincode definition not agreed to by this org' from "peer0.org1.example.com"
 
@@ -572,7 +591,7 @@ Scenario: FAB-13969: Reuse the same sequence number
   When an admin sets up a channel
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   #When each organization admin approves the chaincode package
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
@@ -584,23 +603,27 @@ Scenario: FAB-13969: Reuse the same sequence number
   When a user queries on the chaincode with args ["query","a"]
   Then a user receives a success response of 1000
 
-  Given the chaincode at location "example02/go/cmd" is upgraded
-  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "mycc"
-  And the organization admins install the chaincode package on all peers
-  Then a hash value is received for version "2" on all peers
-  When an admin removes the previous chaincode docker containers
+  #  Given the chaincode at location "example02/go/cmd" is upgraded
+  #  When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/example02/go/cmd" as version "2" with name "mycc_02"
+  #  And the organization admins install the built "mycc_02" chaincode package on all peers
+  #  Then a packageId is received for chaincode "mycc_02" on all peers
+  #  When an admin removes the previous chaincode docker containers
 
 
 
 
   When an admin approves the chaincode package using sequence "1" on peer "peer0.org1.example.com"
-  Then a user receives a response containing 'attempted to define the current sequence' from "peer0.org1.example.com"
-  Then a user receives a response containing "but: Version '0' != '2'" from "peer0.org1.example.com"
+  #Then a user receives a response containing 'attempted to define the current sequence' from "peer0.org1.example.com"
+  #Then a user receives a response containing "but: Version '0' != '2'" from "peer0.org1.example.com"
+  #Then a user receives a response containing 'could not set defaults for chaincode definition in channel ' from "peer0.org1.example.com"
+
   When an admin approves the upgraded chaincode package on peer "peer0.org2.example.com"
   #When the organization admins approve the upgraded chaincode package on all peers
+  #
   When an admin commits the chaincode package to the channel
+  Then a user receives a response containing 'chaincode definition not agreed to by this org' from "peer0.org1.example.com"
   When a user invokes on the chaincode with args ["init","a","1000","b","2000"] on "peer0.org1.example.com"
-  Then a user receives a response containing 'chaincode definition not agreed to by this org'
+  Then a user receives a response containing endorsement failure during invoke
 
 
 @daily
@@ -611,7 +634,7 @@ Scenario: FAB-13970: 2 Different org admins perform the commit
   When an admin sets up a channel
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
   And I wait up to "10" seconds for the chaincode to be committed
@@ -626,6 +649,7 @@ Scenario: FAB-13970: 2 Different org admins perform the commit
   Then a user receives a response containing 'requested sequence is 1, but new definition must be sequence 2' from "peer0.org2.example.com"
 
 
+@doNotDecompose
 @daily
 Scenario: FAB-13974: An org admin should be able to recover after sending a wrong approval
   Given I changed the "Application" capability to version "V2_0"
@@ -634,7 +658,7 @@ Scenario: FAB-13974: An org admin should be able to recover after sending a wron
   When an admin sets up a channel
   And an admin packages a chaincode
   And the organization admins install the chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
   When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
   And I wait up to "10" seconds for the chaincode to be committed
@@ -670,18 +694,18 @@ Scenario: FAB-13974: An org admin should be able to recover after sending a wron
   And an admin makes peer "peer1.org3.example.com" join the channel
 
   When the organization admins install the chaincode package on peer "peer0.org3.example.com"
-  Then a hash value is received on peer "peer0.org3.example.com"
+  Then a packageId is received on peer "peer0.org3.example.com"
   When the organization admins install the chaincode package on peer "peer1.org3.example.com"
-  Then a hash value is received on peer "peer1.org3.example.com"
+  Then a packageId is received on peer "peer1.org3.example.com"
 
   #When each organization admin approves the upgraded chaincode package with policy "OR (AND ('org1.example.com.member','org2.example.com.member'), AND ('org1.example.com.member','org3.example.com.member'), AND ('org2.example.com.member','org3.example.com.member'))"
   When each organization admin approves the upgraded chaincode package with policy "AND ('org1.example.com.member','org2.example.com.member')" on peer "peer0.org1.example.com"
   When each organization admin approves the upgraded chaincode package with policy "OutOf(1,'org1.example.com.member','org2.example.com.member','org3.example.member')" on peer "peer0.org2.example.com"
   When each organization admin approves the upgraded chaincode package with policy "OutOf(1,'org1.example.com.member','org2.example.com.member','org3.example.member')" on peer "peer0.org3.example.com"
 
-  And an admin commits the chaincode package to the channel on peer "peer0.org3.example.com"
-  And I wait up to "10" seconds for the chaincode to be committed on peer "peer0.org3.example.com"
-  And a user invokes on the chaincode with args ["init","a","1000","b","2000"] on "peer0.org3.example.com"
+  And an admin commits the chaincode package to the channel on peer "peer0.org2.example.com"
+  And I wait up to "10" seconds for the chaincode to be committed on peer "peer0.org2.example.com"
+  And a user invokes on the chaincode with args ["init","a","1000","b","2000"] on "peer0.org2.example.com"
   And I wait up to "30" seconds for deploy to complete
 
   When a user queries on the chaincode with args ["query","a"] from "peer0.org3.example.com"
@@ -690,7 +714,7 @@ Scenario: FAB-13974: An org admin should be able to recover after sending a wron
   When a user queries on the chaincode with args ["query","a"]
   Then a user receives a response containing '<Error Message>'
 
-  When each organization admin approves the upgraded chaincode package with policy "OutOf(2,'org1.example.com.member','org2.example.com.member','org3.example.member')" on peer "peer0.org1.example.com"
+  When each organization admin approves the upgraded chaincode package with policy "OutOf(1,'org1.example.com.member','org2.example.com.member','org3.example.member')" on peer "peer0.org1.example.com"
   And an admin commits the chaincode package to the channel on peer "peer0.org1.example.com"
 
   When a user queries on the chaincode with args ["query","a"]
@@ -705,21 +729,23 @@ Scenario: FAB-13974: An org admin should be able to recover after sending a wron
 
 
 @daily
-Scenario: FAB-13975: Different chaincode version used in install and approve
+Scenario: FAB-13975: Different chaincode label used in install and approve
   Given I changed the "Application" capability to version "V2_0"
   And I have a bootstrapped fabric network of type solo
   And I want to use the new chaincode lifecycle
   When an admin sets up a channel
   And an admin packages a chaincode
 
-  And the organization admins install version "17.0.1" of the chaincode package on all peers
-  Then a hash value is received on all peers
-  When each organization admin approves the chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
+  #And the organization admins install version "17.0.1" of the chaincode package on all peers
+  And the organization admins install the chaincode package on all peers
+  Then a packageId is received on all peers
+  When each organization admin approves the "test42" chaincode package with policy "OR ('org1.example.com.member','org2.example.com.member')"
   And an admin commits the chaincode package to the channel
   And I wait up to "10" seconds for the chaincode to be committed
   And a user invokes on the chaincode with args ["init","a","1000","b","2000"]
-  And I wait up to "30" seconds for deploy to complete
-  Then a user receives a response containing '<Error Message>'
+  #And I wait up to "30" seconds for deploy to complete
+  #And I wait "5" seconds
+  Then a user receives a response containing chaincode definition for 'test42' exists, but chaincode is not installed
 
 
 @daily
@@ -732,7 +758,7 @@ Scenario: FAB-13977: Test setting of collections data in new chaincode definitio
   When an admin sets up a channel
   When an admin packages chaincode at path "github.com/hyperledger/fabric-test/chaincodes/marbles02_private" as version "2.0.1" with name "marbles"
   And the organization admins install the built "marbles" chaincode package on all peers
-  Then a hash value is received on all peers
+  Then a packageId is received on all peers
 
   When an admin generates a collections file named "marblesCollection.json" for chaincode named "marbles" with policy "OR('org1.example.com.member','org2.example.com.member')"
   When each organization admin approves the "marbles" chaincode package with no init using collections file named "marblesCollection.json" with policy "OR ('org1.example.com.member','org2.example.com.member')"
