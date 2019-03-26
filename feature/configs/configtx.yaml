@@ -32,7 +32,6 @@ Capabilities:
         # Thus, those like V1_1 need not be set if V1_3 or later is set true.
         # But keep them, to allow disabling V1_3 when bringing up a new test
         # network, if desired, possibly in anticipation of an upgrade test.
-        V1_1: true
 
     # Orderer capabilities apply only to the orderers, and may be safely
     # manipulated without concern for upgrading peers.  Set the value of the
@@ -47,14 +46,12 @@ Capabilities:
     # capability to true to require it.
     Application: &ApplicationCapabilities
         V1_3: true
-        V1_2: true
         # Note: older ones are superceded, e.g. V1_2 capabilities include V1_1.
         # Thus, older ones like V1_1 need not be set if we set V1_2 or later.
         # But keep them all; that would allow tester to override and disable
         # newer ones like Capabilities.Global.V1_3 and
         # Capabilities.Application.V1_3 when bringing up a new test network,
         # if desired, possibly in anticipation of an upgrade test.
-        V1_1: true
 
 ################################################################################
 #
@@ -74,13 +71,16 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('example.com.member')"
+                Rule: OR('example.com.member')
             Writers:
                 Type: Signature
-                Rule: "OR('example.com.member')"
+                Rule: OR('example.com.member')
             Admins:
                 Type: Signature
-                Rule: "OR('example.com.admin')"
+                Rule: OR('example.com.admin')
+            Endorsement:
+                Type: Signature
+                Rule: OR('example.com.member')
 
     - &Org1ExampleCom
         Name: Org1ExampleCom
@@ -93,13 +93,16 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('org1.example.com.member')"
+                Rule: OR('org1.example.com.member')
             Writers:
                 Type: Signature
-                Rule: "OR('org1.example.com.member')"
+                Rule: OR('org1.example.com.member')
             Admins:
                 Type: Signature
-                Rule: "OR('org1.example.com.admin')"
+                Rule: OR('org1.example.com.admin')
+            Endorsement:
+                Type: Signature
+                Rule: OR('org1.example.com.member')
 
     - &Org2ExampleCom
         Name: Org2ExampleCom
@@ -112,13 +115,16 @@ Organizations:
         Policies:
             Readers:
                 Type: Signature
-                Rule: "OR('org2.example.com.member')"
+                Rule: OR('org2.example.com.member')
             Writers:
                 Type: Signature
-                Rule: "OR('org2.example.com.member')"
+                Rule: OR('org2.example.com.member')
             Admins:
                 Type: Signature
-                Rule: "OR('org2.example.com.admin')"
+                Rule: OR('org2.example.com.admin')
+            Endorsement:
+                Type: Signature
+                Rule: OR('org2.example.com.member')
 
 ################################################################################
 #
@@ -183,18 +189,18 @@ Orderer: &OrdererDefaults
     Policies:
         Readers:
             Type: ImplicitMeta
-            Rule: "ANY Readers"
+            Rule: ANY Readers
         Writers:
             Type: ImplicitMeta
-            Rule: "ANY Writers"
+            Rule: ANY Writers
         Admins:
             Type: ImplicitMeta
-            Rule: "MAJORITY Admins"
+            Rule: MAJORITY Admins
         # BlockValidation specifies what signatures must be included in the block
         # from the orderer for the peer to validate it.
         BlockValidation:
             Type: ImplicitMeta
-            Rule: "ANY Writers"
+            Rule: ANY Writers
 
     # Capabilities describes the orderer level capabilities, see the
     # dedicated Capabilities section elsewhere in this file for a full
@@ -218,15 +224,15 @@ Channel: &ChannelDefaults
         # Who may invoke the 'Deliver' API
         Readers:
             Type: ImplicitMeta
-            Rule: "ANY Readers"
+            Rule: ANY Readers
         # Who may invoke the 'Broadcast' API
         Writers:
             Type: ImplicitMeta
-            Rule: "ANY Writers"
+            Rule: ANY Writers
         # By default, who may modify elements at this config level
         Admins:
             Type: ImplicitMeta
-            Rule: "MAJORITY Admins"
+            Rule: MAJORITY Admins
 
 
     # Capabilities describes the channel level capabilities, see the
@@ -253,6 +259,17 @@ Application: &ApplicationDefaults
         #
         # User's can override these defaults with their own policy mapping by defining the
         # mapping under ACLs in their channel definition
+
+        #---New Lifecycle System Chaincode (_lifecycle) function to policy mapping for access control--#
+
+        # ACL policy for _lifecycle's "CommitChaincodeDefinition" function
+        _lifecycle/CommitChaincodeDefinition: /Channel/Application/Writers
+
+        # ACL policy for _lifecycle's "QueryChaincodeDefinition" function
+        _lifecycle/QueryChaincodeDefinition: /Channel/Application/Readers
+
+        # ACL policy for _lifecycle's "QueryNamespaceDefinitions" function
+        _lifecycle/QueryNamespaceDefinitions: /Channel/Application/Readers
 
         #---Lifecycle System Chaincode (lscc) function to policy mapping for access control---#
 
@@ -320,6 +337,12 @@ Application: &ApplicationDefaults
     # For Application policies, their canonical path is
     #   /Channel/Application/<PolicyName>
     Policies: &ApplicationDefaultPolicies
+        LifecycleEndorsement:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Endorsement"
+        Endorsement:
+            Type: ImplicitMeta
+            Rule: "MAJORITY Endorsement"
         Readers:
             Type: ImplicitMeta
             Rule: "ANY Readers"
@@ -434,9 +457,26 @@ Profiles:
                 - *ExampleCom
             Capabilities:
                 <<: *ApplicationCapabilities
+            Policies:
+                Readers:
+                  Type: ImplicitMeta
+                  Rule: ANY Readers
+                Writers:
+                  Type: ImplicitMeta
+                  Rule: ANY Writers
+                Admins:
+                  Type: ImplicitMeta
+                  Rule: MAJORITY Admins
+                LifecycleEndorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
+                Endorsement:
+                  Type: ImplicitMeta
+                  Rule: "MAJORITY Endorsement"
 
     # SysTestChannel defines a channel for use with the System Test Orgs
     SysTestChannel:
+        <<: *ChannelDefaults
         Capabilities:
             <<: *ChannelCapabilities
         Consortium: SampleConsortium
@@ -452,6 +492,7 @@ Profiles:
     # member.  It is designed to be used in conjunction with SampleSingleMSPSolo
     # and SampleSingleMSPKafka orderer profiles
     SampleSingleMSPChannel:
+        <<: *ChannelDefaults
         Capabilities:
             <<: *ChannelCapabilities
         Consortium: SampleConsortium
