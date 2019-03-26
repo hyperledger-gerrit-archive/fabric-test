@@ -379,6 +379,9 @@ do
              echo "            Admins:" >> $cfgOutFile
              echo "                Type: Signature" >> $cfgOutFile
              echo "                Rule: \"OR('$ordMSP.admin')\"" >> $cfgOutFile
+             echo "            Endorsement:" >> $cfgOutFile
+             echo "                Type: Signature" >> $cfgOutFile
+             echo "                Rule: \"OR('$ordMSP.member')\"" >> $cfgOutFile
 
              echo "" >> $cfgOutFile
 #             echo "        BCCSP:" >> $cfgOutFile
@@ -451,6 +454,9 @@ do
              echo "            Admins:" >> $cfgOutFile
              echo "                Type: Signature" >> $cfgOutFile
              echo "                Rule: \"OR('$orgMSP.admin')\"" >> $cfgOutFile
+             echo "            Endorsement:" >> $cfgOutFile
+             echo "                Type: Signature" >> $cfgOutFile
+             echo "                Rule: \"OR('$orgMSP.admin', '$orgMSP.peer', '$orgMSP.client')\"" >> $cfgOutFile
 
              echo "" >> $cfgOutFile
 #             echo "        BCCSP:" >> $cfgOutFile
