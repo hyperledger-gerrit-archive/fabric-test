@@ -182,10 +182,10 @@ FAB-7936_100tx_3ch_3ord_3kb () {
         ORDS=3
         KBS=3
         ZKS=1
-        ./networkLauncher.sh -o $ORDS -q $OLOGLVL -x 0 -r 1 -p 1 -n 3 -k $KBS -z $ZKS -e 3 -t kafka -f test -w localhost -S enabled
+        ./networkLauncher.sh -o $ORDS -q $OLOGLVL -x 0 -r 1 -p 1 -n 1 -k $KBS -z $ZKS -e 3 -t kafka -f test -w localhost -S enabled
         cd $OTE_DIR
         # run testcase
-        numChannels=3 testcase=Test_FAB7936_100tx_3ch_3ord_3kb docker-compose -f ote-compose.yml up -d
+        numChannels=1 testcase=Test_FAB7936_100tx_3ch_3ord_3kb docker-compose -f ote-compose.yml up -d
 }
 
 FAB-7076_15ktx_3ch_3ord_5kb_10kpayload () {
