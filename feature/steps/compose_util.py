@@ -71,6 +71,7 @@ class Composition:
         command = ["up", "-d"]
         if force_recreate:
             command += ["--force-recreate"]
+        command += ["> docker-compose.log 2>&1"]
         cas = ["ca.example.com", "ca.org1.example.com", "ca.org2.example.com"]
         for ca in cas:
             self.setFabricCaEnv(ca)
