@@ -69,12 +69,13 @@ class Composition:
 
     def up(self, force_recreate=True, components=[]):
         command = ["up", "-d"]
+        containerlog = [">&", "tee", "docker-compose.log"]
         if force_recreate:
             command += ["--force-recreate"]
         cas = ["ca.example.com", "ca.org1.example.com", "ca.org2.example.com"]
         for ca in cas:
             self.setFabricCaEnv(ca)
-        self.issueCommand(command + components)
+        self.issueCommand(command + components + containerlog)
 
     def scale(self, serviceName, count=1):
         command = ["scale", "%s=%d" %(serviceName, count)]
