@@ -1,5 +1,5 @@
 #!/bin/bash
-
+set -e
 #
 # Copyright IBM Corp. All Rights Reserved.
 #
@@ -13,6 +13,7 @@ PrecfgDir=""
 CHANNEL="notCreate"
 SYNCHUP="notSynchup"
 CHAINCODE="noCC"
+ANCHOR_PEER_UPDATE=false
 TCases=()
 TStart=0
 
@@ -29,6 +30,7 @@ function testDriverHelp {
    echo "    -u: chaincode to be installed and upgraded [all|<chaincode>], default=no"
    echo "    -t [value1 value2 value3 ...]: test cases to be executed"
    echo "    -b [value]: test cases starting time"
+   echo "    -a update anchor peer, default=false"
    echo " "
    echo "  available test cases:"
    echo "    FAB-query-TLS: 4 processes X 1000 queries, TLS"
@@ -80,6 +82,10 @@ while getopts ":t:c:u:b:m:enps" opt; do
       CHANNEL="create"
       echo "channel action: $CHANNEL"
       ;;
+    a)
+      ANCHOR_PEER_UPDATE=true
+      echo "channel update: $ANCHOR_PEER_UPDATE"
+      ;;
     c)
       CHAINCODE=$OPTARG
       echo "chaincode: $CHAINCODE"
@@ -109,8 +115,7 @@ while getopts ":t:c:u:b:m:enps" opt; do
       echo "Invalid option: -$OPTARG" >&2
       testDriverHelp
       exit
-      ;;
-
+      ;;  
     :)
       echo "Option -$OPTARG requires an argument." >&2
       testDriverHelp
@@ -155,7 +160,7 @@ fi
 
 # channel
 if [ $CHANNEL == "create" ]; then
-    ./test_channel.sh $PrecfgDir
+    ./test_channel.sh $PrecfgDir $ANCHOR_PEER_UPDATE
     cd $CWD
     echo "[$0] current dir: $PWD"
     sleep 60
