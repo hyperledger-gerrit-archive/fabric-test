@@ -298,11 +298,36 @@ The tool allows users to create a customized test case easily.  For example, the
 - create `preconfig` directory containing channels and chaincode PTE input files if the default will not be used
 - create PTE manager, run cases, and user inputs under `PTE/CITest/myTest/myCC` based on his test scenarios
 - go to `PTE/CITest/scripts`
-- execute command `./test_driver.sh -t myTest`
+- execute command `./test_driver.sh -t myTest` or `node test_driver.js -t myTest`
 
 It will be easier if copy and change an available test case.
 
 
 ---
+# Running Test using NodeJS
+
+The tool allows users to run the tests using nodeJS files. This duplicates funtionality of the CLI test_driver.sh, allowing the use of nodeJS and mocha to display test results.To run the tests using javascript files,
+
+- go to `PTE/CITest/scripts`
+- run `npm install`
+- execute command `node test_driver.js [opt] [values] && npm test`
+- it will run through all the steps as per the options and values in the above step and generates a `results.tap` file at the end of the test. To see `results.tap`, go to `PTE/CITest/scripts/tap_output`
+- logs of each step will be stored in `PTE/CITest/Logs/<test_case>`
+- To get the list of options, run the command `node test_driver.js` or `node test_driver.js -h`
+
+For example, below are the commands for running tests in different scenarios
+
+- node test_driver.js -n -m FAB-3808-2i -p -c samplecc -t FAB-3808-2i && npm test: create a network, create join channels, install/instantiate samplecc chaincode using setting in FAB-3808-2i, and execute test case FAB-3808-2i
+- node test_driver.js -n -p -c all -t FAB-3989-4i-TLS,FAB-3989-4q-TLS && npm test: create a network, create join channel and install/instantiate all chaincodes using default setting and execute two test cases
+- node test_driver.js -n -p -c samplecc && npm test: create a network, create/join channels, install instantiate chaincode samplecc using default setting
+- node test_driver.js -t FAB-3811-2q,FAB-3808-2i && npm test: execute test cases (FAB-3811-2q and FAB-3808-2i)
+- node test_driver.js -m FAB-8252/upgrade -u marbles02 && npm test: upgrade chaincode marbles02 using setting in FAB-8252/upgrade directory
+
+
+Customized tests can also be run using NodeJS as mentioned above in the Customized Test section
+
+
+---
 
 <a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />This work is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by/4.0/">Creative Commons Attribution 4.0 International License</a>.
+
