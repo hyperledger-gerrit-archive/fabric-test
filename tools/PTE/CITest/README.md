@@ -255,12 +255,16 @@ The script, PTE/CITest/scenarios/run_scenarios.sh, can be used to execute a full
 ---
 # Chaincode
 
-The following chaincodes are available:
+Here are some of the chaincodes available:
 
-- [sample chaincode](https://github.com/hyperledger/fabric-test/tree/master/chaincodes/samplecc/go)
-- [marbles chaincode](https://github.com/hyperledger/fabric/tree/master/examples/chaincode/go/marbles02)
-- [sample Node JS chaincode](https://github.com/hyperledger/fabric-test/tree/master/chaincodes/samplecc/node)
-- [sample java chaincode](https://github.com/hyperledger/fabric-test/tree/master/chaincodes/samplecc/java)
+- [samplecc chaincode, go, node, java](https://github.com/hyperledger/fabric-test/tree/master/chaincodes/samplecc) in fabric-test
+- [example02 chaincode, go, node](https://github.com/hyperledger/fabric-test/tree/master/chaincodes/example02) in fabric-test
+- [marbles02 chaincode, go, node](https://github.com/hyperledger/fabric-samples/tree/master/chaincode/marbles02) in fabric-samples
+- [marbles02_private chaincode, go, node](https://github.com/hyperledger/fabric-samples/tree/master/chaincode/marbles02_private) in fabric-samples
+- [marbles02_private chaincode, go](https://github.com/hyperledger/fabric-test/tree/master/chaincodes/marbles02_private) in fabric-test
+- [marbles02 chaincode, node](https://github.com/hyperledger/fabric-test/tree/master/chaincodes/marbles02/node) in fabric-test
+- [SBE chaincode, go](https://github.com/hyperledger/fabric-test/tree/master/chaincodes/sbe) in fabric-test
+- [mapkeys chaincode, go](https://github.com/hyperledger/fabric-test/tree/master/chaincodes/mapkeys/go) in fabric-test; allows randomness
 
 The user can add a chaincode for his test case by following the same directory structure in `preconfig` directory.
 
