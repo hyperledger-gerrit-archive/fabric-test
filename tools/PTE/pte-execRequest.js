@@ -142,7 +142,7 @@ var TLS = testUtil.setTLS(txCfgPtr);
 var targetPeers=txCfgPtr.targetPeers.toUpperCase();
 if ( targetPeers == 'DISCOVERY' && TLS != testUtil.TLSCLIENTAUTH ) {
     logger.error('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] invalid configuration: targetPeers (%s) requires TLS (clientauth)', Nid, channelName, org, pid, txCfgPtr.targetPeers);
-    process.exit();
+    process.exit(1);
 }
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] input parameters: uiFile=%s, tStart=%d', Nid, channelName, org, pid, uiFile, tStart);
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] TLS: %s', Nid, channelName, org, pid, TLS);
@@ -227,7 +227,7 @@ var nRequest = parseInt(txCfgPtr.nRequest);
 
 if ( transType == 'DISCOVERY' && TLS != testUtil.TLSCLIENTAUTH ) {
     logger.error('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] invalid configuration: transType (%s) requires mutual TLS (clientauth)', Nid, channelName, org, pid, transType);
-    process.exit();
+    process.exit(1);
 }
 
 logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] transMode: %s, transType: %s, invokeType: %s, nRequest: %d', Nid, channel.getName(), org, pid,  transMode, transType, invokeType, nRequest);
@@ -1030,8 +1030,10 @@ function initDiscovery() {
         }
     },
     function(err) {
-        logger.error('[Nid:chan:org:id=%d:%s:%s:%d initDiscovery] Failed to wait due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-        return;
+        throw new Error('[Nid:chan:org:id=%d:%s:%s:%d initDiscovery] Failed to wait due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err)
+    }).catch((err)=>{
+        logger.error(err)
+        process.exit(1)
     });
 
     if ( initFreq > 0 ) {
@@ -1251,7 +1253,7 @@ function getSubmitterForOrg(username, secret, client, peerOrgAdmin, Nid, org, sv
 }
 
 async function execTransMode() {
-
+ try{
     // init vars
     inv_m = 0;
     inv_q = 0;
@@ -1361,12 +1363,18 @@ async function execTransMode() {
                             execModeProposal();
                         } else {
                             // invalid transaction request
-                            logger.error(util.format("[Nid:chan:org:id=%d:%s:%s:%d execTransMode] pte-exec:completed:error Transaction %j and/or mode %s invalid", Nid, channelName, org, pid, transType, transMode));
-                            process.exit(1);
+                            throw new Error(util.format("[Nid:chan:org:id=%d:%s:%s:%d execTransMode] pte-exec:completed:error Transaction %j and/or mode %s invalid", Nid, channelName, org, pid, transType, transMode))
                         }
                     }, tSynchUp);
                 }
-    );
+    ).catch((err)=>{
+        process.exit(1)
+    });
+}catch(err){
+    logger.error(err)
+    evtDisconnect()
+    process.exit(1)
+}
 }
 
 function isExecDone(trType){
@@ -1603,14 +1611,14 @@ function eventRegisterFilteredBlock() {
                 }
             },
             (err) => {
+                reject(err)
                 //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] inv_m:evtRcv=%d:%d err: %j', Nid, channelName, org, pid, inv_m, eBvtRcv, err);
             });
         }).catch((err) => {
             //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterFilteredBlock] number of events timeout=%d %s(%s) in %d ms, timestamp: start %d end %d', Nid, channelName, org, pid, tx_stats[tx_evtTimeout], transType, invokeType, tCurr-tLocal, tLocal, tCurr);
+            process.exit(1)
         });
-
     });
-
 }
 
 function eventRegisterBlock() {
@@ -1652,10 +1660,12 @@ function eventRegisterBlock() {
                     resolve();
             },
             (err) => {
+                reject(err)
                 //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterBlock] inv_m:evtRcv=%d:%d err: %j', Nid, channelName, org, pid, inv_m, eBvtRcv, err);
             });
         }).catch((err) => {
             //logger.info('[Nid:chan:org:id=%d:%s:%s:%d eventRegisterBlock] number of events timeout=%d %s(%s) in %d ms, timestamp: start %d end %d', Nid, channelName, org, pid, tx_stats[tx_evtTimeout], transType, invokeType, tCurr-tLocal, tLocal, tCurr);
+            process.exit(1)
         });
 
     });
@@ -1663,7 +1673,6 @@ function eventRegisterBlock() {
 }
 
 function eventRegister(tx) {
-
     var deployId = tx.getTransactionID();
     eventHubs.forEach((eh) => {
         let txPromise = new Promise((resolve, reject) => {
@@ -1809,6 +1818,7 @@ function execModeLatency() {
     } else {
         logger.error('[Nid:chan:org:id=%d:%s:%s:%d execModeLatency] invalid transType= %s', Nid, channelName, org, pid, transType);
         evtDisconnect();
+        process.exit(1)
     }
 }
 
@@ -1861,7 +1871,6 @@ function invoke_move_simple(freq) {
                     IDoneMsg("invoke_move_simple");
                 }
             })
-
         },
         function(err) {
             tx_stats[tx_pFail]++;
@@ -1918,13 +1927,13 @@ function invoke_query_simple(freq) {
         },
         function(err) {
             logger.error('[[Nid:chan:org:id=%d:%s:%s:%d invoke_query_simple] pte-exec:completed:error Failed to send query due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-            process.exit();
+            process.exit(1);
             return;
         })
     .catch(
         function(err) {
             logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_simple] pte-exec:completed:error %s failed: ', Nid, channelName, org, pid, transType,  err.stack ? err.stack : err);
-            process.exit();
+            process.exit(1);
         }
     );
 
@@ -1947,6 +1956,7 @@ function execModeSimple() {
     } else {
         logger.error('[Nid:chan:org:id=%d:%s:%s:%d execModeSimple] invalid transType= %s', Nid, channelName, org, pid, transType);
         evtDisconnect();
+        process.exit(1)
     }
 }
 
@@ -2128,6 +2138,8 @@ function invoke_move_dist_evtBlock(backoffCalculator) {
                 } else {
                     IDoneMsg("invoke_move_dist_evtBlock");
                 }
+        }).catch((err)=>{
+            process.exit(1)
         });
 }
 
@@ -2378,6 +2390,7 @@ function execModeDistribution(backoffCalculator, delayCalculator) {
     } else {
         logger.error('[Nid:chan:org:id=%d:%s:%s:%d execModeDistribution] pte-exec:completed:error invalid transType= %s', Nid, channelName, org, pid, transType);
         evtDisconnect();
+        process.exit(1)
     }
 }
 
@@ -2544,6 +2557,7 @@ function invoke_query_mix(freq) {
             logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_mix] %s failed: ', Nid, channelName, org, pid, transType,  err.stack ? err.stack : err);
             invoke_move_mix(freq);
             //evtDisconnect();
+            process.exit(1)
         }
     );
 
@@ -2573,6 +2587,7 @@ function execModeMix() {
     } else {
         logger.error('[Nid:chan:org:id=%d:%s:%s:%d execModeMix] invalid transType= %s', Nid, channelName, org, pid, transType);
         evtDisconnect();
+        process.exit(1)
     }
 }
 
@@ -2603,12 +2618,15 @@ function invoke_move_proposal() {
 
         },
         function(err) {
-            logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_proposal] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
+            throw new Error('[Nid:chan:org:id=%d:%s:%s:%d invoke_move_proposal] Failed to send transaction proposal due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err)
+        }).catch(err=>{
+            logger.error(err)
             evtDisconnect();
+            process.exit(1)
         });
 
 
-}
+    }
 
 
 function execModeProposal() {
@@ -2880,6 +2898,7 @@ function invoke_query_burst() {
         function(err) {
             logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_query_burst] %s failed: ', Nid, channelName, org, pid, transType,  err.stack ? err.stack : err);
             evtDisconnect();
+            process.exit(1)
         }
     );
 
@@ -2890,7 +2909,7 @@ function execModeBurst() {
     // input burstOpt
     if ( (typeof(txCfgPtr.burstOpt) === 'undefined') || (typeof(txCfgPtr.burstOpt.burstFreq) === 'undefined') || (typeof(txCfgPtr.burstOpt.burstDur) === 'undefined') ) {
         logger.error('[Nid:chan:org:id=%d:%s:%s:%d execModeBurst] invalid burstOpt',Nid, channelName, org, pid);
-        process.exit();
+        process.exit(1);
     }
     bTotalModes=txCfgPtr.burstOpt.burstFreq.length;
     if ( txCfgPtr.burstOpt.burstFreq.length != txCfgPtr.burstOpt.burstDur.length ) {
@@ -2899,7 +2918,7 @@ function execModeBurst() {
     }
     if ( bTotalModes == 0 ) {
         logger.error('[Nid:chan:org:id=%d:%s:%s:%d execModeBurst] invalid burstFreq and/or burstDur',Nid, channelName, org, pid);
-        process.exit();
+        process.exit(1);
     }
     for (i=0; i< bTotalModes; i++) {
         bFreq.push(parseInt(txCfgPtr.burstOpt.burstFreq[i]));
@@ -2935,6 +2954,7 @@ function execModeBurst() {
     } else {
         logger.error('[Nid:chan:org:id=%d:%s:%s:%d execModeBurst] invalid transType= %s', Nid, channelName, org, pid, transType);
         evtDisconnect();
+        process.exit(1)
     }
 }
 
@@ -2958,8 +2978,10 @@ function invoke_discovery() {
         }
     },
     function(err) {
-        logger.error('[Nid:chan:org:id=%d:%s:%s:%d invoke_discovery] Failed to send service discovery due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err);
-        return;
+        throw new Error('[Nid:chan:org:id=%d:%s:%s:%d invoke_discovery] Failed to send service discovery due to error: ', Nid, channelName, org, pid, err.stack ? err.stack : err)
+    }).catch(err=>{
+        logger.error(err)
+        process.exit(1)
     });
 
 }
