@@ -40,56 +40,56 @@ module.exports.CHAINCODE_PATH = 'github.com/example_cc';
 module.exports.CHAINCODE_UPGRADE_PATH = 'github.com/example_cc1';
 module.exports.CHAINCODE_MARBLES_PATH = 'github.com/marbles_cc';
 module.exports.END2END = {
-	channel: 'mychannel',
-	chaincodeId: 'end2end',
-	chaincodeVersion: 'v0'
+    channel: 'mychannel',
+    chaincodeId: 'end2end',
+    chaincodeVersion: 'v0'
 };
 
 
 // directory for file based KeyValueStore
 module.exports.KVS = '/tmp/hfc-test-kvs';
 module.exports.storePathForOrg = function(networkid, org) {
-	return module.exports.KVS + '_' + networkid + '_' + org;
+    return module.exports.KVS + '_' + networkid + '_' + org;
 };
 
 // temporarily set $GOPATH to the test fixture folder
 module.exports.setupChaincodeDeploy = function() {
-	process.env.GOPATH = path.join(__dirname, '../fixtures');
+    process.env.GOPATH = path.join(__dirname, '../fixtures');
 };
 
 // specifically set the values to defaults because they may have been overridden when
 // running in the overall test bucket ('gulp test')
 module.exports.resetDefaults = function() {
-	global.hfc.config = undefined;
-	require('nconf').reset();
+    global.hfc.config = undefined;
+    require('nconf').reset();
 };
 
 module.exports.cleanupDir = function(keyValStorePath) {
-	var absPath = path.resolve(process.cwd(), keyValStorePath);
-	var exists = module.exports.existsSync(absPath);
-	if (exists) {
-		fs.removeSync(absPath);
-	}
+    var absPath = path.resolve(process.cwd(), keyValStorePath);
+    var exists = module.exports.existsSync(absPath);
+    if (exists) {
+        fs.removeSync(absPath);
+    }
 };
 
 module.exports.getUniqueVersion = function(prefix) {
-	if (!prefix) prefix = 'v';
-	return prefix + Date.now();
+    if (!prefix) prefix = 'v';
+    return prefix + Date.now();
 };
 
 // utility function to check if directory or file exists
 // uses entire / absolute path from root
 module.exports.existsSync = function(absolutePath /*string*/) {
-	try  {
-		var stat = fs.statSync(absolutePath);
-		if (stat.isDirectory() || stat.isFile()) {
-			return true;
-		} else
-			return false;
-	}
-	catch (e) {
-		return false;
-	}
+    try  {
+        var stat = fs.statSync(absolutePath);
+        if (stat.isDirectory() || stat.isFile()) {
+            return true;
+        } else
+            return false;
+    }
+    catch (e) {
+        return false;
+    }
 };
 
 module.exports.readFile = readFile;
@@ -97,214 +97,218 @@ module.exports.readFile = readFile;
 var ORGS;
 var goPath;
 
-var	tlsOptions = {
-	trustedRoots: [],
-	verify: false
+var tlsOptions = {
+    trustedRoots: [],
+    verify: false
 };
 
 function getgoPath() {
 
-        if ( typeof(ORGS.gopath) === 'undefined' ) {
-            goPath = '';
-        } else if ( ORGS.gopath == 'GOPATH' ) {
-            goPath = process.env['GOPATH'];
-        } else {
-            goPath = ORGS.gopath;
-        }
+    if ( typeof(ORGS.gopath) === 'undefined' ) {
+        goPath = '';
+    } else if ( ORGS.gopath == 'GOPATH' ) {
+        goPath = process.env['GOPATH'];
+    } else {
+        goPath = ORGS.gopath;
+    }
 }
 
 function getMember(username, password, client, nid, userOrg, svcFile) {
-	hfc.addConfigFile(svcFile);
-	ORGS = hfc.getConfigSetting('test-network');
+    hfc.addConfigFile(svcFile);
+    ORGS = hfc.getConfigSetting('test-network');
 
-	var caUrl = ORGS[userOrg].ca.url;
+    var caUrl = ORGS[userOrg].ca.url;
 
-	logger.info('[getMember] getMember, name: '+username+', client.getUserContext('+username+', true)');
+    logger.info('[getMember] getMember, name: '+username+', client.getUserContext('+username+', true)');
 
-	return client.getUserContext(username, true)
-	.then((user) => {
-		return new Promise((resolve, reject) => {
-			if (user && user.isEnrolled()) {
-				logger.info('[getMember] Successfully loaded member from persistence');
-				return resolve(user);
-			}
+    return client.getUserContext(username, true)
+        .then((user) => {
+            return new Promise((resolve, reject) => {
+                if (user && user.isEnrolled()) {
+                    logger.info('[getMember] Successfully loaded member from persistence');
+                    return resolve(user);
+                }
 
-			var member = new User(username);
-			var cryptoSuite = client.getCryptoSuite();
-                        if (!cryptoSuite) {
-			    cryptoSuite = hfc.newCryptoSuite();
-			    if (userOrg) {
-				cryptoSuite.setCryptoKeyStore(Client.newCryptoKeyStore({path: module.exports.storePathForOrg(nid, ORGS[userOrg].name)}));
-				client.setCryptoSuite(cryptoSuite);
-			    }
-			}
-			member.setCryptoSuite(cryptoSuite);
+                var member = new User(username);
+                var cryptoSuite = client.getCryptoSuite();
+                if (!cryptoSuite) {
+                    cryptoSuite = hfc.newCryptoSuite();
+                    if (userOrg) {
+                        cryptoSuite.setCryptoKeyStore(Client.newCryptoKeyStore({path: module.exports.storePathForOrg(nid, ORGS[userOrg].name)}));
+                        client.setCryptoSuite(cryptoSuite);
+                    }
+                }
+                member.setCryptoSuite(cryptoSuite);
 
-			// need to enroll it with CA server
-			var cop = new copService(caUrl, tlsOptions, ORGS[userOrg].ca.name, cryptoSuite);
+                // need to enroll it with CA server
+                var cop = new copService(caUrl, tlsOptions, ORGS[userOrg].ca.name, cryptoSuite);
 
-			return cop.enroll({
-				enrollmentID: username,
-				enrollmentSecret: password
-			}).then((enrollment) => {
-				logger.info('[getMember] Successfully enrolled user \'' + username + '\'');
+                return cop.enroll({
+                    enrollmentID: username,
+                    enrollmentSecret: password
+                }).then((enrollment) => {
+                    logger.info('[getMember] Successfully enrolled user \'' + username + '\'');
 
-				return member.setEnrollment(enrollment.key, enrollment.certificate, ORGS[userOrg].mspid);
-			}).then(() => {
-                                var skipPersistence = false;
-                                if (!client.getStateStore()) {
-                                    skipPersistence = true;
-                                }
-				return client.setUserContext(member, skipPersistence);
-			}).then(() => {
-				return resolve(member);
-			}).catch((err) => {
-				logger.error('[getMember] Failed to enroll and persist user. Error: ' + err.stack ? err.stack : err);
-			});
-		});
-	});
+                    return member.setEnrollment(enrollment.key, enrollment.certificate, ORGS[userOrg].mspid);
+                }).then(() => {
+                    var skipPersistence = false;
+                    if (!client.getStateStore()) {
+                        skipPersistence = true;
+                    }
+                    return client.setUserContext(member, skipPersistence);
+                }).then(() => {
+                    return resolve(member);
+                }).catch((err) => {
+                    logger.error('[getMember] Failed to enroll and persist user. Error: ' + err.stack ? err.stack : err)
+                    process.exit(1);
+                });
+            });
+        }).catch((err)=>{
+            logger.error(err)
+            process.exit(1);
+        });
 }
 
 function getAdmin(client, nid, userOrg, svcFile) {
-        hfc.addConfigFile(svcFile);
-        ORGS = hfc.getConfigSetting('test-network');
-        var keyPath;
-        var keyPEM;
-        var certPath;
-        var certPEM;
+    hfc.addConfigFile(svcFile);
+    ORGS = hfc.getConfigSetting('test-network');
+    var keyPath;
+    var keyPEM;
+    var certPath;
+    var certPEM;
 
-        if (typeof ORGS[userOrg].admin_cert !== 'undefined') {
-            logger.info(' %s admin_cert defined', userOrg);
-            keyPEM = ORGS[userOrg].priv;
-            certPEM = ORGS[userOrg].admin_cert;
-        } else {
-            getgoPath();
-            logger.info(' %s admin_cert undefined', userOrg);
-            keyPath =  path.resolve(goPath, ORGS[userOrg].adminPath , 'keystore');
-            keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
-            certPath = path.resolve(goPath, ORGS[userOrg].adminPath, 'signcerts');
-            certPEM = readAllFiles(certPath)[0];
-            logger.debug('[getAdmin] keyPath: %s', keyPath);
-            logger.debug('[getAdmin] certPath: %s', certPath);
+    if (typeof ORGS[userOrg].admin_cert !== 'undefined') {
+        logger.info(' %s admin_cert defined', userOrg);
+        keyPEM = ORGS[userOrg].priv;
+        certPEM = ORGS[userOrg].admin_cert;
+    } else {
+        getgoPath();
+        logger.info(' %s admin_cert undefined', userOrg);
+        keyPath =  path.resolve(goPath, ORGS[userOrg].adminPath , 'keystore');
+        keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
+        certPath = path.resolve(goPath, ORGS[userOrg].adminPath, 'signcerts');
+        certPEM = readAllFiles(certPath)[0];
+        logger.debug('[getAdmin] keyPath: %s', keyPath);
+        logger.debug('[getAdmin] certPath: %s', certPath);
+    }
+
+    var cryptoSuite = hfc.newCryptoSuite();
+    if (userOrg) {
+        cryptoSuite.setCryptoKeyStore(hfc.newCryptoKeyStore({path: module.exports.storePathForOrg(nid, ORGS[userOrg].name)}));
+        client.setCryptoSuite(cryptoSuite);
+    }
+
+    return Promise.resolve(client.createUser({
+        username: 'peer'+userOrg+'Admin',
+        mspid: ORGS[userOrg].mspid,
+        cryptoContent: {
+            privateKeyPEM: keyPEM.toString(),
+            signedCertPEM: certPEM.toString()
         }
-
-        var cryptoSuite = hfc.newCryptoSuite();
-	if (userOrg) {
-                cryptoSuite.setCryptoKeyStore(hfc.newCryptoKeyStore({path: module.exports.storePathForOrg(nid, ORGS[userOrg].name)}));
-                client.setCryptoSuite(cryptoSuite);
-	}
-
-	return Promise.resolve(client.createUser({
-		username: 'peer'+userOrg+'Admin',
-		mspid: ORGS[userOrg].mspid,
-		cryptoContent: {
-			privateKeyPEM: keyPEM.toString(),
-			signedCertPEM: certPEM.toString()
-		}
-	}));
+    }));
 }
 
 function getOrdererAdmin(client, userOrg, svcFile) {
-        hfc.addConfigFile(svcFile);
-        ORGS = hfc.getConfigSetting('test-network');
-        var keyPath;
-        var keyPEM;
-        var certPath;
-        var certPEM;
-        var ordererID = ORGS[userOrg].ordererID;
+    hfc.addConfigFile(svcFile);
+    ORGS = hfc.getConfigSetting('test-network');
+    var keyPath;
+    var keyPEM;
+    var certPath;
+    var certPEM;
+    var ordererID = ORGS[userOrg].ordererID;
 
-        if (typeof ORGS['orderer'].admin_cert !== 'undefined') {
-            logger.info(' %s global orderer admin_cert defined', userOrg);
-            keyPEM = ORGS['orderer'].priv;
-            certPEM = ORGS['orderer'].admin_cert;
-        } else if (typeof ORGS['orderer'][ordererID].admin_cert !== 'undefined') {
-            logger.info(' %s local orderer admin_cert defined', userOrg);
-            keyPEM = ORGS['orderer'][ordererID].priv;
-            certPEM = ORGS['orderer'][ordererID].admin_cert;
-        } else if (typeof ORGS['orderer'].adminPath !== 'undefined') {
-            getgoPath();
-            logger.info(' %s global orderer adminPath defined', userOrg);
-            keyPath = path.resolve(goPath, ORGS['orderer'].adminPath, 'keystore');
-            keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
-            certPath = path.resolve(goPath, ORGS['orderer'].adminPath, 'signcerts');
-            certPEM = readAllFiles(certPath)[0];
-            logger.debug('[getOrdererAdmin] keyPath: %s', keyPath);
-            logger.debug('[getOrdererAdmin] certPath: %s', certPath);
-        } else {
-            getgoPath();
-            logger.info(' %s local orderer adminPath defined', userOrg);
-            keyPath = path.resolve(goPath, ORGS['orderer'][ordererID].adminPath, 'keystore');
-            keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
-            certPath = path.resolve(goPath, ORGS['orderer'][ordererID].adminPath, 'signcerts');
-            certPEM = readAllFiles(certPath)[0];
-            logger.debug('[getOrdererAdmin] keyPath: %s', keyPath);
-            logger.debug('[getOrdererAdmin] certPath: %s', certPath);
+    if (typeof ORGS['orderer'].admin_cert !== 'undefined') {
+        logger.info(' %s global orderer admin_cert defined', userOrg);
+        keyPEM = ORGS['orderer'].priv;
+        certPEM = ORGS['orderer'].admin_cert;
+    } else if (typeof ORGS['orderer'][ordererID].admin_cert !== 'undefined') {
+        logger.info(' %s local orderer admin_cert defined', userOrg);
+        keyPEM = ORGS['orderer'][ordererID].priv;
+        certPEM = ORGS['orderer'][ordererID].admin_cert;
+    } else if (typeof ORGS['orderer'].adminPath !== 'undefined') {
+        getgoPath();
+        logger.info(' %s global orderer adminPath defined', userOrg);
+        keyPath = path.resolve(goPath, ORGS['orderer'].adminPath, 'keystore');
+        keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
+        certPath = path.resolve(goPath, ORGS['orderer'].adminPath, 'signcerts');
+        certPEM = readAllFiles(certPath)[0];
+        logger.debug('[getOrdererAdmin] keyPath: %s', keyPath);
+        logger.debug('[getOrdererAdmin] certPath: %s', certPath);
+    } else {
+        getgoPath();
+        logger.info(' %s local orderer adminPath defined', userOrg);
+        keyPath = path.resolve(goPath, ORGS['orderer'][ordererID].adminPath, 'keystore');
+        keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
+        certPath = path.resolve(goPath, ORGS['orderer'][ordererID].adminPath, 'signcerts');
+        certPEM = readAllFiles(certPath)[0];
+        logger.debug('[getOrdererAdmin] keyPath: %s', keyPath);
+        logger.debug('[getOrdererAdmin] certPath: %s', certPath);
+    }
+
+    return Promise.resolve(client.createUser({
+        username: 'ordererAdmin',
+        mspid: ORGS['orderer'][ordererID].mspid,
+        cryptoContent: {
+            privateKeyPEM: keyPEM.toString(),
+            signedCertPEM: certPEM.toString()
         }
-
-	return Promise.resolve(client.createUser({
-		username: 'ordererAdmin',
-		mspid: ORGS['orderer'][ordererID].mspid,
-		cryptoContent: {
-			privateKeyPEM: keyPEM.toString(),
-			signedCertPEM: certPEM.toString()
-		}
-	}));
+    }));
 }
 
 function readFile(path) {
-	return new Promise((resolve, reject) => {
-		fs.readFile(path, (err, data) => {
-			if (!!err)
-				reject(new Error('Failed to read file ' + path + ' due to error: ' + err));
-			else
-				resolve(data);
-		});
-	});
+    return new Promise((resolve, reject) => {
+        fs.readFile(path, (err, data) => {
+            if (!!err)
+                reject(new Error('Failed to read file ' + path + ' due to error: ' + err));
+            else
+                resolve(data);
+        });
+    });
 }
 
 function readAllFiles(dir) {
-	var files = fs.readdirSync(dir);
-	var certs = [];
-	files.forEach((file_name) => {
-		let file_path = path.resolve(dir,file_name);
-		logger.debug('[readAllFiles] looking at file ::'+file_path);
-		let data = fs.readFileSync(file_path);
-		certs.push(data);
-	});
-	return certs;
+    var files = fs.readdirSync(dir);
+    var certs = [];
+    files.forEach((file_name) => {
+        let file_path = path.resolve(dir,file_name);
+        logger.debug('[readAllFiles] looking at file ::'+file_path);
+        let data = fs.readFileSync(file_path);
+        certs.push(data);
+    });
+    return certs;
 }
 
 module.exports.getOrderAdminSubmitter = function(client, userOrg, svcFile) {
-	return getOrdererAdmin(client, userOrg, svcFile);
+    return getOrdererAdmin(client, userOrg, svcFile);
 };
 
 module.exports.getSubmitter = function(username, secret, client, peerOrgAdmin, nid, org, svcFile) {
-	if (arguments.length < 2) throw new Error('"client" and "test" are both required parameters');
+    if (arguments.length < 2) throw new Error('"client" and "test" are both required parameters');
 
-	var peerAdmin, userOrg;
-	if (typeof peerOrgAdmin === 'boolean') {
-		peerAdmin = peerOrgAdmin;
-	} else {
-		peerAdmin = false;
-	}
+    var peerAdmin, userOrg;
+    if (typeof peerOrgAdmin === 'boolean') {
+        peerAdmin = peerOrgAdmin;
+    } else {
+        peerAdmin = false;
+    }
 
-	// if the 3rd argument was skipped
-	if (typeof peerOrgAdmin === 'string') {
-		userOrg = peerOrgAdmin;
-	} else {
-		if (typeof org === 'string') {
-			userOrg = org;
-		} else {
-			userOrg = 'org1';
-		}
-	}
+    // if the 3rd argument was skipped
+    if (typeof peerOrgAdmin === 'string') {
+        userOrg = peerOrgAdmin;
+    } else {
+        if (typeof org === 'string') {
+            userOrg = org;
+        } else {
+            userOrg = 'org1';
+        }
+    }
 
-	if (peerAdmin) {
-		logger.info(' >>>> getting the org admin');
-		return getAdmin(client, nid, userOrg, svcFile);
-	} else {
-		return getMember(username, secret, client, nid, userOrg, svcFile);
-	}
+    if (peerAdmin) {
+        logger.info(' >>>> getting the org admin');
+        return getAdmin(client, nid, userOrg, svcFile);
+    } else {
+        return getMember(username, secret, client, nid, userOrg, svcFile);
+    }
 };
 
 // set up PTE logger
@@ -356,8 +360,8 @@ function getTLSCert(key, subkey) {
     } else {
         var tlscerts = ORGS[key][subkey].tls_cacerts;
         if (tlscerts.includes('BEGIN CERTIFICATE')) {
-           //tlscerts is a cert
-           data = tlscerts;
+            //tlscerts is a cert
+            data = tlscerts;
         } else {
             var caRootsPath = path.resolve(goPath, ORGS[key][subkey].tls_cacerts);
             if (fs.existsSync(caRootsPath)) {
@@ -374,41 +378,45 @@ function getTLSCert(key, subkey) {
 module.exports.getTLSCert = getTLSCert;
 
 module.exports.tlsEnroll = async function(client, orgName, svcFile) {
-    logger.info('[tlsEnroll] CA tls enroll: %s, svcFile: %s', orgName, svcFile);
-    hfc.addConfigFile(svcFile);
-    return new Promise(function (resolve, reject) {
-        FabricCAServices.addConfigFile(svcFile);
-        let orgs = FabricCAServices.getConfigSetting('test-network');
-        if (!orgs[orgName]) {
+    try {
+        logger.info('[tlsEnroll] CA tls enroll: %s, svcFile: %s', orgName, svcFile);
+        hfc.addConfigFile(svcFile);
+        return new Promise(function (resolve, reject) {
+            FabricCAServices.addConfigFile(svcFile);
+            let orgs = FabricCAServices.getConfigSetting('test-network');
+            if (!orgs[orgName]) {
                 throw new Error('Invalid org name: ' + orgName);
-        }
-        let fabricCAEndpoint = orgs[orgName].ca.url;
-        let tlsOptions = {
-            trustedRoots: [],
-            verify: false
-        };
-        let caService = new FabricCAServices(fabricCAEndpoint, tlsOptions, orgs[orgName].ca.name);
-        logger.info('[tlsEnroll] CA tls enroll ca name: %j', orgs[orgName].ca.name);
-        let req = {
-            enrollmentID: 'admin',
-            enrollmentSecret: 'adminpw',
-            profile: 'tls'
-        };
-        caService.enroll(req).then(
-            function(enrollment) {
-                const key = enrollment.key.toBytes();
-                const cert = enrollment.certificate;
-                client.setTlsClientCertAndKey(cert, key);
-                logger.info('[tlsEnroll] CA tls enroll succeeded');
-
-                return resolve(enrollment);
-            },
-            function(err) {
-                logger.info('[tlsEnroll] CA tls enroll failed: %j', err);
-                return reject(err);
             }
-        );
-    });
+            let fabricCAEndpoint = orgs[orgName].ca.url;
+            let tlsOptions = {
+                trustedRoots: [],
+                verify: false
+            };
+            let caService = new FabricCAServices(fabricCAEndpoint, tlsOptions, orgs[orgName].ca.name);
+            logger.info('[tlsEnroll] CA tls enroll ca name: %j', orgs[orgName].ca.name);
+            let req = {
+                enrollmentID: 'admin',
+                enrollmentSecret: 'adminpw',
+                profile: 'tls'
+            };
+            caService.enroll(req).then(
+                function(enrollment) {
+                    const key = enrollment.key.toBytes();
+                    const cert = enrollment.certificate;
+                    client.setTlsClientCertAndKey(cert, key);
+                    logger.info('[tlsEnroll] CA tls enroll succeeded');
+
+                    return resolve(enrollment);
+                }).catch(err => {
+                    logger.info('[tlsEnroll] CA tls enroll failed: %j', err);
+                    return reject(err);
+                }
+                );
+        });
+    } catch (err) {
+        logger.error(err)
+        process.exit(1)
+    }
 }
 
 var TLSDISABLED = 0;
@@ -424,10 +432,9 @@ module.exports.setTLS=function(txCfgPtr) {
     if ( (TLSin == 'SERVERAUTH') || (TLSin == 'ENABLED') ) {
         TLS = TLSSERVERAUTH;
     } else if ( TLSin == 'CLIENTAUTH' ) {
-       TLS = TLSCLIENTAUTH;
+        TLS = TLSCLIENTAUTH;
     }
     logger.info('[setTLS] TLSin: %s, TLS: %d', TLSin, TLS);
-
     return TLS;
 }
 
