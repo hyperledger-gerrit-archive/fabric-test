@@ -159,10 +159,13 @@ function getMember(username, password, client, nid, userOrg, svcFile) {
 			}).then(() => {
 				return resolve(member);
 			}).catch((err) => {
-				logger.error('[getMember] Failed to enroll and persist user. Error: ' + err.stack ? err.stack : err);
+                logger.error('[getMember] Failed to enroll and persist user. Error: ' + err.stack ? err.stack : err);
+                throw new Error('[getMember] Failed to enroll and persist user. Error: ' + err.stack ? err.stack : err)
 			});
 		});
-	});
+	}).catch((err)=>{
+            process.exit(1);
+    });
 }
 
 function getAdmin(client, nid, userOrg, svcFile) {
@@ -427,7 +430,7 @@ module.exports.setTLS=function(txCfgPtr) {
        TLS = TLSCLIENTAUTH;
     }
     logger.info('[setTLS] TLSin: %s, TLS: %d', TLSin, TLS);
-
+    
     return TLS;
 }
 
