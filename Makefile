@@ -60,7 +60,14 @@ TARGET = pte test-viewer
 STABLE_TAG ?= $(ARCH)-$(BRANCH)-stable
 
 .PHONY: ci-smoke
-ci-smoke: fabric ca pre-req pull-images pull-binaries pull-thirdparty-images build-fabric-ca build-sdk-wrapper smoke-tests
+#ci-smoke: fabric ca pre-req pull-images pull-binaries pull-thirdparty-images build-fabric-ca build-sdk-wrapper smoke-tests
+ci-smoke: fabric ca pre-req pull-images pull-binaries pull-thirdparty-images build-fabric-ca build-sdk-wrapper
+	@make docker-fvt -C $(CA_DIR)
+	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runCATestSuite.sh
+
+#svt-daily-ca-tests: pre-req pull-images pull-binaries build-fabric-ca
+#	@make docker-fvt -C $(CA_DIR)
+#	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runCATestSuite.sh
 
 .PHONY: git-latest
 git-latest:
@@ -234,6 +241,7 @@ svt-daily-lte-tests: pre-req fabric pull-binaries pull-thirdparty-images
 
 .PHONY: svt-daily-ca-tests
 svt-daily-ca-tests: pre-req pull-images pull-binaries build-fabric-ca
+	@make docker-fvt -C $(CA_DIR)
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/daily && ./runCATestSuite.sh
 
 .PHONY: svt-weekly-pte-12hr-test
