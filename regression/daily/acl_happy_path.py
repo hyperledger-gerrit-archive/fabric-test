@@ -8,7 +8,7 @@ import unittest
 import subprocess
 import os
 
-fca_sample_directory = '../../fabric-samples/fabric-ca'
+fca_sample_directory = '../../fabric-samples/basic-network'
 
 class ACL(unittest.TestCase):
 
