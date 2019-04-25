@@ -68,7 +68,7 @@ class Composition:
         return servicesList
 
     def up(self, force_recreate=True, components=[]):
-        command = ["up", "-d"]
+        command = ["up", "-d", " > log.txt 2&>1"]
         if force_recreate:
             command += ["--force-recreate"]
         cas = ["ca.example.com", "ca.org1.example.com", "ca.org2.example.com"]
@@ -325,7 +325,7 @@ class Composition:
 
     def decompose(self):
         self.issueCommand(["unpause"], self.refreshContainerIDs())
-        self.issueCommand(["down"])
+        self.issueCommand(["down",  " > log.txt 2&>1"])
         self.issueCommand(["kill"])
         self.issueCommand(["rm", "-f"])
         env = self.getEnv()
