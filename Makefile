@@ -60,7 +60,7 @@ TARGET = pte test-viewer
 STABLE_TAG ?= $(ARCH)-$(BRANCH)-stable
 
 .PHONY: ci-smoke
-ci-smoke: fabric ca pre-req pull-images pull-binaries-fabric pull-thirdparty-images build-fabric-ca smoke-tests
+ci-smoke: fabric ca pre-req pull-images pull-binaries-fabric pull-binaries-fabric-ca pull-thirdparty-images build-fabric-ca smoke-tests
 
 .PHONY: git-latest
 git-latest:

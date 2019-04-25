@@ -76,6 +76,7 @@ services:
 
     couchdb:
         image: hyperledger/fabric-couchdb
+        
 
     peer:
         image: hyperledger/fabric-peer
