@@ -63,7 +63,7 @@ class Composition:
         if startContainers:
             self.up(force_recreate, components)
 
-    def collectServiceNames(self):
+    def collectServiceNames(self)::
         servicesList = [service for service in self.issueCommand(["config", "--services"]).splitlines() if "WARNING" not in service]
         return servicesList
 
