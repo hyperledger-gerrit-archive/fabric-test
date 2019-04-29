@@ -304,7 +304,7 @@ done
 if [ $Req == "create" ]; then
 
    #docker-compose -f docker-compose.yml up -d --force-recreate cli $VPN
-   docker-compose -f docker-compose.yml --no-ansi up -d --force-recreate
+   docker-compose -f docker-compose.yml up -d --force-recreate --no-color
    #docker-compose -f docker-compose.yml up -d --force-recreate $VPN
    ##docker-compose -f docker-compose.yml up -d --force-recreate $VPN
    #for ((i=1; i<$nOrderer; i++))
