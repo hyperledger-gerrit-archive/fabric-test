@@ -28,4 +28,5 @@ if [ $? != 0 ]; then
 else
     echo "Successfully installed npm."
 fi
+
 cd $SMOKEDIR && py.test -v --junitxml results_systest_pte.xml systest_pte.py
