@@ -869,8 +869,8 @@ The user input file contains configuration parameters including chaincode defini
 
 where
 
-* **txCfgPtr**: the transaction configuration input file
-* **ccDfnPtr**: the chaincode definition input file
+* **txCfgPtr**: the transaction configuration input file, supported format: json and yaml, see PTE/sampleccInputs for example of both formats
+* **ccDfnPtr**: the chaincode definition input file, supported format: json and yaml, see PTE/sampleccInputs for example of both formats
 
 
 ####### Transaction configuration File
@@ -1095,7 +1095,7 @@ where:
 * **invoke** invoke transaction contents
     * **query**: query content
     * **move**: move content
-* **SCFile**: the service credentials json.
+* **SCFile**: the service credentials file, supported format: json and yaml, see PTE/SCFiles for example of both formats
 
 
 ### Notes on Statistical Distributions
