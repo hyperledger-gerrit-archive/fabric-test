@@ -6,9 +6,9 @@
 #
 #   - ca                       - clones the fabric-ca repository.
 #   - ci-smoke                 - update submodules, clone fabric, pulls docker images and executes smoke
-#                              tests.
+#                                tests.
 #   - ci-daily                 - update submodules, clone fabric, pulls docker images and executes daily
-#                              test suite. NOT USED?
+#                                test suite. NOT USED?
 #   - svt-daily                - clones fabric, pulls the images, binaries from Nexus and runs the daily
 #                              test suite. NOT USED?
 #   - svt-smoke                - pulls the images, binaries from Nexus and runs the smoke tests. NOT USED?
