@@ -136,7 +136,8 @@ nOrgPerChannel=$nOrg
 echo "nOrgPerChannel: $nOrgPerChannel"
 
 
-function outOrderer {
+# ################  create json
+function outOrderer_json {
     adminPath=$ordererBaseDir"/"$comName"/users/Admin@"$comName"/msp"
 
     lastOrderer=$[nOrderer-1]
@@ -144,49 +145,49 @@ function outOrderer {
     do
         ordererid="orderer"$i
 
-        tmp="            \"$ordererid\": {" >> $scOfile
+        tmp="            \"$ordererid\": {"
         echo "$tmp" >> $scOfile
-        tmp="                \"name\": \"OrdererOrg\"," >> $scOfile
+        tmp="                \"name\": \"OrdererOrg\","
         echo "$tmp" >> $scOfile
-        tmp="                \"mspid\": \"OrdererOrg\"," >> $scOfile
+        tmp="                \"mspid\": \"OrdererOrg\","
         echo "$tmp" >> $scOfile
-        tmp="                \"mspPath\": \"$MSPBaseDir\"," >> $scOfile
+        tmp="                \"mspPath\": \"$MSPBaseDir\","
         echo "$tmp" >> $scOfile
-        tmp="                \"adminPath\": \"$adminPath\"," >> $scOfile
+        tmp="                \"adminPath\": \"$adminPath\","
         echo "$tmp" >> $scOfile
-        tmp="                \"comName\": \"$comName\"," >> $scOfile
+        tmp="                \"comName\": \"$comName\","
         echo "$tmp" >> $scOfile
 
         urlPort=$[ordererBasePort+i]
         url="grpcs://"$HostIP":"$urlPort
-        tmp="                \"url\": \"$url\"," >> $scOfile
+        tmp="                \"url\": \"$url\","
         echo "$tmp" >> $scOfile
 
         ordererCom=$ordererid"."$comName
-        tmp="                \"server-hostname\": \"$ordererCom\"," >> $scOfile
+        tmp="                \"server-hostname\": \"$ordererCom\","
         echo "$tmp" >> $scOfile
 
         ordererTlsCert=$ordererBaseDir"/"$comName"/orderers/"$ordererid"."$comName"/msp/tlscacerts/tlsca."$comName"-cert.pem"
-        tmp="                \"tls_cacerts\": \"$ordererTlsCert\"" >> $scOfile
+        tmp="                \"tls_cacerts\": \"$ordererTlsCert\""
         echo "$tmp" >> $scOfile
 
         if [ $i -ne $lastOrderer ]; then
-            tmp="            }," >> $scOfile
+            tmp="            },"
             echo "$tmp" >> $scOfile
         else
-            tmp="            }" >> $scOfile
+            tmp="            }"
             echo "$tmp" >> $scOfile
             if [ $nOrgPerChannel -eq 0 ]; then
-                tmp="        }" >> $scOfile
+                tmp="        }"
             else
-                tmp="        }," >> $scOfile
+                tmp="        },"
             fi
             echo "$tmp" >> $scOfile
         fi
     done
 }
 
-function outOrg {
+function outOrg_json {
     # org/peer
     ordID=0
     caID=0
@@ -233,23 +234,23 @@ function outOrg {
                 orgPeer=$opVal
             fi
         fi
-        tmp="        \"$orgid\": {" >> $scOfile
+        tmp="        \"$orgid\": {"
         echo "$tmp" >> $scOfile
 
-        tmp="                \"name\": \"$orgPeer\"," >> $scOfile
+        tmp="                \"name\": \"$orgPeer\","
         echo "$tmp" >> $scOfile
-        tmp="                \"mspid\": \"$orgPeer\"," >> $scOfile
+        tmp="                \"mspid\": \"$orgPeer\","
         echo "$tmp" >> $scOfile
-        tmp="                \"mspPath\": \"$MSPBaseDir\"," >> $scOfile
+        tmp="                \"mspPath\": \"$MSPBaseDir\","
         echo "$tmp" >> $scOfile
-        tmp="                \"adminPath\": \"$adminPath\"," >> $scOfile
+        tmp="                \"adminPath\": \"$adminPath\","
         echo "$tmp" >> $scOfile
-        tmp="                \"comName\": \"$comName\"," >> $scOfile
+        tmp="                \"comName\": \"$comName\","
         echo "$tmp" >> $scOfile
 
         if [ $nOrderer -gt 0 ]; then
             ordID=$(( (n-1) % nOrderer ))
-            tmp="                \"ordererID\": \"orderer$ordID\"," >> $scOfile
+            tmp="                \"ordererID\": \"orderer$ordID\","
             echo "$tmp" >> $scOfile
         else
             echo "Error: no orderer number is specified."
@@ -257,23 +258,23 @@ function outOrg {
         fi
 
         if [ $nCA -gt 0 ]; then
-            tmp="                \"ca\": {" >> $scOfile
+            tmp="                \"ca\": {"
             echo "$tmp" >> $scOfile
             caID=$(( caID % nCA ))
             capid=$(( CAPort + caID ))
             caPort="https://"$HostIP":"$capid
-            tmp="                    \"url\": \"$caPort\"," >> $scOfile
+            tmp="                    \"url\": \"$caPort\","
             echo "$tmp" >> $scOfile
             caName="ca"$caID
             caID=$(( caID + 1 ))
-            tmp="                    \"name\": \"$caName\"" >> $scOfile
+            tmp="                    \"name\": \"$caName\""
             echo "$tmp" >> $scOfile
-            tmp="                }," >> $scOfile
+            tmp="                },"
             echo "$tmp" >> $scOfile
 
-            tmp="                \"username\": \"admin\"," >> $scOfile
+            tmp="                \"username\": \"admin\","
             echo "$tmp" >> $scOfile
-            tmp="                \"secret\": \"adminpw\"," >> $scOfile
+            tmp="                \"secret\": \"adminpw\","
             echo "$tmp" >> $scOfile
         fi
 
@@ -286,46 +287,46 @@ function outOrg {
 
             j0=$(( j - 1 ))
             peerID="peer"$j
-            tmp="                \"$peerID\": {" >> $scOfile
+            tmp="                \"$peerID\": {"
             echo "$tmp" >> $scOfile
             peerIP=$(( (i-1)*nPeersPerOrg + j0 + peerBasePort ))
             peerTmp="grpcs://"$HostIP":"$peerIP
-            tmp="                    \"requests\": \"$peerTmp\"," >> $scOfile
+            tmp="                    \"requests\": \"$peerTmp\","
             echo "$tmp" >> $scOfile
             eventIP=$(( (i-1)*nPeersPerOrg + j0 + peerEventBasePort ))
             eventTmp="grpcs://"$HostIP":"$eventIP
-            tmp="                    \"events\": \"$eventTmp\"," >> $scOfile
+            tmp="                    \"events\": \"$eventTmp\","
             echo "$tmp" >> $scOfile
             sHost="peer"$j0"."$orgid"."$comName
-            tmp="                    \"server-hostname\": \"$sHost\"," >> $scOfile
+            tmp="                    \"server-hostname\": \"$sHost\","
             echo "$tmp" >> $scOfile
-            tmp="                    \"tls_cacerts\": \"$orgTlscaCert\"" >> $scOfile
+            tmp="                    \"tls_cacerts\": \"$orgTlscaCert\""
             echo "$tmp" >> $scOfile
 
             if [ $j -ne $nPeersPerOrg ]; then
-                tmp="                }," >> $scOfile
+                tmp="                },"
                 echo "$tmp" >> $scOfile
             else
-                tmp="                }" >> $scOfile
+                tmp="                }"
                 echo "$tmp" >> $scOfile
             fi
         done
 
         if [ $i -ne $nOrgPerChannel ]; then
-            tmp="        }," >> $scOfile
+            tmp="        },"
             echo "$tmp" >> $scOfile
         else
-            tmp="        }" >> $scOfile
+            tmp="        }"
             echo "$tmp" >> $scOfile
         fi
     done
 
-    tmp="    }" >> $scOfile
+    tmp="    }"
     echo "$tmp" >> $scOfile
 
 }
 
-#begin process
+#begin process: create json
 for (( n=1; n<=$nChannel; n++ ))
 do
     scOfile="config-chan"$n"-TLS.json"
@@ -336,28 +337,223 @@ do
     ## header
     tmp="{"
     echo "$tmp" >> $scOfile
-    tmp="    \"test-network\": {" >> $scOfile
+    tmp="    \"test-network\": {"
     echo "$tmp" >> $scOfile
-    tmp="        \"gopath\": \"GOPATH\"," >> $scOfile
-    echo "$tmp" >> $scOfile
-
-    ## orderers
-    tmp="        \"orderer\": {" >> $scOfile
+    tmp="        \"gopath\": \"GOPATH\","
     echo "$tmp" >> $scOfile
 
     ## orderers
-    outOrderer
+    tmp="        \"orderer\": {"
+    echo "$tmp" >> $scOfile
+
+    ## orderers
+    outOrderer_json
 
     ## orgs with peers
     if [ $nOrgPerChannel -eq 0 ]; then
-        tmp="    }" >> $scOfile
+        tmp="    }"
         echo "$tmp" >> $scOfile
     else
-        outOrg
+        outOrg_json
     fi
 
-    tmp="}" >> $scOfile
+    tmp="}"
     echo "$tmp" >> $scOfile
+done
+
+# ################  create yaml
+function outOrderer_yaml {
+    adminPath=$ordererBaseDir"/"$comName"/users/Admin@"$comName"/msp"
+
+    lastOrderer=$[nOrderer-1]
+    for (( i=0; i<$nOrderer; i++ ))
+    do
+        ordererid="orderer"$i
+
+        tmp="    $ordererid:"
+        echo "$tmp" >> $scOfile
+        tmp="      name: OrdererOrg"
+        echo "$tmp" >> $scOfile
+        tmp="      mspid: OrdererOrg"
+        echo "$tmp" >> $scOfile
+        tmp="      mspPath: $MSPBaseDir"
+        echo "$tmp" >> $scOfile
+        tmp="      adminPath: $adminPath"
+        echo "$tmp" >> $scOfile
+        tmp="      comName: $comName"
+        echo "$tmp" >> $scOfile
+
+        urlPort=$[ordererBasePort+i]
+        url="grpcs://"$HostIP":"$urlPort
+        tmp="      url: $url"
+        echo "$tmp" >> $scOfile
+
+        ordererCom=$ordererid"."$comName
+        tmp="      server-hostname: $ordererCom"
+        echo "$tmp" >> $scOfile
+
+        ordererTlsCert=$ordererBaseDir"/"$comName"/orderers/"$ordererid"."$comName"/msp/tlscacerts/tlsca."$comName"-cert.pem"
+        tmp="      tls_cacerts: $ordererTlsCert"
+        echo "$tmp" >> $scOfile
+
+    done
+}
+
+function outOrg_yaml {
+    # org/peer
+    ordID=0
+    caID=0
+    for (( i=1; i<=$nOrgPerChannel; i++ ))
+    do
+        peerid=$i
+
+        orgid="org"$peerid
+        if [ ! -z $orgMap ] && [ -f $orgMap ]
+        then
+            oiVal=$(jq .$orgid $orgMap)
+            if [ ! -z $oiVal ] && [ $oiVal != "null" ]
+            then
+                # Strip quotes from oiVal if they are present
+                if [ ${oiVal:0:1} == "\"" ]
+                then
+                    oiVal=${oiVal:1}
+                fi
+                let "OILEN = ${#oiVal} - 1"
+                if [ ${oiVal:$OILEN:1} == "\"" ]
+                then
+                    oiVal=${oiVal:0:$OILEN}
+                fi
+                orgid=$oiVal
+            fi
+        fi
+        adminPath=$peerBaseDir"/"$orgid"."$comName"/users/Admin@"$orgid"."$comName"/msp"
+        orgPeer="PeerOrg"$peerid
+        if [ ! -z $orgMap ] && [ -f $orgMap ]
+        then
+            opVal=$(jq .$orgPeer $orgMap)
+            if [ ! -z $opVal ] && [ $opVal != "null" ]
+            then
+                # Strip quotes from opVal if they are present
+                if [ ${opVal:0:1} == "\"" ]
+                then
+                    opVal=${opVal:1}
+                fi
+                let "OPLEN = ${#opVal} - 1"
+                if [ ${opVal:$OPLEN:1} == "\"" ]
+                then
+                    opVal=${opVal:0:$OPLEN}
+                fi
+                orgPeer=$opVal
+            fi
+        fi
+        tmp="  $orgid:"
+        echo "$tmp" >> $scOfile
+
+
+        tmp="    name: $orgPeer"
+        echo "$tmp" >> $scOfile
+        tmp="    mspid: $orgPeer"
+        echo "$tmp" >> $scOfile
+        tmp="    mspPath: $MSPBaseDir"
+        echo "$tmp" >> $scOfile
+        tmp="    adminPath: $adminPath"
+        echo "$tmp" >> $scOfile
+        tmp="    comName: $comName"
+        echo "$tmp" >> $scOfile
+
+        if [ $nOrderer -gt 0 ]; then
+            ordID=$(( (n-1) % nOrderer ))
+            tmp="    ordererID: orderer$ordID"
+            echo "$tmp" >> $scOfile
+        else
+            echo "Error: no orderer number is specified."
+            exit 1
+        fi
+
+        if [ $nCA -gt 0 ]; then
+            tmp="    ca:"
+            echo "$tmp" >> $scOfile
+            caID=$(( caID % nCA ))
+            capid=$(( CAPort + caID ))
+            caPort="https://"$HostIP":"$capid
+            tmp="      url: $caPort"
+            echo "$tmp" >> $scOfile
+            caName="ca"$caID
+            caID=$(( caID + 1 ))
+            tmp="      name: $caName"
+            echo "$tmp" >> $scOfile
+
+            tmp="    username: admin"
+            echo "$tmp" >> $scOfile
+            tmp="    secret: adminpw"
+            echo "$tmp" >> $scOfile
+        fi
+
+
+        # peer per org
+        for (( j=1; j<=$nPeersPerOrg; j++ ))
+        do
+            orgCom=$orgid"."$comName
+            orgTlscaCert=$peerBaseDir"/"$orgCom"/tlsca/tlsca."$orgCom"-cert.pem"
+
+            j0=$(( j - 1 ))
+            peerID="peer"$j
+            tmp="    $peerID:"
+            echo "$tmp" >> $scOfile
+            peerIP=$(( (i-1)*nPeersPerOrg + j0 + peerBasePort ))
+            peerTmp="grpcs://"$HostIP":"$peerIP
+            tmp="      requests: $peerTmp"
+            echo "$tmp" >> $scOfile
+            eventIP=$(( (i-1)*nPeersPerOrg + j0 + peerEventBasePort ))
+            eventTmp="grpcs://"$HostIP":"$eventIP
+            tmp="      events: $eventTmp"
+            echo "$tmp" >> $scOfile
+            sHost="peer"$j0"."$orgid"."$comName
+            tmp="      server-hostname: $sHost"
+            echo "$tmp" >> $scOfile
+            tmp="      tls_cacerts: $orgTlscaCert"
+            echo "$tmp" >> $scOfile
+
+        done
+
+    done
+
+}
+
+#begin process
+for (( n=1; n<=$nChannel; n++ ))
+do
+    scOfile="config-chan"$n"-TLS.yaml"
+    if [ -e $scOfile ]; then
+        rm -f $scOfile
+    fi
+
+    ## header
+    tmp="# Copyright IBM Corp. All Rights Reserved."
+    echo "$tmp" >> $scOfile
+    tmp="#"
+    echo "$tmp" >> $scOfile
+    tmp="# SPDX-License-Identifier: Apache-2.0"
+    echo "$tmp" >> $scOfile
+    tmp="---"
+    echo "$tmp" >> $scOfile
+    tmp="test-network:"
+    echo "$tmp" >> $scOfile
+    tmp="  gopath: GOPATH"
+    echo "$tmp" >> $scOfile
+
+    ## orderers
+    tmp="  orderer:"
+    echo "$tmp" >> $scOfile
+
+    ## orderers
+    outOrderer_yaml
+
+    ## orgs with peers
+    if [ $nOrgPerChannel -ne 0 ]; then
+        outOrg_yaml
+    fi
+
 done
 
 
