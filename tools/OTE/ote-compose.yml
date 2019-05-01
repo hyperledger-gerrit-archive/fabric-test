@@ -26,4 +26,4 @@ services:
       - ../../fabric-test/tools/NL/configtx.yaml:/etc/hyperledger/fabric/configtx.yaml
       - ../../fabric-test/fabric/internal/cryptogen/crypto-config:/etc/hyperledger/fabric/artifacts
     working_dir: /opt/gopath/src/github.com/hyperledger/fabric/OTE
-    command: sh -c 'sleep 40 && ./script.sh'
+    command: sh -c 'sleep 40 && echo "ote-compose PATH=$PATH" && ./script.sh'
