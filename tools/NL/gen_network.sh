@@ -61,6 +61,7 @@ MutualTLSEnabled="disabled"
 db="goleveldb"
 comName="example.com"
 orgMap=
+FABRIC_LOGGING_SPEC=ERROR
 
 while getopts ":x:z:l:q:d:t:a:o:k:e:p:r:F:G:S:m:C:M:" opt; do
   case $opt in
@@ -80,9 +81,9 @@ while getopts ":x:z:l:q:d:t:a:o:k:e:p:r:F:G:S:m:C:M:" opt; do
       echo "number of CA: $nCA"
       ;;
     l)
-      FABRIC_LOGGING_SPEC=$OPTARG
+      FABRIC_LOGGING_SPEC=peer,endorser,committeer=$OPTARG:$FABRIC_LOGGING_SPEC
       export FABRIC_LOGGING_SPEC=$FABRIC_LOGGING_SPEC
-      echo "FABRIC_LOGGING_SPEC: $FABRIC_LOGGING_SPEC"
+      echo "FABRIC_LOGGING_SPEC=$FABRIC_LOGGING_SPEC"
       ;;
     d)
       db=$OPTARG
@@ -110,9 +111,9 @@ while getopts ":x:z:l:q:d:t:a:o:k:e:p:r:F:G:S:m:C:M:" opt; do
       fi
       ;;
     q)
-      ORDERER_GENERAL_LOGLEVEL=$OPTARG
-      export ORDERER_GENERAL_LOGLEVEL=$ORDERER_GENERAL_LOGLEVEL
-      echo "ORDERER_GENERAL_LOGLEVEL: $ORDERER_GENERAL_LOGLEVEL"
+      FABRIC_LOGGING_SPEC=orderer=$OPTARG:$FABRIC_LOGGING_SPEC
+      export FABRIC_LOGGING_SPEC=$FABRIC_LOGGING_SPEC
+      echo "FABRIC_LOGGING_SPEC=$FABRIC_LOGGING_SPEC"
       ;;
 
     # network options
@@ -179,17 +180,22 @@ if [ $nReplica -le 0 ]; then
     nReplica=$nBroker
 fi
 
-#OS
-##OSName=`uname`
-##echo "Operating System: $OSName"
+myOS=`uname -s`
+echo "Operating System: $myOS"
 
 # get current dir for CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE
 CWD=${PWD##*/}
-HOSTCONFIG_NETWORKMODE=$(echo $CWD | awk '{print tolower($CWD)}')
+HOSTCONFIG_NETWORKMODE="$CWD"
+dbType="$db"
+
+if [ "$myOS" != 'Darwin' ]; then
+    # macOS cannot run awk, but on Linux we can do better to convert to lowercase
+    dbType=`echo "$db" | awk '{print tolower($0)}'`
+    HOSTCONFIG_NETWORKMODE=$(echo $CWD | awk '{print tolower($CWD)}')
+fi
 export HOSTCONFIG_NETWORKMODE=$HOSTCONFIG_NETWORKMODE
 echo "HOSTCONFIG_NETWORKMODE: $HOSTCONFIG_NETWORKMODE"
 
-dbType=`echo "$db" | awk '{print tolower($0)}'`
 echo "action=$Req nPeerPerOrg=$nPeerPerOrg nBroker=$nBroker nReplica=$nReplica nOrderer=$nOrderer dbType=$dbType"
 VP=`docker ps -a | grep 'peer node start' | wc -l`
 echo "existing peers: $VP"
