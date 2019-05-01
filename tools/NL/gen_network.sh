@@ -61,6 +61,7 @@ MutualTLSEnabled="disabled"
 db="goleveldb"
 comName="example.com"
 orgMap=
+FABRIC_LOGGING_SPEC=ERROR
 
 while getopts ":x:z:l:q:d:t:a:o:k:e:p:r:F:G:S:m:C:M:" opt; do
   case $opt in
@@ -80,9 +81,9 @@ while getopts ":x:z:l:q:d:t:a:o:k:e:p:r:F:G:S:m:C:M:" opt; do
       echo "number of CA: $nCA"
       ;;
     l)
-      FABRIC_LOGGING_SPEC=$OPTARG
+      FABRIC_LOGGING_SPEC=peer,endorser,committeer=$OPTARG:$FABRIC_LOGGING_SPEC
       export FABRIC_LOGGING_SPEC=$FABRIC_LOGGING_SPEC
-      echo "FABRIC_LOGGING_SPEC: $FABRIC_LOGGING_SPEC"
+      echo "FABRIC_LOGGING_SPEC=$FABRIC_LOGGING_SPEC"
       ;;
     d)
       db=$OPTARG
@@ -110,9 +111,9 @@ while getopts ":x:z:l:q:d:t:a:o:k:e:p:r:F:G:S:m:C:M:" opt; do
       fi
       ;;
     q)
-      ORDERER_GENERAL_LOGLEVEL=$OPTARG
-      export ORDERER_GENERAL_LOGLEVEL=$ORDERER_GENERAL_LOGLEVEL
-      echo "ORDERER_GENERAL_LOGLEVEL: $ORDERER_GENERAL_LOGLEVEL"
+      FABRIC_LOGGING_SPEC=orderer=$OPTARG:$FABRIC_LOGGING_SPEC
+      export FABRIC_LOGGING_SPEC=$FABRIC_LOGGING_SPEC
+      echo "FABRIC_LOGGING_SPEC=$FABRIC_LOGGING_SPEC"
       ;;
 
     # network options

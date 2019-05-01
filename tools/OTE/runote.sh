@@ -3,7 +3,7 @@
 #defaults
 CWD=$PWD
 OTE_DIR=$CWD/../../../fabric/OTE
-TESTCASE="FAB-6996_1ch_solo"
+TESTCASE="FAB-6996_30ktx_1ch_solo"
 CLEANUP=true
 OLOGLVL="INFO"
 ORDS=1
@@ -12,14 +12,14 @@ ZKS=0
 
 function printHelp {
 
-   echo "Usage: "
+   echo "[fabric-test/tools/OTE/runote.sh] Usage: "
    echo " ./runote.sh [opt] [value] "
    echo "    -t <testcase (default=${TESTCASE})>"
    echo "    -d                                          # debugging option: leave network running"
    echo "    -q <loglevel>                               # orderer log level <CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG>"
    echo " "
    echo "Examples: "
-   echo "  ./runote.sh                                   # run the default testcase FAB-6996_1ch_solo"
+   echo "  ./runote.sh                                   # run the default testcase FAB-6996_30ktx_1ch_solo"
    echo "  ./runote.sh -t FAB-6996_30ktx_1ch_solo        # basic test with 1 channel, 1 solo orderer"
    echo "  ./runote.sh -t FAB-7936_100tx_3ch_3ord_3kb    # short test covering OTE functionalities"
    echo " "
@@ -330,12 +330,13 @@ saveLogs () {
 
 
 
-echo "====================Starting $TESTCASE test with OTE===================="
+echo "==================== [fabric-test/tools/OTE/runote.sh] Starting OTE testcase $TESTCASE ===================="
 cp -R $CWD/../OTE $CWD/../../../fabric/
 $TESTCASE
-
 docker logs -f OTE
+echo "======"
 echo "====== OTE test execution finished. Save OTE test logs."
+echo "======"
 if [ ! -d logs ];then
        mkdir logs
 fi
@@ -345,29 +346,42 @@ docker cp -a OTE:/opt/gopath/src/github.com/hyperledger/fabric/OTE/ote.log ./log
 echo "====== Collect data on host machine:"
 echo "====== $ df"
 df
-echo "====== $ free"
-free
 echo "====== $ top"
-top -b -n 1 | head -n 20
+myOS=`uname -s`
+if [ "$myOS" == 'Darwin' ]; then
+    top -l 1 -o cpu -n 20
+else
+    top -b -n 1 | head -n 20
+    echo "====== $ free"
+    free
+fi
 
 # Check the output OTE test logs for the string "RESULT=PASSED' which ote.go prints for each
 # successfully passed testcase. If an error occurred, collect container logs and host data.
-if [ -f ./logs/${TESTCASE}.log -a `grep -c RESULT=PASSED ./logs/${TESTCASE}.log` -eq 0 ]
+PASSED_linecount=`grep RESULT=PASSED ./logs/${TESTCASE}.log | wc -l`
+# echo PASSED_linecount=$PASSED_linecount
+# echo PATH=$PATH
+if [ -f ./logs/${TESTCASE}.log -a "$PASSED_linecount" -ne 0 ]
 then
-    echo "====== Saving all docker container logs in logs/ for the ${TESTCASE} test failure."
+    echo "====== ${TESTCASE} PASSED."
+else
+    echo "====== ${TESTCASE} FAILED. Saving all docker container logs in ${PWD}/logs/."
     saveOrdLogs
     saveLogs "kafka" $KBS
     saveLogs "zookeeper" $ZKS
 fi
 
 # Clean up ####################################################################
-if ( $CLEANUP )
+if [ "$CLEANUP" == "true" ]
 then
+  echo CLEANUP
   numChannels="" testcase="" docker-compose -f ote-compose.yml down
   cd ../../fabric-test/tools/NL
   ./networkLauncher.sh -a down
+  cd -
 else
-  echo "====== Test network remains running, as requested, for debugging. $ docker ps"
+  echo "====== Test network remains running, as requested, for debugging."
+  echo "=== $ docker ps"
   docker ps
   echo "=== PWD:  ${PWD}"
   echo "=== Read OTE output log artifacts:"
@@ -384,4 +398,4 @@ else
 fi
 
 sleep 10
-echo "====================Completed $TESTCASE test===================="
+echo "==================== Completed OTE testcase $TESTCASE ===================="
