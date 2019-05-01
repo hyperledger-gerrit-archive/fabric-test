@@ -1,9 +1,11 @@
 #!/bin/bash
 
 #defaults
+# tool sourcecode location
 CWD=$PWD
-OTE_DIR=$CWD/../../../fabric/OTE
-TESTCASE="FAB-6996_1ch_solo"
+# location in fabric where to copy and then run the tool
+OTE_DIR="$CWD/../../../fabric/OTE"
+TESTCASE="FAB-6996_3000tx_1ch_solo"
 CLEANUP=true
 OLOGLVL="INFO"
 ORDS=1
@@ -12,15 +14,15 @@ ZKS=0
 
 function printHelp {
 
-   echo "Usage: "
+   echo "[fabric-test/tools/OTE/runote.sh] Usage: "
    echo " ./runote.sh [opt] [value] "
    echo "    -t <testcase (default=${TESTCASE})>"
    echo "    -d                                          # debugging option: leave network running"
    echo "    -q <loglevel>                               # orderer log level <CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG>"
    echo " "
    echo "Examples: "
-   echo "  ./runote.sh                                   # run the default testcase FAB-6996_1ch_solo"
-   echo "  ./runote.sh -t FAB-6996_30ktx_1ch_solo        # basic test with 1 channel, 1 solo orderer"
+   echo "  ./runote.sh                                   # run the default testcase FAB-6996_3000tx_1ch_solo"
+   echo "  ./runote.sh -t FAB-6996_3000tx_1ch_solo       # basic test with 1 channel, 1 solo orderer"
    echo "  ./runote.sh -t FAB-7936_100tx_3ch_3ord_3kb    # short test covering OTE functionalities"
    echo " "
    echo "The supported testcases are:"
@@ -55,12 +57,12 @@ do
         esac
 done
 
-FAB-6996_30ktx_1ch_solo () {
+FAB-6996_3000tx_1ch_solo () {
         cd $CWD/../NL
         ./networkLauncher.sh -o $ORDS -q $OLOGLVL -x 0 -r 1 -p 1 -n 1 -f test -w localhost -S enabled
         cd $OTE_DIR
         # run testcase
-        numChannels=1 testcase=Test_FAB6996_30ktx_1ch_solo docker-compose -f ote-compose.yml up -d
+        numChannels=1 testcase=Test_FAB6996_3000tx_1ch_solo docker-compose -f ote-compose.yml up -d
 }
 
 FAB-7070_30ktx_1ch_solo_10kpayload () {
@@ -326,48 +328,76 @@ saveLogs () {
   done
 }
 
+collectHostData () {
+  # Collect host data : useful when debugging CI host problems
+  echo "====== Collect data on host machine:"
+  echo "====== $ df"
+  df -h
+  echo "====== $ top"
+  myOS=`uname -s`
+  if [ "$myOS" == 'Darwin' ]; then
+    # Mac, OSX
+    top -l 1 -u -n 10
+  else
+    top -b -n 1 | head -n 10
+    echo "====== $ free"
+    free
+  fi
+}
 
 
 
+echo "==================== [fabric-test/tools/OTE/runote.sh] Starting OTE testcase $TESTCASE ===================="
 
-echo "====================Starting $TESTCASE test with OTE===================="
+# remove log data from any prior execution of this test
+echo PWD=$PWD, removing prior test log files
+rm -f ${OTE_DIR}/ote.log
+if [ ! -d "${OTE_DIR}/logs" ] ; then
+    mkdir -p "${OTE_DIR}/logs"
+else
+    rm -f ${OTE_DIR}/logs/${TESTCASE}*.log
+fi
+
 cp -R $CWD/../OTE $CWD/../../../fabric/
 $TESTCASE
-
 docker logs -f OTE
-echo "====== OTE test execution finished. Save OTE test logs."
-if [ ! -d logs ];then
-       mkdir logs
+echo "====== OTE test execution finished. Save OTE container logs and test output logs."
+docker logs OTE >& logs/${TESTCASE}-ote-container.log
+docker cp -a OTE:/opt/gopath/src/github.com/hyperledger/fabric/OTE/ote.log ./logs/${TESTCASE}-ote.log
+  # Note: there might not be any test logs if the failure occurred while creating network or channels,
+  # so in that situation then you could ignore this stderr message from the previous statement:
+  #   Error: No such container:path: OTE:/opt/gopath/src/github.com/hyperledger/fabric/OTE/ote.log
+
+# Check ote test log file for the string "RESULT=PASSED' which ote.go prints for each successful testcase.
+PASSED_count=0
+if [ -f "./logs/${TESTCASE}-ote.log" ] ; then
+    PASSED_count=`grep RESULT=PASSED ./logs/${TESTCASE}-ote.log | wc -l | tr -d '[:space:]'`
 fi
-docker cp -a OTE:/opt/gopath/src/github.com/hyperledger/fabric/OTE/ote.log ./logs/${TESTCASE}.log
-
-# Collect data ################################################################
-echo "====== Collect data on host machine:"
-echo "====== $ df"
-df
-echo "====== $ free"
-free
-echo "====== $ top"
-top -b -n 1 | head -n 20
-
-# Check the output OTE test logs for the string "RESULT=PASSED' which ote.go prints for each
-# successfully passed testcase. If an error occurred, collect container logs and host data.
-if [ -f ./logs/${TESTCASE}.log -a `grep -c RESULT=PASSED ./logs/${TESTCASE}.log` -eq 0 ]
+# echo "PASSED_count=$PASSED_count"
+if [ "$PASSED_count" -ne 0 ]
 then
-    echo "====== Saving all docker container logs in logs/ for the ${TESTCASE} test failure."
+    echo "====== ${TESTCASE} PASSED."
+else
+    echo "====== ${TESTCASE} FAILED."
+    echo "====== Saving all docker container logs in ${PWD}/logs/."
     saveOrdLogs
     saveLogs "kafka" $KBS
     saveLogs "zookeeper" $ZKS
+    ### Can uncomment this to help debug problems with CI hosts such as cpu or memory usage:
+    ### collectHostData()
 fi
 
 # Clean up ####################################################################
-if ( $CLEANUP )
+if [ "$CLEANUP" == "true" ]
 then
+  echo CLEANUP
   numChannels="" testcase="" docker-compose -f ote-compose.yml down
   cd ../../fabric-test/tools/NL
   ./networkLauncher.sh -a down
+  cd -
 else
-  echo "====== Test network remains running, as requested, for debugging. $ docker ps"
+  echo "====== Test network remains running, as requested, for debugging."
+  echo "=== $ docker ps"
   docker ps
   echo "=== PWD:  ${PWD}"
   echo "=== Read OTE output log artifacts:"
@@ -383,5 +413,5 @@ else
   echo "    ./networkLauncher.sh -a down"
 fi
 
-sleep 10
-echo "====================Completed $TESTCASE test===================="
+#sleep 10
+echo "==================== Completed OTE testcase $TESTCASE ===================="
