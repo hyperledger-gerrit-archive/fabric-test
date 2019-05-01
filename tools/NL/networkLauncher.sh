@@ -83,8 +83,7 @@ while getopts ":a:z:x:d:f:h:k:e:n:o:p:r:t:s:w:l:q:c:B:F:G:S:C:M:" opt; do
   case $opt in
     # peer environment options
     a)
-      tt=$OPTARG
-      networkAction=$(echo $tt | awk '{print tolower($tt)}')
+      networkAction="$OPTARG"
       echo "network action: $networkAction"
       ;;
     x)
@@ -217,37 +216,36 @@ while getopts ":a:z:x:d:f:h:k:e:n:o:p:r:t:s:w:l:q:c:B:F:G:S:C:M:" opt; do
 done
 
 #first handle network action: up|down
-if [ $networkAction == "down" ]; then
+if [ "$networkAction" == "down" ]; then
     ./cleanNetwork.sh $comName
-    exit;
-elif [ $networkAction != "up" ]; then
+    exit
+elif [ "$networkAction" != "up" ]; then
     echo "invalid network action option: $networkAction"
     printHelp
-    exit;
+    exit 1
 fi
 
-if [ $TLSEnabled == "clientauth" ]; then
+if [ "$TLSEnabled" == "clientauth" ]; then
     TLSEnabled="enabled"
     MutualTLSEnabled="enabled"
 fi
-if [ $TLSEnabled == "serverauth" ]; then
+if [ "$TLSEnabled" == "serverauth" ]; then
     TLSEnabled="enabled"
 fi
 
 echo "TLSEnabled $TLSEnabled, MutualTLSEnabled $MutualTLSEnabled"
 
-orderering=$(echo $ordServType | awk '{print tolower($ordServType)}')
-if [ $orderering == "etcdraft" ]; then
+if [ "$ordServType" != "kafka" ]; then
     nKafka=0
     nZoo=0
 fi
 
-if [ $nReplica -eq 0 ]; then
+if [ "$nReplica" -eq 0 ]; then
     nReplica=$nKafka
 fi
 
 # input vars
-if [ $orderering == "etcdraft" ]; then
+if [ "$ordServType" == "etcdraft" ]; then
     echo " PROFILE_STRING=$PROFILE_STRING, ordServType=$ordServType, nOrderer=$nOrderer"
 else
     echo " PROFILE_STRING=$PROFILE_STRING, ordServType=$ordServType, nKafka=$nKafka, nOrderer=$nOrderer, nZoo=$nZoo"
@@ -262,7 +260,7 @@ CWD=$PWD
 echo "current working directory: $CWD"
 echo "GOPATH=$GOPATH"
 
-if [ ! -z $orgMap ]
+if [ ! -z "$orgMap" ]
 then
 	orgMapParam="-M "$orgMap
 fi
@@ -287,7 +285,7 @@ cd $MSPDir
 # remove existing crypto-config
 rm -rf crypto-config
 echo "current working directory: $PWD"
-if [ ! -f $CRYPTOEXE ]; then
+if [ ! -f "$CRYPTOEXE" ]; then
 echo "build $CRYPTOEXE "
     cd $FabricDir
     echo "current working directory: $PWD"
@@ -320,7 +318,7 @@ CFGEXE=$BuildDir/configtxgen
 ordererDir=$MSPDir/crypto-config/ordererOrganizations
 #cp configtx.yaml $FabricDir"/common/configtx/tool"
 #cd $CFGGenDir
-if [ ! -f $CFGEXE ]; then
+if [ ! -f "$CFGEXE" ]; then
     cd $FabricDir
     make configtxgen
 fi
@@ -356,18 +354,18 @@ do
     for (( i=1; i<=$nOrg; i++ ))
     do
         orgMSP="PeerOrg"$i
-        if [ ! -z $orgMap ] && [ -f $orgMap ]
+        if [ ! -z "$orgMap" ] && [ -f "$orgMap" ]
         then
             tmpVal=$(jq .$orgMSP $orgMap)
-            if [ ! -z $tmpVal ] && [ $tmpVal != "null" ]
+            if [ ! -z "$tmpVal" ] && [ "$tmpVal" != "null" ]
             then
                 # Strip quotes from tmpVal if they are present
-                if [ ${tmpVal:0:1} == "\"" ]
+                if [ "${tmpVal:0:1}" == "\"" ]
                 then
                     tmpVal=${tmpVal:1}
                 fi
                 let "tmpLen = ${#tmpVal} - 1"
-                if [ ${tmpVal:$tmpLen:1} == "\"" ]
+                if [ "${tmpVal:$tmpLen:1}" == "\"" ]
                 then
                     tmpVal=${tmpVal:0:$tmpLen}
                 fi
