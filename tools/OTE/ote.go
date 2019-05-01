@@ -45,7 +45,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/hyperledger/fabric/common/crypto"
 	"io/ioutil"
 	"log"
 	"math"
@@ -58,11 +57,11 @@ import (
 	"sync"
 	"time"
 
-	commonsigner "github.com/hyperledger/fabric/cmd/common/signer"
+	"github.com/hyperledger/fabric/internal/pkg/identity"
 	"github.com/hyperledger/fabric/common/tools/protolator"
-	genesisconfig "github.com/hyperledger/fabric/internal/configtxgen/localconfig" // config for genesis.yaml
+	genesisconfig "github.com/hyperledger/fabric/internal/configtxgen/localconfig"
 	mspmgmt "github.com/hyperledger/fabric/msp/mgmt"
-	ordererConf "github.com/hyperledger/fabric/orderer/common/localconfig" // config, for the orderer.yaml
+	ordererConf "github.com/hyperledger/fabric/orderer/common/localconfig"
 	cb "github.com/hyperledger/fabric/protos/common"
 	ab "github.com/hyperledger/fabric/protos/orderer"
 	utils "github.com/hyperledger/fabric/protoutil"
@@ -231,21 +230,21 @@ type config struct {
 type ordererdriveClient struct {
 	client ab.AtomicBroadcast_DeliverClient
 	chanID string
-	signer crypto.LocalSigner
+	signer identity.SignerSerializer
 	quiet  bool
 }
 
 type broadcastClient struct {
 	client ab.AtomicBroadcast_BroadcastClient
 	chanID string
-	signer crypto.LocalSigner
+	signer identity.SignerSerializer
 }
 
-func newOrdererdriveClient(client ab.AtomicBroadcast_DeliverClient, chanID string, signer crypto.LocalSigner, quiet bool) *ordererdriveClient {
+func newOrdererdriveClient(client ab.AtomicBroadcast_DeliverClient, chanID string, signer identity.SignerSerializer, quiet bool) *ordererdriveClient {
 	return &ordererdriveClient{client: client, chanID: chanID, signer: signer, quiet: quiet}
 }
 
-func newBroadcastClient(client ab.AtomicBroadcast_BroadcastClient, chanID string, signer crypto.LocalSigner) *broadcastClient {
+func newBroadcastClient(client ab.AtomicBroadcast_BroadcastClient, chanID string, signer identity.SignerSerializer) *broadcastClient {
 	return &broadcastClient{client: client, chanID: chanID, signer: signer}
 }
 
@@ -340,7 +339,10 @@ func (b *broadcastClient) getAck() error {
 
 func startConsumer(serverAddr string, chanID string, ordererIndex int, channelIndex int, txRecvCntrP *int64, blockRecvCntrP *int64, consumerConnP **grpc.ClientConn, seek int, quiet bool, tlsEnabled bool, orgMSPID string) {
 	myName := clientName("Consumer", ordererIndex, channelIndex)
-	signer := commonsigner.NewSigner()
+	signer, loaderr := mspmgmt.GetLocalMSP().GetDefaultSigningIdentity()
+	if loaderr != nil {
+		panic(fmt.Sprintf("[startConsumer myName=%s] Failed to load local signing identity; loaderr: %s\n", myName, loaderr))
+	}
 	ordererName := strings.Trim(serverAddr, fmt.Sprintf(":%d", ordStartPort+uint16(ordererIndex)))
 	fpath := fmt.Sprintf("/etc/hyperledger/fabric/artifacts/ordererOrganizations/example.com/orderers/%s"+"*", ordererName)
 	matches, err := filepath.Glob(fpath)
@@ -417,7 +419,10 @@ func startConsumerMaster(serverAddr string, chanIdsP *[]string, ordererIndex int
 			panic(fmt.Sprintf("Error on client %s invoking Deliver() on grpc connection to %s, err: %v", myName, serverAddr, err))
 		}
 		quiet := true
-		signer := commonsigner.NewSigner()
+		signer, loaderr := mspmgmt.GetLocalMSP().GetDefaultSigningIdentity()
+		if loaderr != nil {
+			panic(fmt.Sprintf("[startConsumerMaster myName=%s] Failed to load local signing identity; loaderr: %s\n", myName, loaderr))
+		}
 		dc[c] = newOrdererdriveClient(client, (*chanIdsP)[c], signer, quiet)
 		if err = dc[c].seekOldest(); err != nil {
 			panic(fmt.Sprintf("ERROR starting client %s srvr=%s chID=%s; err: %v", myName, serverAddr, (*chanIdsP)[c], err))
@@ -578,7 +583,10 @@ func moreDeliveries(txSentP *[][]int64, totalNumTxSentP *int64, txSentFailuresP 
 
 func startProducer(serverAddr string, chanID string, ordererIndex int, channelIndex int, txReq int64, txSentCntrP *int64, txSentFailureCntrP *int64, tlsEnabled bool, payload int) {
 	myName := clientName("Producer", ordererIndex, channelIndex)
-	signer := commonsigner.NewSigner()
+	signer, loaderr := mspmgmt.GetLocalMSP().GetDefaultSigningIdentity()
+	if loaderr != nil {
+		panic(fmt.Sprintf("[startProducer myName=%s] Failed to load local signing identity; loaderr: %s\n", myName, loaderr))
+	}
 	ordererName := strings.Trim(serverAddr, fmt.Sprintf(":%d", ordStartPort+uint16(ordererIndex)))
 	fpath := fmt.Sprintf("/etc/hyperledger/fabric/artifacts/ordererOrganizations/example.com/orderers/%s"+"*", ordererName)
 	matches, err := filepath.Glob(fpath)
@@ -726,7 +734,10 @@ func startProducerMaster(serverAddr string, chanIdsP *[]string, ordererIndex int
 	// create the broadcast clients for every channel on this orderer
 	bc := make([]*broadcastClient, numChannels)
 	for c := 0; c < numChannels; c++ {
-		signer := commonsigner.NewSigner()
+		signer, loaderr := mspmgmt.GetLocalMSP().GetDefaultSigningIdentity()
+		if loaderr != nil {
+			panic(fmt.Sprintf("[startProducerMaster myName=%s] Failed to load local signing identity; loaderr: %s\n", myName, loaderr))
+		}
 		bc[c] = newBroadcastClient(client, (*chanIdsP)[c], signer)
 	}
 
