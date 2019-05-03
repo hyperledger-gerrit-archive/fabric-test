@@ -816,6 +816,9 @@ The user input file contains configuration parameters including chaincode defini
         "ccOpt": {
             "keyIdx": [1],
             "keyPayLoad": [2],
+            "keyPayLoadType": ["Random"],
+            "keyPayLoadMin": [128],
+            "keyPayLoadMax": [512],
             "keyStart": "5000",
             "payLoadType": "Random",
             "payLoadMin": "1024",
@@ -943,6 +946,9 @@ where
         "ccOpt": {
             "keyIdx": [1],
             "keyPayLoad": [2],
+            "keyPayLoadType": ["Random"],
+            "keyPayLoadMin": [128],
+            "keyPayLoadMax": [512],
             "keyStart": "5000",
             "payLoadType": "Random",
             "payLoadMin": "1024",
@@ -1076,10 +1082,17 @@ where:
     * **grpcTimeout**: The timeout for grpc that to be used for any transactions using grpc connection. Unit: ms. Default:3,000.
 * **ccType**: chaincode type
     * **ccchecker**: The first argument (key) in the query and invoke request is incremented by 1 for every transaction.  The prefix of the key is made of process ID, ex, all keys issued from process 4 will have prefix of **key3_**. And, the second argument (payload) in an invoke (Move) is a random string of size ranging between payLoadMin and payLoadMax defined in ccOpt.
-    * **general**: The arguments of transaction request are taken from the user input json file without any changes.
+    * **general**: The arguments from user input file will be modified for each transaction according to the parameters **keyPayLoadType**, **keyPayLoadMin**, and **keyPayLoadMax**.
 * **ccOpt**: chaincode options, see `ccOpt` and `invoke.query` and `invoke.move` in `marblesccInputs/marblescc-chan1-constant-i-TLS.json` as an example on how to **keyIdx** and **keyPayLoad** below.
     * **keyIdx**: a list of indexes of transaction argument used as keys
     * **keyPayLoad**: a list of indexes of transaction argument used as payload
+    * **keyPayLoadType**: a list of payload type for each entry of the arguments given in **keyPayLoad**, corresponding to each entry of **keyPayLoad**, used with ccType **general**
+        * **Fixed**: a string payload with a fixed size between keyPayLoadMin and kayPayLoadMax for every trandsaction
+        * **Random**: a string payload with a random size between kayPayLoadMin and kayPayLoadMax for every transaction
+        * **FixedInt**: fixed integer payload between 0 and kayPayLoadMax for every trandsaction
+        * **RandomInt**: random integer payload between 0 and kayPayLoadMax for every transaction
+    * **keyPayLoadMin**: a list of minimum size in bytes or integer of the payload, corresponding to each entry of **keyPayLoad** defined above, used with ccType **general**
+    * **keyPayLoadMax**: a list of maximum size in bytes or integer of the payload, corresponding to each entry of **keyPayLoad** defined above, used with ccType **general**
     * **keyStart**: the starting transaction key index, this is used when the ccType is non general which requires a unique key for each invoke.
     * **payLoadType**: payload type
         * **Fixed**: fixed payload with the size of payLoadMin for every trandsaction
