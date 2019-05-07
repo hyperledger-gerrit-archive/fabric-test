@@ -61,7 +61,7 @@ Scenario: FAB-1306: Multiple organizations in a cluster - remove all, reinstate 
 
 @smoke
 Scenario: FAB-3852: Message Payloads Less than 1MB, for kafka-based orderer using the NodeJS SDK interface
-    Given I have a bootstrapped fabric network of type kafka using state-database couchdb with tls
+    Given I have a bootstrapped fabric network of type kafka using state-database couchdb without tls
     And I use the NodeJS SDK interface
     # Following lines are equivalent to "When an admin sets up a channel"
     When an admin creates a channel
