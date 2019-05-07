@@ -57,6 +57,7 @@ func newChainsMgr(mgrConf *ChainMgrConf, batchConf *BatchConf, initOp chainInitO
 		PlatformRegistry:              platforms.NewRegistry(&golang.Platform{}),
 		DeployedChaincodeInfoProvider: &mock.DeployedChaincodeInfoProvider{},
 		MetricsProvider:               &disabled.Provider{},
+		HealthCheckRegistry:           &mock.HealthCheckRegistry{},
 	})
 	return &chainsMgr{mgrConf, batchConf, initOp, make(map[ChainID]*Chain), &sync.WaitGroup{}}
 }
