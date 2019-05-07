@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"sync"
 
+	"github.com/hyperledger/fabric-lib-go/healthz"
 	"github.com/hyperledger/fabric/bccsp/factory"
 	"github.com/hyperledger/fabric/common/configtx/test"
 	"github.com/hyperledger/fabric/common/metrics/disabled"
@@ -57,6 +58,7 @@ func newChainsMgr(mgrConf *ChainMgrConf, batchConf *BatchConf, initOp chainInitO
 		PlatformRegistry:              platforms.NewRegistry(&golang.Platform{}),
 		DeployedChaincodeInfoProvider: &mock.DeployedChaincodeInfoProvider{},
 		MetricsProvider:               &disabled.Provider{},
+		HealthCheckRegistry:           &mockHealthCheckRegistry{},
 	})
 	return &chainsMgr{mgrConf, batchConf, initOp, make(map[ChainID]*Chain), &sync.WaitGroup{}}
 }
@@ -143,6 +145,15 @@ func (c *Chain) Commit(block *common.Block) {
 func (c *Chain) close() {
 	c.PeerLedger.Close()
 	c.m.wg.Done()
+}
+
+// mockHealthCheckRegistry is a no-op implementation for HealthCheckRegistry interface
+// Use this mock struct instead of a recording mock
+type mockHealthCheckRegistry struct {
+}
+
+func (m *mockHealthCheckRegistry) RegisterChecker(string, healthz.HealthChecker) error {
+	return nil
 }
 
 func createLedgerByID(ledgerid string) (ledger.PeerLedger, error) {
