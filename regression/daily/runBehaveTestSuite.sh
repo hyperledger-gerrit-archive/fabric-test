@@ -21,5 +21,5 @@ fi
 
 echo "======== Behave feature and system tests...========"
 cd ../../feature
-behave --junit --junit-directory ../regression/daily/. --tags=-skip --tags=daily -k -D logs=y && echo "------> Behave feature tests completed."
+behave --junit --junit-directory ../regression/daily/. --tags=-skip --tags=daily -k -D logs=y -o behave_tests.log && echo "------> Behave feature tests completed."
 archiveBehave

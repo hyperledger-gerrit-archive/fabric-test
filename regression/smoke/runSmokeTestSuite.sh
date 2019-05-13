@@ -9,7 +9,7 @@ cd $SMOKEDIR
 
 echo "======== Behave feature and system tests ========"
 cd ../../feature
-behave --junit --junit-directory ../regression/smoke/. --tags=-skip --tags=smoke -k -D logs=y
+behave --junit --junit-directory ../regression/smoke/. --tags=-skip --tags=smoke -k -D logs=y -o behave_tests.log
 cd -
 
 echo "======== Ledger component performance tests using LTE ========"
