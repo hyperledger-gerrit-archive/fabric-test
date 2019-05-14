@@ -39,6 +39,7 @@ function printHelp {
    echo "    -S: TLS enablement [disabled|serverauth|clientauth], default=disabled"
    echo "    -C: company name, default=example.com "
    echo "    -M: JSON file containing organization and MSP name mappings (optional) "
+   echo "    -y: yaml file contains network specification, other options are ignored"
    echo " "
    echo " example: "
    echo " ./networkLauncher.sh -o 1 -x 2 -r 2 -p 2 -k 1 -z 1 -n 2 -t kafka -f test -w 10.120.223.35 "
@@ -54,10 +55,6 @@ function printHelp {
 
 #defaults
 PROFILE_STRING="test"
-ordServType="solo"
-nKafka=0
-nReplica=0
-nZoo=0
 nCA=0
 nOrderer=1
 nOrg=1
@@ -72,14 +69,96 @@ HostIP1="0.0.0.0"
 comName="example.com"
 networkAction="up"
 BuildDir=$GOPATH/src/github.com/hyperledger/fabric-test/fabric/.build/bin
-peerLogLevel="ERROR"
-ordererLogLevel="ERROR"
+
+# logging spec
+peerLogSpec="ERROR"
+ordererLogSpec="ERROR"
+
+## orderer
+ordererType="solo"
 batchTimeOut="2s"
-batchSize=10
+batchsizeMaxmessagecount=500
+batchsizeAbsolutemaxbytes="10 MB"
+batchsizePreferredmaxbytes="2 MB"
+
+## orderer: kafka
+nKafka=0
+nReplica=0
+nZoo=0
+
+## orderer: ETCDRAFT
+raftTickInterval="500ms"
+raftElectionTick=10
+raftHeartbeatTick=1
+raftMaxInflightBlocks=5
+raftSnapshotIntervalSize="100 MB"
+
 orgMap=
 orgMapParam=
 
-while getopts ":a:z:x:d:f:h:k:e:n:o:p:r:t:s:w:l:q:c:B:F:G:S:C:M:" opt; do
+
+# yaml parser
+function yamlParser {
+    TLSEnabled=`yq r $yamlF tls`
+    ledgerDB=`yq r $yamlF db_type`
+    echo "[yamlParser] TLSEnabled=$TLSEnabled ledgerDB=$ledgerDB"
+
+    peerLogSpec=`yq r $yamlF peer_fabric_logging_spec`
+    ordererLogSpec=`yq r $yamlF orderer_fabric_logging_spec`
+    metrics=`yq r $yamlF metrics`
+    echo "[yamlParser] peerLogSpec=$peerLogSpec ordererLogSpec=$ordererLogSpec metrics=$metrics"
+    certs_location=`yq r $yamlF certs_location`
+    echo "[yamlParser] certs_location=$certs_location"
+
+    nChannels=`yq r $yamlF num_of_channels`
+
+    #organisations
+    tmp=`yq r in.yaml organizations[*].name`
+    echo "org length: ${#tmp[@]}"
+    for (( i=0; i<=${#tmp[@]}; i++ ))
+    do
+        t1=`yq r in.yaml organizations[$i].name`
+        echo "i=$i, t1: $t1"
+        if [ "$t1" != "ordererorg" ]; then
+            nCA=`yq r $yamlF organizations[$i].num_of_ca`
+            nOrg=`yq r $yamlF organizations[$i].num_of_orgs`
+            nPeersPerOrg=`yq r $yamlF organizations[$i].num_of_peer_orgs`
+            nOrderer=`yq r $yamlF organizations[$i].num_of_orderers`
+            echo "[yamlParser] nChannels=$nChannels, nCA=$nCA, nOrg=$nOrg, nPeersPerOrg=$nPeersPerOrg, nOrderer=$nOrderer"
+        fi
+    done
+
+    #for ( i=0; i<${#Chaincode[@]}; i++ )
+    nCA=`yq r $yamlF organizations.num_of_ca`
+    nOrg=`yq r $yamlF organizations.num_of_orgs`
+    nPeersPerOrg=`yq r $yamlF organizations.num_of_peer_orgs`
+    nOrderer=`yq r $yamlF organizations.num_of_orderers`
+    echo "[yamlParser] nChannels=$nChannels, nCA=$nCA, nOrg=$nOrg, nPeersPerOrg=$nPeersPerOrg, nOrderer=$nOrderer"
+
+    ordererType=`yq r $yamlF orderer.orderertype`
+    echo "[yamlParser] ordererType=$ordererType"
+    if [ "$ordererType" == "kafka" ]; then
+        nKafka=`yq r $yamlF kafka.num_of_kafka`
+        nReplica=`yq r $yamlF kafka.num_of_kafka_replications`
+        nZoo=`yq r $yamlF kafka.num_of_zookeepers`
+        echo "[yamlParser] kafka: nKafka=$nKafka, nReplica=$nReplica, nZoo=$nZoo"
+    elif [ "$ordererType" == "etcdraft" ]; then
+        raftTickInterval=`yq r $yamlF orderer.etcdraft_options.TickInterval`
+        raftElectionTick=`yq r $yamlF orderer.etcdraft_options.ElectionTick`
+        raftHeartbeatTick=`yq r $yamlF orderer.etcdraft_options.HeartbeatTick`
+        raftMaxInflightBlocks=`yq r $yamlF orderer.etcdraft_options.MaxInflightBlocks`
+        raftSnapshotIntervalSize=`yq r $yamlF orderer.etcdraft_options.SnapshotIntervalSize`
+        echo "[yamlParser] raft: TickInterval=$raftTickInterval, ElectionTick=$raftElectionTick, HeartbeatTick=$raftHeartbeatTick, MaxInflightBlocks=$raftMaxInflightBlocks, SnapshotIntervalSize=$raftSnapshotIntervalSize"
+    fi
+    batchTimeOut=`yq r $yamlF orderer.batchtimeout`
+    echo "[yamlParser] batchTimeOut=$batchTimeOut"
+    batchsizeMaxmessagecount=`yq r $yamlF orderer.batchsize.maxmessagecount`
+    batchsizeAbsolutemaxbytes=`yq r $yamlF orderer.batchsize.absolutemaxbytes`
+    batchsizePreferredmaxbytes=`yq r $yamlF orderer.batchsize.preferredmaxbytes`
+    echo "[yamlParser] batchsizeMaxmessagecount=$batchsizeMaxmessagecount, batchsizeAbsolutemaxbytes=$batchsizeAbsolutemaxbytes batchsizePreferredmaxbytes=$batchsizePreferredmaxbytes"
+}
+
+while getopts ":a:z:x:d:f:h:k:e:n:o:p:r:t:s:w:l:q:c:B:F:G:S:C:M:y:" opt; do
   case $opt in
     # peer environment options
     a)
@@ -145,8 +224,8 @@ while getopts ":a:z:x:d:f:h:k:e:n:o:p:r:t:s:w:l:q:c:B:F:G:S:C:M:" opt; do
       ;;
 
     t)
-      ordServType=$OPTARG
-      echo "orderer service type: $ordServType"
+      ordererType=$OPTARG
+      echo "orderer service type: $ordererType"
       ;;
 
     w)
@@ -160,18 +239,18 @@ while getopts ":a:z:x:d:f:h:k:e:n:o:p:r:t:s:w:l:q:c:B:F:G:S:C:M:" opt; do
       ;;
 
     l)
-      peerLogLevel=$OPTARG
-      echo "peerLogLevel:  $peerLogLevel"
+      peerLogSpec=$OPTARG
+      echo "peerLogSpec:  $peerLogSpec"
       ;;
 
     q)
-      ordererLogLevel=$OPTARG
-      echo "ordererLogLevel:  $ordererLogLevel"
+      ordererLogSpec=$OPTARG
+      echo "ordererLogSpec:  $ordererLogSpec"
       ;;
 
     B)
-      batchSize=$OPTARG
-      echo "batchSize:  $batchSize"
+      batchsizeMaxmessagecount=$OPTARG
+      echo "batchsizeMaxmessagecount:  $batchsizeMaxmessagecount"
       ;;
 
     F)
@@ -201,6 +280,11 @@ while getopts ":a:z:x:d:f:h:k:e:n:o:p:r:t:s:w:l:q:c:B:F:G:S:C:M:" opt; do
       echo "orgMap: $orgMap"
       ;;
 
+    y)
+      yamlF=$OPTARG
+      echo "yamlF: $yamlF"
+      ;;
+
     # else
     \?)
       echo "Invalid option: -$OPTARG" >&2
@@ -225,6 +309,12 @@ elif [ "$networkAction" != "up" ]; then
     exit 1
 fi
 
+if [ "yamlF" != "none" ]; then
+    yamlParser
+fi
+exit
+
+
 if [ "$TLSEnabled" == "clientauth" ]; then
     TLSEnabled="enabled"
     MutualTLSEnabled="enabled"
@@ -235,7 +325,7 @@ fi
 
 echo "TLSEnabled $TLSEnabled, MutualTLSEnabled $MutualTLSEnabled"
 
-if [ "$ordServType" != "kafka" ]; then
+if [ "$ordererType" != "kafka" ]; then
     nKafka=0
     nZoo=0
 fi
@@ -245,10 +335,10 @@ if [ "$nReplica" -eq 0 ]; then
 fi
 
 # input vars
-if [ "$ordServType" == "etcdraft" ]; then
-    echo " PROFILE_STRING=$PROFILE_STRING, ordServType=$ordServType, nOrderer=$nOrderer"
+if [ "$ordererType" == "etcdraft" ]; then
+    echo " PROFILE_STRING=$PROFILE_STRING, ordererType=$ordererType, nOrderer=$nOrderer"
 else
-    echo " PROFILE_STRING=$PROFILE_STRING, ordServType=$ordServType, nKafka=$nKafka, nOrderer=$nOrderer, nZoo=$nZoo"
+    echo " PROFILE_STRING=$PROFILE_STRING, ordererType=$ordererType, nKafka=$nKafka, nOrderer=$nOrderer, nZoo=$nZoo"
 fi
 echo " nOrg=$nOrg, nPeersPerOrg=$nPeersPerOrg, ledgerDB=$ledgerDB, hashType=$hashType, secType=$secType, comName=$comName"
 
@@ -306,8 +396,8 @@ echo "generate configtx.yaml ..."
 cd $CWD
 echo "current working directory: $PWD"
 
-echo "./gen_configtx_cfg.sh -o $nOrderer -k $nKafka -p $nPeersPerOrg -r $nOrg -h $hashType -s $secType -t $ordServType -f $PROFILE_STRING -w $HostIP1 -C $comName -b $MSPDir/crypto-config -c $batchTimeOut -B $batchSize $orgMapParam"
-./gen_configtx_cfg.sh -o $nOrderer -k $nKafka -p $nPeersPerOrg -r $nOrg -h $hashType -s $secType -t $ordServType -f $PROFILE_STRING -w $HostIP1 -C $comName -b $MSPDir/crypto-config -c $batchTimeOut -B $batchSize $orgMapParam
+echo "./gen_configtx_cfg.sh -o $nOrderer -k $nKafka -p $nPeersPerOrg -r $nOrg -h $hashType -s $secType -t $ordererType -f $PROFILE_STRING -w $HostIP1 -C $comName -b $MSPDir/crypto-config -c $batchTimeOut -B $batchsizeMaxmessagecount $orgMapParam"
+./gen_configtx_cfg.sh -o $nOrderer -k $nKafka -p $nPeersPerOrg -r $nOrg -h $hashType -s $secType -t $ordererType -f $PROFILE_STRING -w $HostIP1 -C $comName -b $MSPDir/crypto-config -c $batchTimeOut -B $batchsizeMaxmessagecount $orgMapParam
 
 echo " "
 echo "        ####################################################### "
@@ -387,8 +477,8 @@ echo "generate docker-compose.yml ..."
 echo "current working directory: $PWD"
 nPeers=$[ nPeersPerOrg * nOrg ]
 echo "number of peers: $nPeers"
-echo "./gen_network.sh -a create -x $nCA -p $nPeersPerOrg -r $nOrg -o $nOrderer -k $nKafka -e $nReplica -z $nZoo -t $ordServType -d $ledgerDB -F $MSPDir/crypto-config -G $SRCMSPDir -S $TLSEnabled -m $MutualTLSEnabled -l $peerLogLevel -q $ordererLogLevel $orgMapParam"
-./gen_network.sh -a create -x $nCA -p $nPeersPerOrg -r $nOrg -o $nOrderer -k $nKafka -e $nReplica -z $nZoo -t $ordServType -d $ledgerDB -F $MSPDir/crypto-config -G $SRCMSPDir -S $TLSEnabled -m $MutualTLSEnabled -C $comName -l $peerLogLevel -q $ordererLogLevel $orgMapParam
+echo "./gen_network.sh -a create -x $nCA -p $nPeersPerOrg -r $nOrg -o $nOrderer -k $nKafka -e $nReplica -z $nZoo -t $ordererType -d $ledgerDB -F $MSPDir/crypto-config -G $SRCMSPDir -S $TLSEnabled -m $MutualTLSEnabled -l $peerLogSpec -q $ordererLogSpec $orgMapParam"
+./gen_network.sh -a create -x $nCA -p $nPeersPerOrg -r $nOrg -o $nOrderer -k $nKafka -e $nReplica -z $nZoo -t $ordererType -d $ledgerDB -F $MSPDir/crypto-config -G $SRCMSPDir -S $TLSEnabled -m $MutualTLSEnabled -C $comName -l $peerLogSpec -q $ordererLogSpec $orgMapParam
 
 echo " "
 echo "        ####################################################### "
