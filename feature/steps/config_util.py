@@ -229,7 +229,7 @@ def generateChannelConfig(channelID, profile, context):
     updated_env = updateEnviron(context)
     try:
         command = ["configtxgen", "-profile", profile,
-                   "-outputCreateChannelTx", "%s.tx" % channelID,
+                   "-outputCreateChannelTx", "%s.block" % channelID,
                    "-configPath", ".",
                    "-channelID", channelID]
         subprocess.check_call(command, cwd=testConfigs, env=updated_env)
