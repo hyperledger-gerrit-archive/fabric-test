@@ -7,6 +7,10 @@
 SMOKEDIR="$GOPATH/src/github.com/hyperledger/fabric-test/regression/smoke"
 cd $SMOKEDIR
 
+echo "======== ONLY Orderer component test using OTE and NL tools ========"
+py.test -v --junitxml results_orderer_ote.xml orderer_ote.py
+exit 0
+
 echo "======== Behave feature and system tests ========"
 cd ../../feature
 behave --junit --junit-directory ../regression/smoke/. --tags=-skip --tags=smoke -k -D logs=y
