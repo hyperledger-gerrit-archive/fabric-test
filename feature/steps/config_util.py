@@ -229,7 +229,7 @@ def generateChannelConfig(channelID, profile, context):
     updated_env = updateEnviron(context)
     try:
         command = ["configtxgen", "-profile", profile,
-                   "-outputCreateChannelTx", "%s.tx" % channelID,
+                   "-outputCreateChannelTx", "%s.block" % channelID,
                    "-configPath", ".",
                    "-channelID", channelID]
         subprocess.check_call(command, cwd=testConfigs, env=updated_env)
@@ -252,7 +252,7 @@ def generateChannelAnchorConfig(channelID, profile, context):
     for org in os.listdir("./{0}/peerOrganizations".format(testConfigs)):
         try:
             command = ["configtxgen", "-profile", profile,
-                       "-outputAnchorPeersUpdate", "{0}{1}Anchor.tx".format(org, channelID),
+                       "-outputAnchorPeersUpdate", "{0}{1}Anchor.block".format(org, channelID),
                        "-channelID", channelID,
                        "-configPath", testConfigs,
                        "-asOrg", org.title().replace('.', '')]
