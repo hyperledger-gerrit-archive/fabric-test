@@ -13,7 +13,7 @@ TEST_PASS_STRING="RESULT=PASSED"
 
 class OTE_Orderer_Traffic_Engine(unittest.TestCase):
 
-    @unittest.skip("skipping; can reenable after fixing bug FAB-15356 causing intermittent failures")
+#   @unittest.skip("skipping; can reenable after fixing bug FAB-15356 causing intermittent failures")
     def test_FAB6996_3000tx_1ch_solo(self):
         '''
         Description:
@@ -45,7 +45,7 @@ class OTE_Orderer_Traffic_Engine(unittest.TestCase):
         self.assertIn(TEST_PASS_STRING, result)
 
 
-    @unittest.skip("skipping; can reenable after fixing bug FAB-15357 causing failures of tests using multiple orderers")
+#   @unittest.skip("skipping; can reenable after fixing bug FAB-15357 causing failures of tests using multiple orderers")
     def test_FAB7936_100tx_3ch_3ord_3kb(self):
         '''
         Description:
