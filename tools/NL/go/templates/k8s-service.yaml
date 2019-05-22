@@ -1,0 +1,73 @@
+#! some variables need to be configurable externally
+#! we can specify them in a separate file or a separate
+#! YAML document node
+
+#@ load("@ytt:data", "data")
+#@ for i in range(0, len(data.values.peer_organizations)):
+#@ organization = data.values.peer_organizations[i]
+#@ for j in range(0, organization.num_ca):
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: #@ "ca{}-{}".format(j, organization.name)
+  name: #@ "ca{}-{}".format(j, organization.name)
+spec:
+  selector:
+    k8s-app: #@ "ca{}-{}".format(j, organization.name)
+  ports:
+    - name: port1
+      port: 7054
+  #@ end
+  #@ for j in range(0, organization.num_peers):
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: #@ "peer{}-{}".format(j, organization.name)
+  name: #@ "peer{}-{}".format(j, organization.name)
+spec:
+  selector:
+    k8s-app: #@ "peer{}-{}".format(j, organization.name)
+  ports:
+    - name: port1
+      port: 7051
+    - name: port2
+      port: 7052
+  #@ end
+#@ end
+#@ for i in range(0, len(data.values.orderer_organizations)):
+#@ organization = data.values.orderer_organizations[i]
+  #@ for j in range(0, organization.num_ca):
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: #@ "ca{}-{}".format(i, organization.name)
+  name: #@ "ca{}-{}".format(i, organization.name)
+spec:
+  selector:
+    k8s-app: #@ "ca{}-{}".format(i, organization.name)
+  ports:
+    - name: port1
+      port: 7054
+  #@ end
+  #@ for j in range(0, organization.num_orderers):
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    k8s-app: #@ "orderer{}-{}".format(j, organization.name)
+  name: #@ "orderer{}-{}".format(j, organization.name)
+spec:
+  selector:
+    k8s-app: #@ "orderer{}-{}".format(j, organization.name)
+  ports:
+    - name: port1
+      port: 7050
+  #@ end
+#@ end
