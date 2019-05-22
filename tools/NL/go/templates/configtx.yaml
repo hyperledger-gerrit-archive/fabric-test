@@ -1,0 +1,120 @@
+#! some variables need to be configurable externally
+#! we can specify them in a separate file or a separate
+#! YAML document node
+
+#@ load("@ytt:data", "data")
+#@ def orgPolicies(orgName):
+#@   output = {}
+#@   readers = {}
+#@   writers = {}
+#@   admins = {"Type": "Signature", "Rule": "OR('{}.admin')".format(orgName)}
+#@   if orgName.startswith("orderer"):
+#@     readers = {"Type": "Signature", "Rule": "OR('{}.member')".format(orgName)}
+#@     writers = {"Type": "Signature", "Rule": "OR('{}.member')".format(orgName)}
+#@   else:
+#@     readers = {"Type": "Signature", "Rule": "OR('{}.admin', '{}.peer')".format(orgName, orgName)}
+#@     writers = {"Type": "Signature", "Rule": "OR('{}.admin', '{}.client')".format(orgName, orgName)}
+#@   end
+#@   output = {"Readers": readers, "Writers": writers, "Admins": admins}
+#@   return output
+#@ end
+#@ def organizations(input, type):
+#@   output = []
+#@   if(type.startswith("peer") == False):
+#@   for i in range(0, len(input.orderer_organizations)):
+#@     output.append({"Name": input.orderer_organizations[i].name, "ID": input.orderer_organizations[i].name, "MSPDir": input.certs_location+"crypto-config/ordererOrganizations/"+input.orderer_organizations[i].name+"/msp", "Policies": orgPolicies(input.orderer_organizations[i].name)})
+#@   end
+#@   end
+#@   if(type.startswith("orderer") == False):
+#@     for i in range(0, len(input.peer_organizations)):
+#@       output.append({"Name": input.peer_organizations[i].name, "ID": input.peer_organizations[i].name, "MSPDir": input.certs_location+"crypto-config/peerOrganizations/"+input.peer_organizations[i].name+"/msp", "Policies": orgPolicies(input.peer_organizations[i].name)})
+#@     end
+#@   end
+#@   return output
+#@ end
+#@ def policies(type):
+#@   readers = {"Type": "ImplicitMeta", "Rule": "ANY Readers"}
+#@   writers = {"Type": "ImplicitMeta", "Rule": "ANY Writers"}
+#@   admins = {"Type": "ImplicitMeta", "Rule": "MAJORITY Admins"}
+#@   output = {}
+#@   if type.startswith("orderer"):
+#@     blockValidation = {"Type": "ImplicitMeta", "Rule": "ANY Writers"}
+#@     output = {"Readers":readers, "Writers": writers, "Admins": admins, "BlockValidation": blockValidation}
+#@   else:
+#@     output = {"Readers":readers, "Writers": writers, "Admins": admins}
+#@   end
+#@   return output
+#@ end
+#@ def ordererHosts(input):
+#@   result = []
+#@   for i in range(0, len(input.orderer_organizations)):
+#@     ordererOrg = input.orderer_organizations[i]
+#@     for j in range(0, ordererOrg.num_orderers):
+#@       result.append("orderer"+str(j)+"-"+ordererOrg.name)
+#@     end
+#@   end
+#@   return result
+#@ end
+#@ def orderer(input):
+#@   result = {}
+#@   batchSize = {"MaxMessageCount":500, "AbsoluteMaxBytes": "10 MB", "PreferredMaxBytes":"2 MB"}
+#@   if(input.orderer.orderertype=="etcdraft"):
+#@     consenters = []
+#@     for i in range(0, len(input.orderer_organizations)):
+#@       for j in range(0, input.orderer_organizations[i].num_orderers):
+#@       ordererOrg = input.orderer_organizations[i]
+#@       certs = "{}crypto-config/ordererOrganizations/{}/orderers/orderer{}-{}.{}/tls/server.crt".format(input.certs_location, ordererOrg.name, j, ordererOrg.name, ordererOrg.name)  
+#@       consenters.append({"Host":"orderer{}-{}".format(j, ordererOrg.name), "Port": 7050, "ClientTLSCert": certs, "ServerTLSCert": certs})
+#@       end
+#@     end
+#@     options = {"TickInterval":"500ms", "ElectionTick": 10, "HeartbeatTick": 1, "MaxInflightBlocks": 5, "SnapshotIntervalSize": "100 MB"}
+#@     result = {"OrdererType": input.orderer.orderertype, "Addresses": ordererHosts(input), "BatchTimeout": "2s", "BatchSize": batchSize, "Organizations": organizations(input, "orderer"), "Policies": policies("orderer"), "Capabilities":{"V1_1": True}, "EtcdRaft":{"Consenters":consenters, "Options":options}}
+#@   elif (input.orderer.orderertype == "kafka"):
+#@     brokersList = []
+#@     kafka = {}
+#@     for i in range(0, input.kafka.num_kafka):
+#@       brokersList.append("kafka{}:9092".format(i))
+#@     end
+#@     kafka = {"Brokers": brokersList}
+#@     result = {"OrdererType": input.orderer.orderertype, "Addresses": ordererHosts(input), "BatchTimeout": "2s", "BatchSize": batchSize, "kafka": kafka, "Organizations": organizations(input, "orderer"),"Policies": policies("orderer"),"Capabilities":{"V1_1": True} }
+#@   else:
+#@     result = {"OrdererType": input.orderer.orderertype, "Addresses": ordererHosts(input), "BatchTimeout": "2s", "BatchSize": batchSize, "Organizations": organizations(input, "orderer"), "Policies": policies("orderer"), "Capabilities":{"V1_1": True}}
+#@   end
+#@   return result
+#@ end
+Organizations: #@ organizations(data.values, "")
+Capabilities:
+  Global:
+    V1_3: true
+  Orderer:
+    V1_1: true
+  Application:
+    V1_3: true
+Orderer: #@ orderer(data.values)
+Application:
+  Organizations: #@ organizations(data.values, "peer")
+  Policies: #@ policies("peer")
+  Capabilities:
+    V1_3: true
+Channel:
+  Policies: #@ policies("channel")
+  Capabilities:
+    V1_3: true
+Profiles:
+  testorgschannel:
+    Policies: #@ policies("channel")
+    Consortium: FabricConsortium
+    Application:
+      Organizations: #@ organizations(data.values, "peer")
+      Policies: #@ policies("peer")
+      Capabilities:
+        V1_3: true
+    Orderer: #@ orderer(data.values)
+  testOrgsOrdererGenesis:
+    Policies: #@ policies("channel")
+    Capabilities:
+        V1_3: true
+    Orderer: #@ orderer(data.values)
+    Consortiums:
+      FabricConsortium:
+        Organizations: #@ organizations(data.values, "peer")
