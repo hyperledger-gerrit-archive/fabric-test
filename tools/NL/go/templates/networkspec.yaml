@@ -1,0 +1,80 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+---
+fabric_version: 1.4.1-stable
+## peer database ledger type (couchdb, goleveldb)
+db_type: couchdb
+peer_fabric_logging_spec: error
+orderer_fabric_logging_spec: error
+## tls in the network (true, false or client)
+tls: true
+## fabric metrics with prometheus (true/false)
+metrics: false
+
+certs_location: /home/ibmadmin/go/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/
+
+orderer:
+  orderertype: solo
+  batchsize:
+    maxmessagecount: 500
+    absolutemaxbytes: 10 MB
+    preferredmaxbytes: 2 MB
+  batchtimeout: 2s
+  etcdraft_options:
+    TickInterval: 500ms
+    ElectionTick: 10
+    HeartbeatTick: 1
+    MaxInflightBlocks: 5
+    SnapshotIntervalSize: 100 MB
+
+kafka:
+  num_kafka: 5
+  num_kafka_replications: 3
+  num_zookeepers: 3
+  
+orderer_organizations:
+- name: ordererorg1
+  msp_id: OrdererOrgExampleCom
+  num_orderers: 1
+  num_ca: 1
+
+peer_organizations:
+- name: org1
+  msp_id: Org1ExampleCom
+  num_peers: 2
+  num_ca: 1
+
+- name: org2
+  msp_id: Org2ExampleCom
+  num_peers: 2
+  num_ca: 1
+
+orderer_capabilities: 
+  V1_4_2: true
+
+channel_capabilities:
+  V1_4_2: true
+
+application_capabilities: 
+  V1_3: true
+
+# Create the channel creation transactions; every org will be included in every channel
+# (note: client will need to submit the transactions)
+num_channels: 10
+
+### TODO: future enhancement to read individual profiles for each channel creation.
+#profiles:
+#- name: TwoOrgsOrdererGenesis
+#  orderers:
+#    - orderer0
+#- name: TwoOrgsChannelProfile
+#  consortium: SampleConsortium
+#  organizations:
+#    - org1
+#    - org2
+#- name: AnotherChannelProfile
+#  consortium: SampleConsortium
+#  organizations:
+#    - org3
+#    - org4
