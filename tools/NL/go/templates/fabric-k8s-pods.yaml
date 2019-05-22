@@ -1,0 +1,140 @@
+#! some variables need to be configurable externally
+#! we can specify them in a separate file or a separate
+#! YAML document node
+
+#@ load("@ytt:data", "data")
+#@ def caContainers(input, value):
+#@   env = [{ "name": "FABRIC_CA_HOME", "value": "/etc/hyperledger/fabric-ca-server-config/keyfiles/{}/ca".format(value)}]
+#@   env.append({"name": "FABRIC_CA_SERVER_CA_NAME", "value": "{}".format(input)})
+#@   env.append({"name": "FABRIC_CA_SERVER_CA_KEYFILE", "value": "/etc/hyperledger/fabric-ca-server-config/keyfiles/{}/ca/ca_private.key".format(value)})
+#@   env.append({"name": "FABRIC_CA_SERVER_CA_CERTFILE", "value": "/etc/hyperledger/fabric-ca-server-config/keyfiles/{}/ca/ca.{}-cert.pem".format(value, value)})
+#@   env.append({"name": "FABRIC_CA_SERVER_TLS_ENABLED", "value": "true" })
+#@   env.append({"name": "FABRIC_CA_SERVER_TLS_KEYFILE", "value": "/etc/hyperledger/fabric-ca-server-config/keyfiles/{}/tlsca/tlsca_private.key".format(value)})
+#@   env.append({"name": "FABRIC_CA_SERVER_TLS_CERTFILE", "value": "/etc/hyperledger/fabric-ca-server-config/keyfiles/{}/tlsca/tlsca.{}-cert.pem".format(value, value)})
+#@   resources = {"limits":{"cpu": "0.2", "memory": "0.5Gi"}, "requests":{"cpu":"0.2", "memory":"0.5Gi"}}
+#@   volumeMounts = [{"mountPath":"/etc/hyperledger/fabric-ca-server-config","name":"task-pv-storage"}]
+#@   output = [{"name": input,"image": "hyperledger/fabric-ca", "imagePullPolicy": "Always", "env": env, "resources": resources,"volumeMounts":volumeMounts, "command":["fabric-ca-server"],"args":["start", "-b", "admin:adminpw", "-d"]}]
+#@   return output
+#@ end
+
+
+#@ def peerContainers(input, value, dbType):
+#@   env = [{ "name": "CORE_VM_ENDPOINT", "value": "unix:///var/run/docker.sock"}]
+#@   env.append({"name": "CORE_PEER_GOSSIP_USELEADERELECTION", "value": "True"})
+#@   env.append({"name": "CORE_PEER_GOSSIP_ORGLEADER", "value": "false"})
+#@   env.append({"name": "CORE_PEER_LISTENADDRESS", "value": "0.0.0.0:7051"})
+#@   env.append({"name": "CORE_PEER_CHAINCODELISTENADDRESS", "value": "0.0.0.0:7052"})
+#@   env.append({"name": "CORE_PEER_TLS_ENABLED", "value": "true" })
+#@   env.append({"name": "FABRIC_LOGGING_SPEC", "value": "error" })
+#@   env.append({"name": "CORE_PEER_TLS_CERT_FILE", "value": "/etc/hyperledger/fabric/artifacts/keyfiles/{}/peers/{}.{}/tls/server.crt".format(value, input, value)})
+#@   env.append({"name": "CORE_PEER_TLS_KEY_FILE", "value": "/etc/hyperledger/fabric/artifacts/keyfiles/{}/peers/{}.{}/tls/server.key".format(value, input, value)})
+#@   env.append({"name": "CORE_PEER_TLS_ROOTCERT_FILE", "value": "/etc/hyperledger/fabric/artifacts/keyfiles/{}/tlsca/tlsca.{}-cert.pem".format(value, value)})
+#@   env.append({"name": "CORE_PEER_ID", "value": "{}".format(input)})
+#@   env.append({"name": "CORE_PEER_GOSSIP_EXTERNALENDPOINT", "value": "{}:7051".format(input)})
+#@   env.append({"name": "CORE_PEER_ADDRESS", "value": "{}:7051".format(input)})
+#@   env.append({"name": "CORE_PEER_CHAINCODEADDRESS", "value": "{}:7052".format(input)})
+#@   env.append({"name": "CORE_PEER_LOCALMSPID", "value": "{}".format(value)})
+#@   env.append({"name": "CORE_PEER_MSPCONFIGPATH", "value": "/etc/hyperledger/fabric/artifacts/keyfiles/{}/peers/{}.{}/msp".format(value, input, value)})
+
+#@   volumeMounts = [{"mountPath": "/etc/hyperledger/fabric/artifacts", "name": "task-pv-storage"}]
+#@   volumeMounts.append({"mountPath": "/var/run", "name": "rundind"})
+#@   resources = {"limits":{"cpu": "1", "memory": "1Gi"}, "requests":{"cpu":"1", "memory":"1Gi"}}
+
+#@   if dbType == "couchdb":
+#@     env.append({"name": "CORE_LEDGER_STATE_STATEDATABASE", "value": "CouchDB"})
+#@     env.append({"name": "CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS", "value": "localhost:5984"})
+#@     container = {"name":"couchdb-{}".format(input), "image": "hyperledger/fabric-couchdb", "imagePullPolicy": "Always", "securityContext":{"privileged":True}, "resources":{"limits":{"cpu": "0.1","memory": "1Gi"},"requests":{"cpu": "0.1","memory": "1Gi"} }}
+#@     output = [{"name": input,"image": "hyperledger/fabric-peer", "imagePullPolicy": "Always", "securityContext" : { "privileged": True }, "env": env, "volumeMounts":volumeMounts, "command": ["peer"], "args":["node","start"], "resources": resources}, container]
+#@   else:
+#@      output = [{"name": input,"image": "hyperledger/fabric-peer", "imagePullPolicy": "Always", "securityContext" : { "privileged": True }, "env": env, "volumeMounts":volumeMounts, "command": ["peer"], "args":["node","start"], "resources": resources}]
+#@   end 
+#@   return output
+#@ end
+
+
+#@ def ordererContainers(input, value):
+#@   env = [{ "name": "ORDERER_GENERAL_LISTENADDRESS", "value": "0.0.0.0"}]
+#@   env.append({"name": "ORDERER_GENERAL_GENESISMETHOD", "value": "file"})
+#@   env.append({"name": "FABRIC_LOGGING_SPEC", "value": "error"})
+#@   env.append({"name": "ORDERER_GENERAL_TLS_ENABLED", "value": "true"})
+#@   env.append({"name": "ORDERER_GENERAL_GENESISFILE", "value": "/etc/hyperledger/fabric/artifacts/keyfiles/genesis.block"})
+#@   env.append({"name": "ORDERER_GENERAL_LOCALMSPID", "value": "OrdererOrgExampleCom" })
+#@   env.append({"name": "ORDERER_GENERAL_LOCALMSPDIR", "value": "/etc/hyperledger/fabric/artifacts/keyfiles/ordererorg1/orderers/orderer-ordererorg1.ordererorg1/msp" })
+#@   env.append({"name": "ORDERER_GENERAL_TLS_SERVERHOSTOVERRIDE", "value": "orderer-ordererorg1"})
+#@   env.append({"name": "ORDERER_GENERAL_TLS_PRIVATEKEY", "value": "/etc/hyperledger/fabric/artifacts/keyfiles/ordererorg1/orderers/orderer-ordererorg1.ordererorg1/tls/server.key"})
+#@   env.append({"name": "ORDERER_GENERAL_TLS_CERTIFICATE", "value": "/etc/hyperledger/fabric/artifacts/keyfiles/ordererorg1/orderers/orderer-ordererorg1.ordererorg1/tls/server.crt"})
+#@   env.append({"name": "ORDERER_GENERAL_TLS_ROOTCAS", "value": "[/etc/hyperledger/fabric/artifacts/keyfiles/ordererorg1/tlsca/tlsca.ordererorg1-cert.pem]"})
+#@   env.append({"name": "ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY", "value": "/etc/hyperledger/fabric/artifacts/keyfiles/ordererorg1/orderers/orderer-ordererorg1.ordererorg1/tls/server.key"})
+#@   env.append({"name": "ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE", "value": "/etc/hyperledger/fabric/artifacts/keyfiles/ordererorg1/orderers/orderer-ordererorg1.ordererorg1/tls/server.crt"})
+
+#@   volumeMounts = [{"mountPath": "/etc/hyperledger/fabric/artifacts", "name": "task-pv-storage"}]
+#@   resources = {"limits":{"cpu": "1", "memory": "1Gi"}, "requests":{"cpu":"1", "memory":"1Gi"}}
+#@   output = [{"name": input,"image": "hyperledger/fabric-orderer", "imagePullPolicy": "Always",  "resources": resources,"volumeMounts": volumeMounts,"command":["orderer"] }]
+#@   return output
+#@ end
+
+#@ def spec(input,orgName, value, dbType):
+#@   type = {}
+#@   specData = {}
+#@   if input.startswith("ca"):
+#@     type = "ca"
+#@     specData = {"volumes":[{"name":"task-pv-storage","persistentVolumeClaim":{"claimName":"fabriccerts"}}],
+#@             "affinity":{"podAntiAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":1,"podAffinityTerm":{"labelSelector":{"matchExpressions":[{"key":"type","operator": "In","values":["{}".format(value)]}]},"topologyKey":"kubernetes.io/hostname"}}]}},
+#@              "containers": caContainers(input, orgName)}
+#@   elif input.startswith("orderer"):
+#@     type = "orderer"
+#@     specData = {"volumes":[{"name":"task-pv-storage","persistentVolumeClaim":{"claimName":"fabriccerts"}}],
+#@             "affinity":{"podAntiAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":1,"podAffinityTerm":{"labelSelector":{"matchExpressions":[{"key":"type","operator": "In","values":["{}".format(value)]}]},"topologyKey":"kubernetes.io/hostname"}}]}},
+#@              "containers": ordererContainers(input, orgName)}
+#@   else:
+#@     type = "peer"
+#@     specData = {"volumes":[{"name":"task-pv-storage","persistentVolumeClaim":{"claimName":"fabriccerts"}}],
+#@             "affinity":{"podAntiAffinity":{"preferredDuringSchedulingIgnoredDuringExecution":[{"weight":1,"podAffinityTerm":{"labelSelector":{"matchExpressions":[{"key":"type","operator": "In","values":["{}".format(value)]}]},"topologyKey":"kubernetes.io/hostname"}}]}},
+#@              "containers": peerContainers(input, orgName, dbType)}
+#@   end
+#@   selector = {"matchLabels":{"k8s-app": input,"type": type}}
+#@   metadata = {"labels":{"k8s-app": input,"type":type}}
+#@   template = {"metadata":metadata,"spec":specData}
+#@   output = {"selector":selector, "serviceName": input, "replicas": 1, "template": template}
+#@   return output
+#@ end
+
+#@ for i in range(0,len(data.values.peer_organizations)):
+#@ organization = data.values.peer_organizations[i]
+#@ for j in range(0, organization.num_ca):
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: #@ "ca{}-{}".format(j, organization.name)
+spec: #@ spec("ca{}-{}".format(j, organization.name),organization.name,"peer", "{}".format(data.values.db_type))
+#@ end
+#@ for j in range(0, organization.num_peers):
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: #@ "peer{}-{}".format(j, organization.name)
+spec: #@ spec("peer{}-{}".format(j, organization.name),organization.name,"peer", "{}".format(data.values.db_type))
+#@ end
+#@ end
+
+#@ for i in range(0,len(data.values.orderer_organizations)):
+#@ organization = data.values.orderer_organizations[i]
+#@ for j in range(0, organization.num_ca):
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: #@ "ca{}-{}".format(j, organization.name)
+spec: #@ spec("ca{}-{}".format(j, organization.name),organization.name,"orderer", "{}".format(data.values.db_type))
+#@ end
+#@ for j in range(0, organization.num_orderers):
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: #@ "orderer{}-{}".format(j, organization.name)
+spec: #@ spec("orderer{}-{}".format(j, organization.name),organization.name,"orderer", "{}".format(data.values.db_type))
+#@ end
+#@ end
