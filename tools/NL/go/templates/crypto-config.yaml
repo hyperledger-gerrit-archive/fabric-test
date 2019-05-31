@@ -1,0 +1,20 @@
+#@ load("@ytt:data", "data")
+#@ def orgs(input):
+#@ output = []
+#@ for i in range(0,len(input)):
+#@   hostnames = []
+#@   if input[0].name.startswith("orderer"):
+#@     for j in range(0,input[i].num_orderers):
+#@       hostnames.append("orderer"+str(j)+"-"+input[i].name)
+#@     end
+#@   else:
+#@     for j in range(0,input[i].num_peers):
+#@       hostnames.append("peer"+str(j)+"-"+input[i].name)
+#@     end
+#@   end
+#@   output.append({"Name": input[i].name,"Domain": input[i].name,"EnableNodeOUs": True, "HostName": hostnames})
+#@ end
+#@ return output
+#@ end
+OrdererOrgs: #@ orgs(data.values.orderer_organizations)
+PeerOrgs: #@ orgs(data.values.peer_organizations)
