@@ -21,7 +21,7 @@
         "language": "java",
         "args": []
     },
-    "SCFile": [
-        {"ServiceCredentials":"SCFiles/config-chan3-TLS.json"}
+    "ConnProfile": [
+        "ConnProfiles/config.yaml"
     ]
 }
