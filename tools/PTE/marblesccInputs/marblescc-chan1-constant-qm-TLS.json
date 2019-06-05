@@ -71,7 +71,7 @@
             "args": ["marble", "blue","35","tom"]
         }
     },
-    "SCFile": [
-		{"ServiceCredentials":"SCFiles/config-chan1-TLS.json"}
-	]
+    "ConnProfile": [
+        "ConnProfiles/config.yaml"
+    ]
 }

@@ -9,7 +9,7 @@
             "org2"
         ]
     },
-    "SCFile": [
-        {"ServiceCredentials":"SCFiles/config-chan1-TLS.yaml"}
+    "ConnProfile": [
+        "ConnProfiles/config.yaml"
     ]
 }
