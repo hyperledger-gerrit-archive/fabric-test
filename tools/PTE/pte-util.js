@@ -129,6 +129,54 @@ module.exports.readConfigFileSubmitter=function(inFile, keyreq) {
     return readConfigFile(inFile, keyreq);
 }
 
+var cpClient;
+var cpChannels;
+var cpOrgs;
+var cpOrderers;
+var cpPeers;
+var cpCAs;
+
+// get connection sub pointers
+function getCPsubPtr(inPtr) {
+
+    cpClient = inPtr['client'];
+    cpChannels = inPtr['channels'];
+    cpOrgs = inPtr['organizations'];
+    cpOrderers = inPtr['orderers'];
+    cpPeers = inPtr['peers'];
+    cpCAs = inPtr['certificateAuthorities'];
+
+}
+
+function getOrgName(inFile, org) {
+    var inPtr = readConfigFile(inFile);
+    getCPsubPtr(inPtr);
+    var orgCA=cpOrgs[org].certificateAuthorities[0];
+    return cpCAs[orgCA].registrar.enrollId;
+}
+module.exports.getOrgNameSubmitter=function(inFile, org) {
+    return getOrgName(inFile, org);
+}
+
+function getOrgSecret(org) {
+    var inPtr = readConfigFile(inFile);
+    getCPsubPtr(inPtr);
+    var orgCA=cpOrgs[org].certificateAuthorities[0];
+    return cpCAs[orgCA].registrar.enrollSecret;
+}
+module.exports.getOrgSecretSubmitter=function(inFile, org) {
+    return getOrgSecret(inFile, org);
+}
+
+var ordererName = [];
+function getOrdererName() {
+    for ( var key in cpOrderers) {
+        ordererName.push(key);
+        logger.info('[getOrdererName] cpOrderers key: ', key);
+    }
+    logger.info('[getOrdererName] cpOrderers length: %d, name: ', ordererName.length, ordererName);
+}
+
 function getgoPath() {
 
     if ( typeof(ORGS.gopath) === 'undefined' ) {
@@ -140,12 +188,20 @@ function getgoPath() {
     }
 }
 
+function getCAUrl(org) {
+
+    var ca = cpOrgs[Org]['certificateAuthorities'];
+    return cpOrgs[userOrg][ca].url;
+}
+
 function getMember(username, password, client, nid, userOrg, svcFile) {
     ORGS = readConfigFile(svcFile, 'test-network');
+    getCPsubPtr(ORGS);
 
-	var caUrl = ORGS[userOrg].ca.url;
+    var caUrl = getCAUrl(userOrg);
+    logger.info('[getMember] getMember, name: org %s ca url: %s', userOrg, caUrl);
 
-	logger.info('[getMember] getMember, name: '+username+', client.getUserContext('+username+', true)');
+    logger.info('[getMember] getMember, name: '+username+', client.getUserContext('+username+', true)');
 
 	return client.getUserContext(username, true)
 	.then((user) => {
@@ -189,43 +245,68 @@ function getMember(username, password, client, nid, userOrg, svcFile) {
                 process.exit(1);
 			});
 		});
-	}).catch((err)=>{
-        logger.error(err)
-        process.exit(1);
-    });
+        }).catch((err)=>{
+            logger.error(err)
+            process.exit(1);
+        });
 }
 
 function getAdmin(client, nid, userOrg, svcFile) {
+        logger.info('[getAdmin] svcFile=%j', svcFile);
         ORGS = readConfigFile(svcFile, 'test-network');
+        getCPsubPtr(ORGS);
+
         var keyPath;
         var keyPEM;
         var certPath;
         var certPEM;
 
-        if (typeof ORGS[userOrg].admin_cert !== 'undefined') {
-            logger.info(' %s admin_cert defined', userOrg);
-            keyPEM = ORGS[userOrg].priv;
-            certPEM = ORGS[userOrg].admin_cert;
-        } else {
+        if (typeof cpOrgs[userOrg].admin_cert !== 'undefined') {
+            logger.info('[getAdmin] %s admin_cert defined', userOrg);
+            keyPEM = cpOrgs[userOrg].priv;
+            certPEM = cpOrgs[userOrg].admin_cert;
+        } else if ((typeof cpOrgs[userOrg].adminPrivateKey !== 'undefined') &&
+                   (typeof cpOrgs[userOrg].signedCert !== 'undefined')) {
             getgoPath();
-            logger.info(' %s admin_cert undefined', userOrg);
-            keyPath =  path.resolve(goPath, ORGS[userOrg].adminPath , 'keystore');
+            logger.info('[getAdmin] %s adminPrivateKey and signedCert defined', userOrg);
+            if ( typeof cpOrgs[userOrg].adminPrivateKey.path !== 'undefined') {
+                keyPath = path.resolve(goPath, cpOrgs[userOrg].adminPrivateKey.path, 'keystore');
+                keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
+                logger.info('[getAdmin] keyPath: %s', keyPath);
+            } else if (typeof cpOrgs[userOrg].adminPrivateKey.pem !== 'undefined') {
+                keyPEM = cpOrgs[userOrg].adminPrivateKey.pem;
+            } else {
+                logger.error('[getAdmin] error: adminPrivateKey invalid');
+            }
+            if ( typeof cpOrgs[userOrg].signedCert.path !== 'undefined') {
+                certPath =  path.resolve(goPath, cpOrgs[userOrg].signedCert.path, 'signcerts');
+                certPEM = Buffer.from(readAllFiles(certPath)[0]).toString();
+                logger.info('[getAdmin] certPath: %s', certPath);
+            } else if (typeof cpOrgs[userOrg].signedCert.pem !== 'undefined') {
+                certPEM = cpOrgs[userOrg].signedCert.pem;
+            } else {
+                logger.error('[getAdmin] error: signedCert invalid');
+            }
+        } else if (typeof cpOrgs[userOrg].adminPath !== 'undefined') {
+            getgoPath();
+            logger.info('[getAdmin] %s adminPath defined', userOrg);
+            keyPath =  path.resolve(goPath, cpOrgs[userOrg].adminPath , 'keystore');
             keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
-            certPath = path.resolve(goPath, ORGS[userOrg].adminPath, 'signcerts');
+            certPath = path.resolve(goPath, cpOrgs[userOrg].adminPath, 'signcerts');
             certPEM = readAllFiles(certPath)[0];
             logger.debug('[getAdmin] keyPath: %s', keyPath);
             logger.debug('[getAdmin] certPath: %s', certPath);
         }
-        
+
         var cryptoSuite = hfc.newCryptoSuite();
         if (userOrg) {
-                    cryptoSuite.setCryptoKeyStore(hfc.newCryptoKeyStore({path: module.exports.storePathForOrg(nid, ORGS[userOrg].name)}));
-                    client.setCryptoSuite(cryptoSuite);
+            cryptoSuite.setCryptoKeyStore(hfc.newCryptoKeyStore({path: module.exports.storePathForOrg(nid, cpOrgs[userOrg].name)}));
+            client.setCryptoSuite(cryptoSuite);
         }
-    
+
         return Promise.resolve(client.createUser({
             username: 'peer'+userOrg+'Admin',
-            mspid: ORGS[userOrg].mspid,
+            mspid: cpOrgs[userOrg].mspid,
             cryptoContent: {
                 privateKeyPEM: keyPEM.toString(),
                 signedCertPEM: certPEM.toString()
@@ -235,48 +316,60 @@ function getAdmin(client, nid, userOrg, svcFile) {
 
 function getOrdererAdmin(client, userOrg, svcFile) {
         ORGS = readConfigFile(svcFile, 'test-network');
+        getCPsubPtr(ORGS);
+        getOrdererName();
         var keyPath;
         var keyPEM;
         var certPath;
         var certPEM;
-        var ordererID = ORGS[userOrg].ordererID;
+        var ordererID;
 
-        if (typeof ORGS['orderer'].admin_cert !== 'undefined') {
-            logger.info(' %s global orderer admin_cert defined', userOrg);
-            keyPEM = ORGS['orderer'].priv;
-            certPEM = ORGS['orderer'].admin_cert;
-        } else if (typeof ORGS['orderer'][ordererID].admin_cert !== 'undefined') {
-            logger.info(' %s local orderer admin_cert defined', userOrg);
-            keyPEM = ORGS['orderer'][ordererID].priv;
-            certPEM = ORGS['orderer'][ordererID].admin_cert;
-        } else if (typeof ORGS['orderer'].adminPath !== 'undefined') {
-            getgoPath();
-            logger.info(' %s global orderer adminPath defined', userOrg);
-            keyPath = path.resolve(goPath, ORGS['orderer'].adminPath, 'keystore');
-            keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
-            certPath = path.resolve(goPath, ORGS['orderer'].adminPath, 'signcerts');
-            certPEM = readAllFiles(certPath)[0];
-            logger.debug('[getOrdererAdmin] keyPath: %s', keyPath);
-            logger.debug('[getOrdererAdmin] certPath: %s', certPath);
+        // get ordererID
+        if ( typeof cpOrgs[userOrg].ordererId !== 'undefined' ) {
+            ordererId = cpOrgs[userOrg].ordererID;
         } else {
+            ordererID = ordererName[0];
+        }
+        logger.info('[getOrdererAdmin] orderer ID= %s', ordererID);
+
+        if ((typeof cpOrderers.admin_cert !== 'undefined') &&
+            (typeof cpOrderers.priv !== 'undefined')) {
+            logger.info('[getOrdererAdmin] %s global orderer admin_cert and priv defined', userOrg);
+            keyPEM = cpOrderers.priv;
+            certPEM = cpOrderers.admin_cert;
+        } else if ((typeof cpOrderers[ordererID].admin_cert !== 'undefined') &&
+                   (typeof cpOrderers[ordererID].priv !== 'undefined')) {
+            logger.info('[getOrdererAdmin] %s local orderer admin_cert and priv defined', userOrg);
+            keyPEM = cpOrderers[ordererID].priv;
+            certPEM = cpOrderers[ordererID].admin_cert;
+        } else if (typeof cpOrderers.adminPath !== 'undefined') {
             getgoPath();
-            logger.info(' %s local orderer adminPath defined', userOrg);
-            keyPath = path.resolve(goPath, ORGS['orderer'][ordererID].adminPath, 'keystore');
+            logger.info('[getOrdererAdmin] %s global orderer adminPath defined', userOrg);
+            keyPath = path.resolve(goPath, cpOrderers.adminPath, 'keystore');
             keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
-            certPath = path.resolve(goPath, ORGS['orderer'][ordererID].adminPath, 'signcerts');
+            certPath = path.resolve(goPath, cpOrderers.adminPath, 'signcerts');
+            certPEM = readAllFiles(certPath)[0];
+            logger.debug('[getOrdererAdmin] keyPath: %s', keyPath);
+            logger.debug('[getOrdererAdmin] certPath: %s', certPath);
+        } else if (typeof cpOrderers[ordererID].adminPath !== 'undefined') {
+            getgoPath();
+            logger.info('[getOrdererAdmin] %s local orderer adminPath defined', userOrg);
+            keyPath = path.resolve(goPath, cpOrderers[ordererID].adminPath, 'keystore');
+            keyPEM = Buffer.from(readAllFiles(keyPath)[0]).toString();
+            certPath = path.resolve(goPath, cpOrderers[ordererID].adminPath, 'signcerts');
             certPEM = readAllFiles(certPath)[0];
             logger.debug('[getOrdererAdmin] keyPath: %s', keyPath);
             logger.debug('[getOrdererAdmin] certPath: %s', certPath);
         }
 
-    return Promise.resolve(client.createUser({
-        username: 'ordererAdmin',
-        mspid: ORGS['orderer'][ordererID].mspid,
-        cryptoContent: {
-            privateKeyPEM: keyPEM.toString(),
-            signedCertPEM: certPEM.toString()
-        }
-    }));
+        return Promise.resolve(client.createUser({
+            username: 'ordererAdmin',
+            mspid: cpOrderers[ordererID].mspid,
+            cryptoContent: {
+                privateKeyPEM: keyPEM.toString(),
+                signedCertPEM: certPEM.toString()
+            }
+        }));
 }
 
 function readFile(path) {
@@ -285,7 +378,7 @@ function readFile(path) {
             if (!!err)
                 reject(new Error('Failed to read file ' + path + ' due to error: ' + err));
             else
-                resolve(data);
+               	resolve(data);
         });
     });
 }
@@ -377,17 +470,29 @@ function getTLSCert(key, subkey, svcFile) {
     var data;
     logger.info('[getTLSCert] key: %s, subkey: %s', key, subkey);
     ORGS = readConfigFile(svcFile, 'test-network');
+    getCPsubPtr(ORGS);
     getgoPath();
+
+    var cpPtr;
+    if ( cpPeers[subkey] ) {
+        cpPtr = cpPeers;
+    } else if ( cpOrderers[subkey] ) {
+        cpPtr = cpOrderers;
+    } else {
+        logger.info('[getTLSCert] key: not found');
+        return;
+    }
+    logger.info('[getTLSCert] key found: %j', cpPtr[subkey]);
 
     if ( typeof(ORGS.tls_cert) !== 'undefined' ) {
         data = ORGS.tls_cert;
     } else {
-        var tlscerts = ORGS[key][subkey].tls_cacerts;
-        if (tlscerts.includes('BEGIN CERTIFICATE')) {
+        if ( typeof(cpPtr[subkey].tlsCACerts.pem) != 'undefined' ) {
             //tlscerts is a cert
-            data = tlscerts;
-        } else {
-            var caRootsPath = path.resolve(goPath, ORGS[key][subkey].tls_cacerts);
+            data = cpPtr[subkey].tlsCACerts['pem'];
+        } else if ( typeof(cpPtr[subkey].tlsCACerts.path) != 'undefined' ) {
+            //tlscerts is a path
+            var caRootsPath = path.resolve(goPath, cpPtr[subkey].tlsCACerts['path']);
             if (fs.existsSync(caRootsPath)) {
                 //caRootsPath is a cert path
                 data = fs.readFileSync(caRootsPath);
@@ -395,6 +500,9 @@ function getTLSCert(key, subkey, svcFile) {
                 logger.info('[getTLSCert] tls_cacerts does not exist: caRootsPath: %s, key: %s, subkey: %s', caRootsPath, key, subkey);
                 return null;
             }
+        } else {
+            logger.info('[getTLSCert] tls_cacerts does not exist: key: %s, subkey: %s', key, subkey);
+            return null;
         }
     }
     return data;
@@ -402,39 +510,40 @@ function getTLSCert(key, subkey, svcFile) {
 module.exports.getTLSCert = getTLSCert;
 
 module.exports.tlsEnroll = async function(client, orgName, svcFile) {
-  try{
+  try {
     var orgs = readConfigFile(svcFile, 'test-network');
     logger.info('[tlsEnroll] CA tls enroll: %s, svcFile: %s', orgName, svcFile);
     return new Promise(function (resolve, reject) {
         if (!orgs[orgName]) {
-                throw new Error('Invalid org name: ' + orgName);
-            }
-            let fabricCAEndpoint = orgs[orgName].ca.url;
-            let tlsOptions = {
-                trustedRoots: [],
-                verify: false
-            };
-            let caService = new FabricCAServices(fabricCAEndpoint, tlsOptions, orgs[orgName].ca.name);
-            logger.info('[tlsEnroll] CA tls enroll ca name: %j', orgs[orgName].ca.name);
-            let req = {
-                enrollmentID: 'admin',
-                enrollmentSecret: 'adminpw',
-                profile: 'tls'
-            };
-            caService.enroll(req).then(
-                function(enrollment) {
-                    const key = enrollment.key.toBytes();
-                    const cert = enrollment.certificate;
-                    client.setTlsClientCertAndKey(cert, key);
-                    logger.info('[tlsEnroll] CA tls enroll succeeded');
+            throw new Error('Invalid org name: ' + orgName);
+        }
+        let fabricCAEndpoint = orgs[orgName].ca.url;
+        let tlsOptions = {
+            trustedRoots: [],
+            verify: false
+        };
+        let caService = new FabricCAServices(fabricCAEndpoint, tlsOptions, orgs[orgName].ca.name);
+        logger.info('[tlsEnroll] CA tls enroll ca name: %j', orgs[orgName].ca.name);
+        let req = {
+            enrollmentID: 'admin',
+            enrollmentSecret: 'adminpw',
+            profile: 'tls'
+        };
+        caService.enroll(req).then(
+            function(enrollment) {
+                const key = enrollment.key.toBytes();
+                const cert = enrollment.certificate;
+                client.setTlsClientCertAndKey(cert, key);
+                logger.info('[tlsEnroll] CA tls enroll succeeded');
 
-                    return resolve(enrollment);
-                }).catch(err => {
-                    logger.info('[tlsEnroll] CA tls enroll failed: %j', err);
-                    return reject(err);
-                }
-                );
-        });
+                return resolve(enrollment);
+            },
+            function(err) {
+                logger.info('[tlsEnroll] CA tls enroll failed: %j', err);
+                return reject(err);
+            }
+        );
+    });
     } catch (err) {
         logger.error(err)
         process.exit(1)
@@ -457,12 +566,15 @@ module.exports.setTLS=function(txCfgPtr) {
         TLS = TLSCLIENTAUTH;
     }
     logger.info('[setTLS] TLSin: %s, TLS: %d', TLSin, TLS);
+
     return TLS;
 }
 
 // get ordererID for transactions
 module.exports.getOrdererID=function(pid, orgName, org, txCfgPtr, svcFile, method) {
     ORGS = readConfigFile(svcFile, 'test-network');
+    getCPsubPtr(ORGS);
+    getOrdererName();
     var ordererID;
 
     logger.info('[org:id=%s:%d getOrdererID] orderer method: %s', org, pid, method);
@@ -472,7 +584,8 @@ module.exports.getOrdererID=function(pid, orgName, org, txCfgPtr, svcFile, metho
         var nProcPerOrg = parseInt(txCfgPtr.nProcPerOrg);
         var orgNameLen=orgName.length;
         var orgIdx=orgName.indexOf(org);
-        var SCordList=Object.keys(ORGS.orderer);
+        var SCordList=Object.keys(cpOrderers);
+        //var SCordList=Object.keys(ordererName);
         logger.info('[org:id=%s:%d getOrdererID] SC orderer list: %j', org, pid, SCordList);
         var ordLen=SCordList.length;
 
@@ -491,7 +604,11 @@ module.exports.getOrdererID=function(pid, orgName, org, txCfgPtr, svcFile, metho
         ordererID=SCordList[ordIdx];
     } else {
         // default method: USERDEFINED
-        ordererID = ORGS[org].ordererID;
+        if ( typeof cpOrgs[org].ordererId !== 'undefined' ) {
+            ordererId = cpOrgs[org].ordererId;
+        } else {
+            ordererID = ordererName[0];
+        }
     }
 
     logger.info('[org:id=%s:%d getOrdererID] orderer assigned to the test: %s', org, pid, ordererID);
@@ -502,6 +619,7 @@ module.exports.getOrdererID=function(pid, orgName, org, txCfgPtr, svcFile, metho
 // get peerID for transactions
 module.exports.getPeerID=function(pid, org, txCfgPtr, svcFile, method) {
     ORGS = readConfigFile(svcFile, 'test-network');
+        getCPsubPtr(ORGS);
     var peerID="UNKNOWN";
 
     logger.info('[org:id=%s:%d getPeerID] peer method: %s', org, pid, method);
@@ -510,8 +628,9 @@ module.exports.getPeerID=function(pid, org, txCfgPtr, svcFile, method) {
         // Round Robin
         var nProcPerOrg = parseInt(txCfgPtr.nProcPerOrg);
         var SCordList=[];
-        for (var key in ORGS[org]) {
-            if (ORGS[org][key].requests) {
+        for (let i=0; i < cpOrgs[org]['peers'].length; i++) {
+            var key = cpOrgs[org]['peers'][i];
+            if (cpPeers[key].url) {
                 SCordList.push(key);
             }
         }

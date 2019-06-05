@@ -59,6 +59,6 @@
         }
     },
     "SCFile": [
-		{"ServiceCredentials":"SCFiles/config-chan3-TLS.json"}
-	]
+        "SCFiles/config.yaml"
+    ]
 }

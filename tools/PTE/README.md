@@ -119,27 +119,32 @@ Optionally, you may choose to skip this step of obtaining `fabric` and `fabric-c
         * `git checkout v1.0.0`
         * `make docker`
 
-4. Install PTE
-    - Stable (with latest fabric sdk)
+4. Install SDK-Node
+    - Stable (with latest fabric sdk-node)
         - `cd $GOPATH/src/github.com/hyperledger/fabric-test/tools/PTE`
+        - `rm package-lock.json`
+        - `rm -rf node_modules`
         - `npm install fabric-client`
         - `npm install fabric-ca-client`
-    - Stable (with specific version of fabric sdk)
+    - Stable (with specific version of fabric sdk-node)
         - `cd $GOPATH/src/github.com/hyperledger/fabric-test/tools/PTE`
+        - `rm package-lock.json`
+        - `rm -rf node_modules`
         - `npm install fabric-client@version`, for example to install version `1.0.2`, `npm install fabric-client@1.0.2`
         - `npm install fabric-ca-client@version`, for example to install version `1.0.2`, `npm install fabric-ca-client@1.0.2`
-    - Unstable (with development version of fabric sdk)
+    - Unstable (with development version of fabric sdk-node)
         - `cd $GOPATH/src/github.com/hyperledger/fabric-test/tools/PTE`
+        - `rm package-lock.json`
+        - `rm -rf node_modules`
         - `npm install`
-    or
-        - `cd $GOPATH/src/github.com/hyperledger/fabric-test/tools/PTE`
-        - `npm install fabric-client@unstable`
-        - `npm install fabric-ca-client@unstable`
+
 
 
 Once installed, the following steps are required.
-1. Create Service Credentials file(s) for your Fabric network:
-    - See the examples in `SCFiles` and change the address to your own Fabric addresses and credentials. Add a block for each organization and peer, ensuring correctness.
+
+1. Create Connection profile(s) or Service Credentials file(s) for your Fabric network:
+    - For connection profile, see the example in `PTE/SCFiles/config.yaml` and change the address to your own Fabric addresses and credentials. Add a block for each organization and peer, ensuring correctness.
+    - For service credentials file, see the example in `PTE/SCFiles/config-chan1-TLS.yaml` and change the address to your own Fabric addresses and credentials. Add a block for each organization and peer, ensuring correctness. Note that the service credential file is supported in fabric-test commit level `f923d548c00ee1f7336bbc8812ee0d2058489785` and before.
 
 2. Specify run scenarios:
     - Create your own version of PTEMgr.txt (if use pte_mgr.sh), runCases.txt and User Input json files, according to the test requirements. Use the desired chaincode name, channel name, organizations, etc. Using the information in your own network profiles, remember to "create" all channels, "join" channel, and "install"  and "instantiate"/"upgrade" chaincode for each org, to ensure all peers are set up correctly. Additional information can be found below.
@@ -841,7 +846,7 @@ The user input file contains configuration parameters including chaincode defini
             }
         },
         "SCFile": [
-            {"ServiceCredentials":"SCFiles/config-chan1-TLS.json"}
+            "SCFiles/config-chan.yaml"
         ]
     }
 
@@ -865,7 +870,7 @@ The user input file contains configuration parameters including chaincode defini
             ]
         },
         "SCFile": [
-            {"ServiceCredentials":"SCFiles/config-chan1-TLS.json"}
+            "SCFiles/config.yaml"
         ]
     }
 
