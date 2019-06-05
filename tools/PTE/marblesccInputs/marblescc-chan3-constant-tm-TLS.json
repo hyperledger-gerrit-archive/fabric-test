@@ -65,7 +65,7 @@
             "args": ["marble", "jerry"]
         }
     },
-    "SCFile": [
-		{"ServiceCredentials":"SCFiles/config-chan3-TLS.json"}
-	]
+    "ConnProfile": [
+        "ConnProfiles/config.yaml"
+    ]
 }
