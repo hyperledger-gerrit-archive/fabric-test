@@ -77,7 +77,7 @@
             "args": ["key","300"]
         }
     },
-    "SCFile": [
-        {"ServiceCredentials":"SCFiles/config-chan3-TLS.json"}
+    "ConnProfile": [
+        "ConnProfiles/config.yaml"
     ]
 }

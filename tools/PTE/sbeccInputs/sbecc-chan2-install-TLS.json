@@ -18,7 +18,7 @@
         "language": "golang",
         "args": []
     },
-    "SCFile": [
-        {"ServiceCredentials":"SCFiles/config-chan2-TLS.json"}
+    "ConnProfile": [
+        "ConnProfiles/config.yaml"
     ]
 }
