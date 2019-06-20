@@ -392,6 +392,27 @@ func networkCleanUp(networkSpec Config, kubeConfigPath string) error {
 	return nil
 }
 
+func migrateFromKafkaToRaft(networkSpec Config, kubeConfigPath string) error {
+
+	orderer_orgs := []string{}
+	num_orderers_per_org := []string{}
+	for j := 0; j < len(networkSpec.OrdererOrganizations); j++{
+		orderer_orgs = append(orderer_orgs, networkSpec.OrdererOrganizations[j].Name)
+		num_orderers_per_org = append(num_orderers_per_org, fmt.Sprintf("%v",networkSpec.OrdererOrganizations[j].NumOrderers))
+	}
+	orderer_org := strings.Join(orderer_orgs[:], ",")
+	num_orderers := strings.Join(num_orderers_per_org[:], ",")
+	cmd := exec.Command("./scripts/migrate.sh", kubeConfigPath, networkSpec.OrdererOrganizations[0].MspID, networkSpec.ArtifactsLocation, orderer_org, num_orderers, fmt.Sprintf("%v",networkSpec.NumChannels))
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	fmt.Println("Successfully migrated from kafka to etcdraft")
+	return nil
+}
+
 func readArguments() (*string, *string, string) {
 
 	networkSpecPath := flag.String("i", "", "Network spec input file path")
@@ -503,7 +524,14 @@ func main() {
 
 		err := networkCleanUp(input, *kubeConfigPath)
 		if err != nil {
-			log.Fatalf("Failed to clean up the network:; err = %v", err)
+			log.Fatalf("Failed to clean up the network; err = %v", err)
+		}
+
+	} else if mode == "migrate"{
+
+		err = migrateFromKafkaToRaft(input, *kubeConfigPath)
+		if err != nil {
+			log.Fatalf("Failed to migrate from kafka to raft; err = %v", err)
 		}
 
 	} else {
