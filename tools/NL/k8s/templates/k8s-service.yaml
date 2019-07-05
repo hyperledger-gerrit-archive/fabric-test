@@ -42,8 +42,16 @@ spec:
   #@ end
   #@ end
 #@ end
-#@ for i in range(0, len(data.values.orderer_organizations)):
+#@ num_ordererOrgs = len(data.values.orderer_organizations)
+#@ if (data.values.orderer.orderertype == "solo") or (data.values.orderer.orderertype == "kafka"):
+#@   num_ordererOrgs = 1
+#@ end
+#@ for i in range(0, num_ordererOrgs):
 #@ organization = data.values.orderer_organizations[i]
+#@ num_orderers = organization.num_orderers
+#@ if data.values.orderer.orderertype == "solo":
+#@   num_orderers = 1
+#@ end
   #@ for j in range(0, organization.num_ca):
 ---
 kind: Service
@@ -60,7 +68,7 @@ spec:
     - name: port1
       port: 7054
   #@ end
-  #@ for j in range(0, organization.num_orderers):
+  #@ for j in range(0, num_orderers):
 ---
 kind: Service
 apiVersion: v1

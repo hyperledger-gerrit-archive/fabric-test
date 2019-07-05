@@ -5,13 +5,21 @@
 #@ load("@ytt:data", "data")
 
 OrdererOrgs:
-#@ for i in range(0, len(data.values.orderer_organizations)):
+#@ num_organizations = len(data.values.orderer_organizations)
+#@ if (data.values.orderer.orderertype == "solo") or (data.values.orderer.orderertype == "kafka"):
+#@   num_organizations = 1
+#@ end
+#@ for i in range(0, num_organizations):
 #@ ordererOrg = data.values.orderer_organizations[i]
 - Domain: #@ ordererOrg.name
   Name: #@ ordererOrg.name
   EnableNodeOUs: true
   Specs:
-  #@ for i in range(0, ordererOrg.num_orderers):
+  #@ num_orderers = ordererOrg.num_orderers
+  #@ if data.values.orderer.orderertype == "solo":
+  #@   num_orderers = 1
+  #@ end
+  #@ for i in range(0, num_orderers):
     - Hostname: #@ "orderer{}-{}".format(i, ordererOrg.name)
   #@ end
 #@ end
