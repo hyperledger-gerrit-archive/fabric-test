@@ -19,7 +19,7 @@ tls: true
 metrics: false
 
 # Location where crypto-config and channel-artifacts are stored
-certs_location: /home/ibmadmin/go/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/
+artifacts_location: /home/ibmadmin/go/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/
 
 # Orderer Config Settings
 orderer:
