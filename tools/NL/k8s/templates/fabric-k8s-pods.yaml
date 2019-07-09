@@ -107,7 +107,7 @@
 #@   if networkSpec.tls == "mutual":
 #@     volumeMounts += mutualTLS(networkSpec, "volumeMounts")
 #@   end
-#@   if networkSpec.k8s.data_persistance == True:
+#@   if networkSpec.k8s.data_persistence == "true" or networkSpec.k8s.data_persistence == "local":
 #@     volumeMounts.append({"mountPath": "/shared/data", "name": "peer-data-storage"})
 #@   end
 #@   resources = {"limits":{"cpu": "1", "memory": "1Gi"}, "requests":{"cpu":"1", "memory":"1Gi"}}
@@ -158,7 +158,7 @@
 #@   if networkSpec.tls == "mutual":
 #@     volumeMounts += mutualTLS(networkSpec, "volumeMounts")
 #@   end
-#@   if networkSpec.k8s.data_persistance == True:
+#@   if networkSpec.k8s.data_persistence == "true" or networkSpec.k8s.data_persistence == "local":
 #@     volumeMounts.append({"mountPath": "/shared/data", "name": "orderer-data-storage"})
 #@   end
 #@   resources = {"limits":{"cpu": "1", "memory": "1Gi"}, "requests":{"cpu":"1", "memory":"1Gi"}}
@@ -197,8 +197,10 @@
 #@   elif input.startswith("orderer"):
 #@     type = "orderer"
 #@     volumes = [{"name":"certsparser", "configMap":{"name":"certsparser"}}, {"name":"mspsecret", "secret":{"secretName":"{}".format(input)}}, {"name":"genesisblock", "secret":{"secretName":"genesisblock"}}]
-#@     if networkSpec.k8s.data_persistance == True:
+#@     if networkSpec.k8s.data_persistence == True:
 #@        volumes.append({"name":"orderer-data-storage","persistentVolumeClaim":{"claimName":"{}-data".format(input)}})
+#@     elif networkSpec.k8s.data_persistence == "local":
+#@        volumes.append({"name":"orderer-data-storage","hostPath":{"path":"/shared/{}-data".format(input)}})
 #@     end
 #@     if networkSpec.tls == "mutual":
 #@        volumes += mutualTLS(networkSpec, "volumes")
@@ -208,8 +210,10 @@
 #@   else:
 #@     type = "peer"
 #@     volumes = [{"name":"certsparser", "configMap":{"name":"certsparser"}}, {"name":"mspsecret", "secret":{"secretName":"{}".format(input)}}]
-#@     if networkSpec.k8s.data_persistance == True:
+#@     if networkSpec.k8s.data_persistence == True:
 #@        volumes.append({"name":"peer-data-storage","persistentVolumeClaim":{"claimName":"{}-data".format(input)}})
+#@     elif networkSpec.k8s.data_persistence == "local":
+#@        volumes.append({"name":"peer-data-storage","hostPath":{"path":"/shared/{}-data".format(input)}})
 #@     end
 #@     if networkSpec.tls == "mutual":
 #@        volumes += mutualTLS(networkSpec, "volumes")
