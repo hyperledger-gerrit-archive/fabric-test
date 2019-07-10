@@ -24,7 +24,7 @@ type Config struct {
 	NumChannels          int                    `yaml:"num_channels,omitempty"`
 	TLS                  string                 `yaml:"tls,omitempty"`
 	K8s                  struct {
-		DataPersistance string `yaml:"data_persistence,omitempty"`
+		DataPersistence string `yaml:"data_persistance,omitempty"`
 	} `yaml:"k8s,omitempty"`
 }
 
@@ -237,7 +237,7 @@ func createMspSecret(networkSpec Config, kubeConfigPath string) error {
 		if networkSpec.TLS == "mutual" {
 			err := executeCommand("kubectl", []string{fmt.Sprintf("--kubeconfig=%v", kubeConfigPath), "create", "secret", "generic", fmt.Sprintf("%v-clientrootca-secret", networkSpec.OrdererOrganizations[i].Name), fmt.Sprintf("--from-file=%v/crypto-config/ordererOrganizations/%v/ca/ca.%v-cert.pem", networkSpec.ArtifactsLocation, networkSpec.OrdererOrganizations[i].Name, networkSpec.OrdererOrganizations[i].Name)})
 	        if err != nil {
-		    	return err
+			return err
 	        }
 		}
 	}
@@ -291,6 +291,12 @@ func generateChannelTransaction(networkSpec Config) error {
 		err := executeCommand("configtxgen", []string{"-profile", "testorgschannel", "-channelCreateTxBaseProfile", "testOrgsOrdererGenesis", "-channelID", fmt.Sprintf("testorgschannel%v", i), "-outputCreateChannelTx", fmt.Sprintf("%v/testorgschannel%v.tx", path, i), "-configPath=./configFiles/"})
 		if err != nil {
 			return err
+		}
+		for j := 0; j < len(networkSpec.PeerOrganizations); j++ {
+			err := executeCommand("configtxgen", []string{"-profile", "testorgschannel", "-outputAnchorPeersUpdate", fmt.Sprintf("%v/%vanchor.tx", path, networkSpec.PeerOrganizations[j].MspID), "-asOrg", fmt.Sprintf("%v", networkSpec.PeerOrganizations[j].Name), "-channelID", fmt.Sprintf("testorgschannel%v", i), "-configPath=./configFiles/"})
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -391,9 +397,6 @@ func networkCleanUp(networkSpec Config, kubeConfigPath string) error {
 	}
 	err := executeCommand("kubectl", []string{fmt.Sprintf("--kubeconfig=%v", kubeConfigPath), "delete", "secrets", "genesisblock"})
 	err = executeCommand("kubectl", []string{fmt.Sprintf("--kubeconfig=%v", kubeConfigPath), "delete", "-f", "./configFiles/fabric-k8s-pods.yaml"})
-	if networkSpec.K8s.DataPersistance == "local" {
-		err = executeCommand("kubectl", []string{fmt.Sprintf("--kubeconfig=%v", kubeConfigPath), "apply", "-f", "./scripts/alpine.yaml"})
-	}
 	err = executeCommand("kubectl", []string{fmt.Sprintf("--kubeconfig=%v", kubeConfigPath), "delete", "-f", "./configFiles/k8s-service.yaml"})
 	err = executeCommand("kubectl", []string{fmt.Sprintf("--kubeconfig=%v", kubeConfigPath), "delete", "-f", "./configFiles/fabric-pvc.yaml"})
 	err = executeCommand("kubectl", []string{fmt.Sprintf("--kubeconfig=%v", kubeConfigPath), "delete", "configmaps", "certsparser"})
@@ -414,9 +417,6 @@ func networkCleanUp(networkSpec Config, kubeConfigPath string) error {
 	err = os.RemoveAll(path)
 	path = filepath.Join(networkSpec.ArtifactsLocation, "crypto-config")
 	err = os.RemoveAll(path)
-	if networkSpec.K8s.DataPersistance == "local" {
-		err = executeCommand("kubectl", []string{fmt.Sprintf("--kubeconfig=%v", kubeConfigPath), "delete", "-f", "./scripts/alpine.yaml"})
-	}
 	if err != nil {
 		return err
 	}
@@ -497,7 +497,7 @@ func modeAction(mode string, input Config, kubeConfigPath string) {
 				log.Fatalf("Failed to create cert parser configmap; err = %v", err)
 			}
 
-			if input.K8s.DataPersistance == "true" {
+			if input.K8s.DataPersistence == "true" {
 				err = createPvcs(kubeConfigPath)
 				if err != nil {
 					log.Fatalf("Failed to create pvcs; err = %v", err)
