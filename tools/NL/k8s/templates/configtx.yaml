@@ -18,6 +18,13 @@
 #@   output = {"Readers": readers, "Writers": writers, "Admins": admins}
 #@   return output
 #@ end
+#@ def orgOrderers(ordererOrg):
+#@  orderers = []
+#@  for i in range(0, ordererOrg.num_orderers):
+#@    orderers.append("orderer{}-{}:7050".format(i, ordererOrg.name))
+#@  end
+#@  return orderers
+#@ end
 #@ def anchorPeers(orgName):
 #@  anchorpeers = []
 #@  anchorpeers.append({"Host": "peer0-{}".format(orgName), "Port": "7051"})
@@ -31,7 +38,7 @@
 #@   end
 #@   if type == "peer":
 #@   for i in range(0, len(input.orderer_organizations)):
-#@     output.append({"Name": input.orderer_organizations[i].name, "ID": input.orderer_organizations[i].msp_id, "MSPDir": certs_location+"crypto-config/ordererOrganizations/"+input.orderer_organizations[i].name+"/msp", "Policies": orgPolicies(input.orderer_organizations[i].msp_id, "orderer")})
+#@     output.append({"Name": input.orderer_organizations[i].name, "OrdererEndpoints": orgOrderers(input.orderer_organizations[i]), "ID": input.orderer_organizations[i].msp_id, "MSPDir": certs_location+"crypto-config/ordererOrganizations/"+input.orderer_organizations[i].name+"/msp", "Policies": orgPolicies(input.orderer_organizations[i].msp_id, "orderer")})
 #@   end
 #@   end
 #@   if type == "orderer":
