@@ -1,0 +1,17 @@
+{
+    "channelID": "_ch2",
+    "chaincodeID": "marbles02_go",
+    "chaincodeVer": "v0",
+    "transType": "Channel",
+    "nProcPerOrg": "1",
+    "TLS": "enabled",
+    "channelOpt": {
+        "name": "testorgschannel1",
+        "channelTX": "github.com/hyperledger/fabric-test/fabric/internal/cryptogen/channel-artifacts/testorgschannel1.tx",
+        "action":  "create",
+        "orgName": [
+            "org2"
+        ]
+    },
+    "ConnProfilePath": "CITest/CIConnProfiles/test-network"
+}
