@@ -35,3 +35,7 @@ bin/
 .vscode
 #node_modules
 feature/node_modules/*
+tools/NL/k8s/crypto-config/
+tools/NL/k8s/ytt-linux-amd64
+tools/NL/k8s/configFiles/
+tools/PTE/node_modules/
