@@ -299,7 +299,7 @@ func generateConnectionProfileFile(kubeconfigPath, orgName string, input network
     if err != nil {
         return fmt.Errorf("Failed to create %v file; err:%v", fileName, err)
     }
-    yamlBytes = append([]byte("version: 1.0 \nname: My network \ndescription: Connection Profile for Blockchain Network \n"), yamlBytes...)
+    yamlBytes = append([]byte("version: 1.0 \nname: My network \ndescription: Connection Profile for Blockchain Network \ngopath: GOPATH\n"), yamlBytes...)
     err = ioutil.WriteFile(fileName, yamlBytes, 0644)
     if err != nil {
         return fmt.Errorf("Failed to write content to %v file; err:%v", fileName, err)
