@@ -409,7 +409,7 @@ ChannelProc() {
             echo "create channel on $cppath"
             ./pte_driver.sh $runDir/$runCaseCreate
 
-            sleep 15
+            sleep 60
             # join channel
             cd $runDir
 
