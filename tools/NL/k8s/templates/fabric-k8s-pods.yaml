@@ -25,7 +25,7 @@
 #@   env.append({"name": "KAFKA_MIN_INSYNC_REPLICAS", "value": "2"})
 #@   env.append({"name": "KAFKA_MESSAGE_MAX_BYTES", "value": "103809024"})
 #@   env.append({"name": "KAFKA_REPLICA_FETCH_MAX_BYTES", "value": "103809024"})
-#@   resources = {"limits":{"cpu": "0.2", "memory": "0.5Gi"}, "requests":{"cpu":"0.2", "memory":"0.5Gi"}}
+#@   resources = {"limits":{"cpu": "2", "memory": "4Gi"}, "requests":{"cpu":"2", "memory":"4Gi"}}
 #@   output = [{"name": input, "image": "hyperledger/fabric-kafka", "imagePullPolicy": "Always", "env": env, "resources": resources}]
 #@   return output
 #@ end
@@ -112,7 +112,7 @@
 #@   if networkSpec.k8s.data_persistence == True or networkSpec.k8s.data_persistence == "local":
 #@     volumeMounts.append({"mountPath": "/shared/data", "name": "peer-data-storage"})
 #@   end
-#@   resources = {"limits":{"cpu": "1", "memory": "1Gi"}, "requests":{"cpu":"1", "memory":"1Gi"}}
+#@   resources = {"limits":{"cpu": "2", "memory": "4Gi"}, "requests":{"cpu":"2", "memory":"4Gi"}}
 
 #@   peer_image = "hyperledger/fabric-peer"
 #@   if networkSpec.fabric_version.endswith("-stable"):
@@ -122,7 +122,7 @@
 #@   if networkSpec.db_type == "couchdb":
 #@     env.append({"name": "CORE_LEDGER_STATE_STATEDATABASE", "value": "CouchDB"})
 #@     env.append({"name": "CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS", "value": "localhost:5984"})
-#@     container = {"name":"couchdb-{}".format(input), "image": "hyperledger/fabric-couchdb", "imagePullPolicy": "Always", "securityContext":{"privileged":True}, "resources":{"limits":{"cpu": "0.1", "memory": "1Gi"}, "requests":{"cpu": "0.1", "memory": "1Gi"}}}
+#@     container = {"name":"couchdb-{}".format(input), "image": "hyperledger/fabric-couchdb", "imagePullPolicy": "Always", "securityContext":{"privileged":True}, "resources":{"limits":{"cpu": "2", "memory": "4Gi"}, "requests":{"cpu": "2", "memory": "4Gi"}}}
 #@     output = [{"name": "dind", "image": "docker:dind", "securityContext": {"privileged": True}, "resources": resources}, {"name":input, "image": peer_image, "imagePullPolicy": "Always", "securityContext" : { "privileged": True }, "env": env, "volumeMounts":volumeMounts, "command": ["/bin/bash"], "args":["-c", "cd /etc/hyperledger/fabric/ && cp certparser/certs-parser.sh . && chmod +x ./certs-parser.sh && ./certs-parser.sh {}.json && peer node start".format(input)], "resources": resources}, container]
 #@   else:
 #@     output = [{"name": "dind", "image": "docker:dind", "securityContext": {"privileged": True}, "resources": resources}, {"name":input, "image": peer_image, "imagePullPolicy": "Always", "securityContext" : { "privileged": True }, "env": env, "volumeMounts":volumeMounts, "command": ["/bin/bash"], "args":["-c", "cd /etc/hyperledger/fabric/ && cp certparser/certs-parser.sh . && chmod +x ./certs-parser.sh && ./certs-parser.sh {}.json && peer node start".format(input)], "resources": resources}]
@@ -163,7 +163,7 @@
 #@   if networkSpec.k8s.data_persistence == True or networkSpec.k8s.data_persistence == "local":
 #@     volumeMounts.append({"mountPath": "/shared/data", "name": "orderer-data-storage"})
 #@   end
-#@   resources = {"limits":{"cpu": "1", "memory": "1Gi"}, "requests":{"cpu":"1", "memory":"1Gi"}}
+#@   resources = {"limits":{"cpu": "2", "memory": "4Gi"}, "requests":{"cpu":"2", "memory":"4Gi"}}
 #@   orderer_image = "hyperledger/fabric-orderer"
 #@   if networkSpec.fabric_version.endswith("-stable"):
 #@     orderer_image="nexus3.hyperledger.org:10001/hyperledger/fabric-orderer:amd64-{}".format(networkSpec.fabric_version)
