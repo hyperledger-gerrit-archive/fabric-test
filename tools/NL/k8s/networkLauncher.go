@@ -18,7 +18,7 @@ import (
 )
 
 type Config struct {
-	ArtifactsLocation    string                 `yaml:"certs_location,omitempty"`
+	ArtifactsLocation    string                 `yaml:"artifacts_location,omitempty"`
 	OrdererOrganizations []OrdererOrganizations `yaml:"orderer_organizations,omitempty"`
 	PeerOrganizations    []PeerOrganizations    `yaml:"peer_organizations,omitempty"`
 	NumChannels          int                    `yaml:"num_channels,omitempty"`

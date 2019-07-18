@@ -1,0 +1,138 @@
+# Copyright IBM Corp. All Rights Reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+######################################################################
+# To execute:
+# Install: sudo apt-get install python python-pytest
+# Run on command line: py.test -v --junitxml results_systest_pte.xml ./systest_pte.py
+
+import unittest
+import subprocess
+
+logs_directory = '../../../../../tools/PTE'
+#logs_directory = '../../../../../tools/PTE/CITest/Logs'
+nl_directory = '../../../../../tools/NL'
+k8s_testsuite = '../../../../../tools/PTE/CITest/k8s_testsuite/scripts'
+#KUBECONFIG = '/Users/thoomu@us.ibm.com/.bluemix/plugins/container-service/clusters/community-quality/kube-config-wdc07-community-quality.yml'
+
+# error messages
+testScriptFailed =      "Test Failed with non-zero exit code; check for errors in fabric-test/tools/PTE/CITest/Logs/"
+noTxSummary =           "Error: pteReport.log does not contain INVOKE Overall transactions"
+invokeFailure =         "Error: incorrect number of INVOKE transactions sent or received"
+invokeSendFailure =     "Error sending INVOKE proposal to peer or sending broadcast transaction to orderer"
+eventReceiveFailure =   "Error: event receive failure: INVOKE TX events arrived late after eventOpt.timeout, and/or transaction events were never received"
+invokeCheckError =      "Error during invokeCheck: query result error when validating transaction"
+queryCountFailure =     "Error: incorrect number of QUERY transactions sent or received"
+
+
+class System_Tests_Network1(unittest.TestCase):
+
+    def test_1networkLaunch(self):
+        '''
+        Description:
+
+        '''
+
+        # Launch the network
+        returncode = subprocess.call("./operator.sh -s up -f $k8s_testsuite/networkSpecFiles/network1spec.yaml", cwd=k8s_testsuite, shell=True)
+        self.assertEqual(returncode, 0, msg=testScriptFailed)
+
+    def test_2createJoinChannel(self):
+        '''
+        Description:
+
+        '''
+
+        returncode = subprocess.call("./operator.sh -c", cwd=k8s_testsuite, shell=True)
+        self.assertEqual(returncode, 0, msg=testScriptFailed)
+
+    def test_3installInstantiation(self):
+        '''
+        Description:
+
+        '''
+
+        returncode = subprocess.call("./operator.sh -i", cwd=k8s_testsuite, shell=True)
+        self.assertEqual(returncode, 0, msg=testScriptFailed)
+
+    def test_4FAB_3833_2(self):
+        '''
+        Description:
+
+        '''
+
+        # Run the test scenario: launch network and run the invokes and query tests.
+        returncode = subprocess.call("./operator.sh -t FAB-3833-2i", cwd=k8s_testsuite, shell=True)
+        self.assertEqual(returncode, 0, msg=testScriptFailed)
+        # tear down the network, including all the nodes docker containers
+        #returncode = subprocess.call("./networkLauncher.sh -a down", cwd=nl_directory, shell=True)
+
+        # check if the test created the report file
+        logfilelist = subprocess.check_output("ls", cwd=logs_directory, shell=True)
+        self.assertIn("FAB-3833-2i.log", logfilelist)
+
+        # check if the test finished and printed the Overall summary
+        count = subprocess.check_output(
+                "grep \"INVOKE Overall transactions:\" FAB-3833-2i.log | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=noTxSummary)
+
+        # check the counts
+        count = subprocess.check_output(
+                "grep \"CONSTANT INVOKE Overall transactions: sent 20 received 20\" FAB-3833-2i.log | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=invokeFailure)
+
+        count = subprocess.check_output(
+                "grep \"CONSTANT INVOKE Overall failures: proposal 0 transactions 0\" FAB-3833-2i.log | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=invokeSendFailure)
+
+        count = subprocess.check_output(
+                "grep \"CONSTANT INVOKE Overall event: received 20 timeout 0 unreceived 0\" FAB-3833-2i.log | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=eventReceiveFailure)
+
+        count = subprocess.check_output(
+                "grep \"CONSTANT QUERY Overall transactions: sent 20 received 20 failures 0\" FAB-3833-2i.log | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=queryCountFailure)
+
+
+    def test_5FAB_4038_2(self):
+        '''
+        Description:
+
+        '''
+
+        # Run the test scenario: launch network and run the invokes and query tests.
+        returncode = subprocess.call("./operator.sh -t FAB-4038-2i", cwd=k8s_testsuite, shell=True)
+        self.assertEqual(returncode, 0, msg=testScriptFailed)
+
+        # check if the test created the report file
+        logfilelist = subprocess.check_output("ls", cwd=logs_directory, shell=True)
+        self.assertIn("FAB-4038-2i.log", logfilelist)
+
+        # check if the test finished and printed the Overall summary
+        count = subprocess.check_output(
+                "grep \"QUERY Overall transactions:\" FAB-4038-2i.log | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=noTxSummary)
+
+        # check the counts
+        count = subprocess.check_output(
+                "grep \"CONSTANT QUERY Overall transactions: sent 20 received 20\" FAB-4038-2i.log | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=queryCountFailure)
+
+    def test_6tearDownNetwork(self):
+        '''
+        Description:
+
+        '''
+
+        # Teardown the network
+        #returncode = subprocess.call("./operator.sh -d -f $nl_directory/networkSpecFiles/network1spec.yaml", cwd=k8s_testsuite, shell=True)
+        #self.assertEqual(returncode, 0, msg=testScriptFailed)
