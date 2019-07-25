@@ -9,39 +9,37 @@ import (
 	"os"
 	"path/filepath"
 
-	Client "github.com/hyperledger/fabric-test/tools/operator/client"
-	helper "github.com/hyperledger/fabric-test/tools/operator/launcher/helper"
+	Client "fabric-test/tools/operator/client"
+	helper "fabric-test/tools/operator/launcher/helper"
 )
 
 //NetworkCleanUp - to clean up the network
 func NetworkCleanUp(networkSpec helper.Config, kubeConfigPath string) error {
-
-	numOrdererOrganizations := len(networkSpec.OrdererOrganizations)
-	if networkSpec.Orderer.OrdererType == "solo" || networkSpec.Orderer.OrdererType == "kafka" {
-		numOrdererOrganizations = 1
-	}
-	for i := 0; i < numOrdererOrganizations; i++ {
-		ordererOrg := networkSpec.OrdererOrganizations[i]
-		numOrderers := ordererOrg.NumOrderers
-		if networkSpec.Orderer.OrdererType == "solo" {
-			numOrderers = 1
+	var err error
+	if kubeConfigPath != "" {
+		numOrdererOrganizations := len(networkSpec.OrdererOrganizations)
+		for i := 0; i < numOrdererOrganizations; i++ {
+			ordererOrg := networkSpec.OrdererOrganizations[i]
+			numOrderers := ordererOrg.NumOrderers
+			deleteSecrets(numOrderers, "orderer", networkSpec.OrdererOrganizations[i].Name, kubeConfigPath, networkSpec.TLS)
+			deleteSecrets(networkSpec.OrdererOrganizations[i].NumCA, "ca", networkSpec.OrdererOrganizations[i].Name, kubeConfigPath, networkSpec.TLS)
 		}
-		deleteSecrets(numOrderers, "orderer", networkSpec.OrdererOrganizations[i].Name, kubeConfigPath, networkSpec.TLS)
-		deleteSecrets(networkSpec.OrdererOrganizations[i].NumCA, "ca", networkSpec.OrdererOrganizations[i].Name, kubeConfigPath, networkSpec.TLS)
-	}
 
-	for i := 0; i < len(networkSpec.PeerOrganizations); i++ {
-		deleteSecrets(networkSpec.PeerOrganizations[i].NumPeers, "peer", networkSpec.PeerOrganizations[i].Name, kubeConfigPath, networkSpec.TLS)
-		deleteSecrets(networkSpec.PeerOrganizations[i].NumCA, "ca", networkSpec.PeerOrganizations[i].Name, kubeConfigPath, networkSpec.TLS)
+		for i := 0; i < len(networkSpec.PeerOrganizations); i++ {
+			deleteSecrets(networkSpec.PeerOrganizations[i].NumPeers, "peer", networkSpec.PeerOrganizations[i].Name, kubeConfigPath, networkSpec.TLS)
+			deleteSecrets(networkSpec.PeerOrganizations[i].NumCA, "ca", networkSpec.PeerOrganizations[i].Name, kubeConfigPath, networkSpec.TLS)
+		}
+		err = Client.ExecuteK8sCommand(kubeConfigPath, "delete", "secrets", "genesisblock")
+		err = Client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./configFiles/fabric-k8s-pods.yaml")
+		if networkSpec.K8s.DataPersistence == "local" {
+			err = Client.ExecuteK8sCommand(kubeConfigPath, "apply", "-f", "./scripts/alpine.yaml")
+		}
+		err = Client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./configFiles/k8s-service.yaml")
+		err = Client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./configFiles/fabric-pvc.yaml")
+		err = Client.ExecuteK8sCommand(kubeConfigPath, "delete", "configmaps", "certsparser")
+	} else {
+		err = Client.ExecuteCommand("docker-compose", "-f", "./configFiles/docker-compose.yaml", "down")
 	}
-	err := Client.ExecuteK8sCommand(kubeConfigPath, "delete", "secrets", "genesisblock")
-	err = Client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./configFiles/fabric-k8s-pods.yaml")
-	if networkSpec.K8s.DataPersistence == "local" {
-		err = Client.ExecuteK8sCommand(kubeConfigPath, "apply", "-f", "./scripts/alpine.yaml")
-	}
-	err = Client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./configFiles/k8s-service.yaml")
-	err = Client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./configFiles/fabric-pvc.yaml")
-	err = Client.ExecuteK8sCommand(kubeConfigPath, "delete", "configmaps", "certsparser")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
@@ -54,7 +52,7 @@ func NetworkCleanUp(networkSpec helper.Config, kubeConfigPath string) error {
 	err = os.RemoveAll(path)
 	path = filepath.Join(networkSpec.ArtifactsLocation, "connection-profile")
 	err = os.RemoveAll(path)
-	if networkSpec.K8s.DataPersistence == "local" {
+	if networkSpec.K8s.DataPersistence == "local" && kubeConfigPath != "" {
 		err = Client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./scripts/alpine.yaml")
 	}
 	if err != nil {
