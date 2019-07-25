@@ -7,10 +7,12 @@ package nl
 import (
 	"fmt"
 	"io/ioutil"
-	Client "github.com/hyperledger/fabric-test/tools/operator/client"
-	helper "github.com/hyperledger/fabric-test/tools/operator/networkspec"
+	Client "fabric-test/tools/operator/client"
+	helper "fabric-test/tools/operator/networkspec"
 	"log"
 	"os"
+    "strings"
+    "os/exec"
 	"path/filepath"
 
 	yaml "gopkg.in/yaml.v2"
@@ -32,9 +34,13 @@ func GetConfigData(networkSpecPath string) helper.Config {
 }
 
 //GenerateConfigurationFiles - to generate all the configuration files
-func GenerateConfigurationFiles() error {
-
-	err := Client.ExecuteCommand("./ytt", "-f", "./../templates/", "--output", "./../configFiles")
+func GenerateConfigurationFiles(kubeConfigPath string) error {
+	var err error
+	if kubeConfigPath != "" {
+		err = Client.ExecuteCommand("./ytt", "-f", "../templates/configtx.yaml", "-f", "../templates/crypto-config.yaml", "-f", "../templates/k8s/", "-f", "../templates/input.yaml", "--output=./../configFiles/")
+	} else {
+		err = Client.ExecuteCommand("./ytt", "-f", "../templates/configtx.yaml", "-f", "../templates/crypto-config.yaml", "-f", "../templates/docker/", "-f", "../templates/input.yaml", "--output=./../configFiles/")
+	}
 	if err != nil {
 		return err
 	}
@@ -42,13 +48,29 @@ func GenerateConfigurationFiles() error {
 }
 
 //GenerateCryptoCerts -  to generate the crypto certs
-func GenerateCryptoCerts(networkSpec helper.Config) error {
+func GenerateCryptoCerts(networkSpec helper.Config, kubeConfigPath string) error {
 
 	configPath := filepath.Join(networkSpec.ArtifactsLocation, "crypto-config")
 	err := Client.ExecuteCommand("cryptogen", "generate", "--config=./../configFiles/crypto-config.yaml", fmt.Sprintf("--output=%v", configPath))
 	if err != nil {
 		return err
-	}
+    }
+    if kubeConfigPath == "" {
+        for i := 0; i < len(networkSpec.OrdererOrganizations); i++{
+            org := networkSpec.OrdererOrganizations[i]
+            err = changeKeyName(networkSpec.ArtifactsLocation, "orderer", org.Name, org.NumCA)
+            if err != nil {
+                return err
+            }
+        }
+        for i := 0; i < len(networkSpec.PeerOrganizations); i++{
+            org := networkSpec.PeerOrganizations[i]
+            err = changeKeyName(networkSpec.ArtifactsLocation, "peer", org.Name, org.NumCA)
+            if err != nil {
+                return err
+            }
+        }
+    }
 	return nil
 }
 
@@ -63,9 +85,11 @@ func GenerateGenesisBlock(networkSpec helper.Config, kubeConfigPath string) erro
 		return err
 	}
 
-	err = Client.ExecuteK8sCommand(kubeConfigPath, "create", "secret", "generic", "genesisblock", fmt.Sprintf("--from-file=%v/genesis.block", path))
-	if err != nil {
-		return err
+	if kubeConfigPath != "" {
+		err = Client.ExecuteK8sCommand(kubeConfigPath, "create", "secret", "generic", "genesisblock", fmt.Sprintf("--from-file=%v/genesis.block", path))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil
@@ -92,4 +116,36 @@ func LaunchK8sComponents(kubeConfigPath string, isDataPersistence string) error 
 	}
 
 	return nil
+}
+
+//LaunchLocakNetwork - to launch the network in the local environment
+func LaunchLocalNetwork() error {
+	cmd := exec.Command("docker-compose", "-f", "./../configFiles/docker-compose.yaml", "up", "-d")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func changeKeyName(artifactsLocation, orgType, orgName string, numCA int) error{
+
+	path := filepath.Join(artifactsLocation, fmt.Sprintf("crypto-config/%vOrganizations/%v/ca", orgType, orgName))
+	for j := 0; j < numCA; j++ {
+		files, err := ioutil.ReadDir(path)
+		if err != nil {
+			return fmt.Errorf("Failed to read files; err:%v",err)
+        }
+        for _, file := range files {
+            if strings.HasSuffix(file.Name(), "_sk") && file.Name() != "priv_sk"{
+                err = Client.ExecuteCommand("cp", filepath.Join(path, file.Name()), filepath.Join(path, "priv_sk"))
+                if err != nil {
+                    return fmt.Errorf("Failed to copy files; err:%v",err)
+                }
+            }
+        }
+    }
+    return nil
 }
