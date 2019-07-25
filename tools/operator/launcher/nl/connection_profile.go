@@ -13,7 +13,8 @@ import (
 	"reflect"
 	"strings"
 	"time"
-	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
+
+    "fabric-test/tools/operator/networkspec"
 	yaml "gopkg.in/yaml.v2"
 )
 
