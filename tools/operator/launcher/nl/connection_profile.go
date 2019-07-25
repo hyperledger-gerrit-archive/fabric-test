@@ -14,7 +14,8 @@ import (
 	"strings"
 	"time"
 
-	helper "github.com/hyperledger/fabric-test/tools/operator/launcher/helper"
+	helper "fabric-test/tools/operator/launcher/helper"
+
 	yaml "gopkg.in/yaml.v2"
 )
 
