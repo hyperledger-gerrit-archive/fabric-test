@@ -109,7 +109,7 @@
 #@ end
 
 #@ def peers(input):
-#@   (port1, port2) = (7061, 6051)
+#@   port1 = 7061
 #@   for i in range(0, len(input.peer_organizations)):
 #@     org = input.peer_organizations[i]
 #@     for j in range(0, org.num_peers):
@@ -118,7 +118,6 @@
 #@       env.append("CORE_PEER_GOSSIP_ENDPOINT=peer{}-{}:{}".format(j, org.name, port1))
 #@       env.append("CORE_PEER_LISTENADDRESS=peer{}-{}:{}".format(j, org.name, port1))
 #@       env.append("CORE_PEER_ID=peer{}-{}".format(j, org.name))
-#@       env.append("CORE_PEER_EVENTS_ADDRESS=peer{}-{}:{}".format(j, org.name, port2))
 #@       env.append("CORE_PEER_MSPCONFIGPATH=/opt/hyperledger/fabric/msp/crypto-config/peerOrganizations/{}/peers/peer{}-{}.{}/msp".format(org.name, j, org.name, org.name))
 #@       env.append("CORE_PEER_LOCALMSPID={}".format(org.msp_id))
 #@       env.append("CORE_PEER_ADDRESS=peer{}-{}:{}".format(j, org.name, port1))
@@ -131,9 +130,8 @@
 #@       volumes.append("{}/channel-artifacts:/opt/hyperledger/fabric/msp/channel-artifacts".format(input.artifacts_location))
 #@       volumes.append("/var/run/:/host/var/run/")
 #@       container_name = "peer{}-{}".format(j, org.name)
-#@       services[container_name] = {"image": "hyperledger/fabric-peer", "environment":env, "volumes":volumes, "ports":["{}:{}".format(port1,port1), "{}:{}".format(port2,port2)], "working_dir":"/opt/gopath/src/github.com/hyperledger/fabric/peer", "command":"peer node start", "container_name":container_name}
+#@       services[container_name] = {"image": "hyperledger/fabric-peer", "environment":env, "volumes":volumes, "ports":["{}:{}".format(port1,port1)], "working_dir":"/opt/gopath/src/github.com/hyperledger/fabric/peer", "command":"peer node start", "container_name":container_name}
 #@       port1 += 1
-#@       port2 += 1
 #@     end
 #@   end
 #@ end
