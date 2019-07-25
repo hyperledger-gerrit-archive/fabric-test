@@ -5,7 +5,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
+	"fabric-test/tools/operator/networkspec"
 )
 
 //GenerateChannelTransaction - to generate channel transactions
