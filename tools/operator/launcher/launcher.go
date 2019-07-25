@@ -10,10 +10,10 @@ import (
 	"io/ioutil"
 	"log"
 
-	Client "github.com/hyperledger/fabric-test/tools/operator/client"
-	NL "github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
-	helper "github.com/hyperledger/fabric-test/tools/operator/networkspec"
-	utils "github.com/hyperledger/fabric-test/tools/operator/utils"
+	Client "fabric-test/tools/operator/client"
+	NL "fabric-test/tools/operator/launcher/nl"
+	helper "fabric-test/tools/operator/networkspec"
+	utils "fabric-test/tools/operator/utils"
 )
 
 func readArguments() (string, string, string) {
@@ -24,7 +24,7 @@ func readArguments() (string, string, string) {
 	flag.Parse()
 
 	if fmt.Sprintf("%s", *kubeConfigPath) == "" {
-		fmt.Printf("Kube config file not provided, creating the network in the local environment")
+		fmt.Printf("Kube config file not provided, proceeding with local environment")
 	} else if fmt.Sprintf("%s", *networkSpecPath) == "" {
 		log.Fatalf("Input file not provided")
 	}
@@ -36,17 +36,19 @@ func doAction(action string, input helper.Config, kubeConfigPath string) {
 
 	switch action {
 	case "up":
-		err := NL.GenerateConfigurationFiles()
+		err := NL.GenerateConfigurationFiles(kubeConfigPath)
 		if err != nil {
 			log.Fatalf("Failed to generate yaml files; err = %v", err)
 		}
 
-		err = NL.GenerateCryptoCerts(input)
+		err = NL.GenerateCryptoCerts(input, kubeConfigPath)
 		if err != nil {
 			log.Fatalf("Failed to generate certificates; err = %v", err)
 		}
 
-		NL.CreateMspSecret(input, kubeConfigPath)
+		if kubeConfigPath != "" {
+			NL.CreateMspSecret(input, kubeConfigPath)
+		}
 
 		err = NL.GenerateGenesisBlock(input, kubeConfigPath)
 		if err != nil {
@@ -58,9 +60,16 @@ func doAction(action string, input helper.Config, kubeConfigPath string) {
 			log.Fatalf("Failed to create channel transactions; err = %v", err)
 		}
 
-		err = NL.LaunchK8sComponents(kubeConfigPath, input.K8s.DataPersistence)
-		if err != nil {
-			log.Fatalf("Failed to launch k8s components; err = %v", err)
+		if kubeConfigPath != "" {
+			err = NL.LaunchK8sComponents(kubeConfigPath, input.K8s.DataPersistence)
+			if err != nil {
+				log.Fatalf("Failed to launch k8s components; err = %v", err)
+			}
+		} else {
+			err = NL.LaunchLocalNetwork()
+			if err != nil {
+				log.Fatalf("Failed to launch k8s components; err = %v", err)
+			}
 		}
 
 		err = NL.CreateConnectionProfile(input, kubeConfigPath)

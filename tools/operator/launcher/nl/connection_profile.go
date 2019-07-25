@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	helper "github.com/hyperledger/fabric-test/tools/operator/networkspec"
+	helper "fabric-test/tools/operator/networkspec"
 	yaml "gopkg.in/yaml.v2"
 )
 

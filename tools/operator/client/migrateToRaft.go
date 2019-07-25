@@ -6,7 +6,7 @@ import (
 	"os/exec"
 	"strings"
 
-	helper "github.com/hyperledger/fabric-test/tools/operator/networkspec"
+	helper "fabric-test/tools/operator/networkspec"
 )
 
 //MigrateFromKafkaToRaft -  to migrate from solo or kafka to raft
