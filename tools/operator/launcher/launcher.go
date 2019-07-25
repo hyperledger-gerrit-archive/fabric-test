@@ -25,7 +25,7 @@ func readArguments() (string, string, string) {
 	flag.Parse()
 
 	if fmt.Sprintf("%s", *kubeConfigPath) == "" {
-		fmt.Printf("Kube config file not provided, creating the network in the local environment")
+		fmt.Printf("Kube config file not provided, proceeding with local environment")
 	} else if fmt.Sprintf("%s", *networkSpecPath) == "" {
 		log.Fatalf("Input file not provided")
 	}
@@ -37,17 +37,19 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 
 	switch action {
 	case "up":
-		err := nl.GenerateConfigurationFiles()
+		err := nl.GenerateConfigurationFiles(kubeConfigPath)
 		if err != nil {
 			log.Fatalf("Failed to generate yaml files; err = %v", err)
 		}
 
-		err = nl.GenerateCryptoCerts(input)
+		err = nl.GenerateCryptoCerts(input, kubeConfigPath)
 		if err != nil {
 			log.Fatalf("Failed to generate certificates; err = %v", err)
 		}
 
-		nl.CreateMspSecret(input, kubeConfigPath)
+		if kubeConfigPath != "" {
+			nl.CreateMspSecret(input, kubeConfigPath)
+		}
 
 		err = nl.GenerateGenesisBlock(input, kubeConfigPath)
 		if err != nil {
@@ -59,9 +61,16 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 			log.Fatalf("Failed to create channel transactions; err = %v", err)
 		}
 
-		err = nl.LaunchK8sComponents(kubeConfigPath, input.K8s.DataPersistence)
-		if err != nil {
-			log.Fatalf("Failed to launch k8s components; err = %v", err)
+		if kubeConfigPath != "" {
+			err = nl.LaunchK8sComponents(kubeConfigPath, input.K8s.DataPersistence)
+			if err != nil {
+				log.Fatalf("Failed to launch k8s components; err = %v", err)
+			}
+		} else {
+			err = nl.LaunchLocalNetwork()
+			if err != nil {
+				log.Fatalf("Failed to launch k8s components; err = %v", err)
+			}
 		}
 
 		err = connectionprofile.CreateConnectionProfile(input, kubeConfigPath)

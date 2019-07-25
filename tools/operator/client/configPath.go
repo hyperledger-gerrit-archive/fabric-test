@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/hyperledger/fabric-test/tools/operator/utils"
+	"fabric-test/tools/operator/utils"
 )
 
 //CreateConfigPath - to check if the configtx.yaml exists and generates one if not exists
