@@ -4,12 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
 	"log"
 
-	"github.com/hyperledger/fabric-test/tools/operator/client"
-	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
-	"github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
+	"fabric-test/tools/operator/launcher/nl"
+	"fabric-test/tools/operator/client"
+	"fabric-test/tools/operator/networkspec"
+	"fabric-test/tools/operator/launcher/nl"
 )
 
 func readArguments() (string, string, string) {

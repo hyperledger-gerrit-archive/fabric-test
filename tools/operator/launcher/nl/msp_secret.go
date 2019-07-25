@@ -12,8 +12,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/hyperledger/fabric-test/tools/operator/client"
-	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
+	"fabric-test/tools/operator/client"
+	"fabric-test/tools/operator/networkspec"
 )
 
 func createMspJSON(input networkspec.Config, path string, caPath string, componentName string, kubeConfigPath string) error {
