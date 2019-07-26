@@ -1,0 +1,48 @@
+# Fabric Network Launcher
+- A tool to launch fabric network on kubernetes cluster or local machine with a docker-compose file using a network input file and gives back connection profiles for each peer organization to use with any client. This uses ytt to generate all necessary configuration files and a go program to launch fabric network
+
+## Prerequisites
+- Go 1.11.0 or above
+- yaml.v2 go package (go get gopkg.in/yaml.v2)
+- Fabric binaries in $PATH
+- Kubernetes cluster if launching fabric network on kubernetes cluster
+- Docker and Docker-compose if launching fabric network locally
+
+## Usage
+Supported input arguments for launcher are:
+```
+-a string
+       Set action(up or down) (default "up")
+-i string
+       Network spec input file path (Required)
+-k string
+       Kube config file path (Optional)
+```
+- `-a` is used to set type of action to be performed. It takes `up` or `down` as the values. Default value is up. If `-a` is specified with `up`, it launches fabric network. If `-a` is specified with `down`, it takes down the network
+- `-i` is used to pass the absolute file path for network input file. It is required to launch/remove fabric network. Network input file can be prepared using `networkInput.md`
+- `-k` is used to pass the absolute file path to kube config file of kubernetes cluster. If `-k` is specified with `path/to/kube-config.yaml`, then it will launch/remove fabric network on kubernetes cluster. Kube config file can be downloaded from kubernetes cluster. If `-k` is not specified in the command line, launcher will launch fabric network locally using docker-compose
+
+### Examples
+#### On Kubernetes Cluster
+To launch fabric network in kubernetes cluster, need kube config file for cluster and network input file
+```go run launcher.go -i <path/to/network input file> -k <path/to/kube config file> -a up``` or 
+```go run launcher.go -i <path/to/network input file> -k <path/to/kube config file>```
+To take down the launched fabric network from the above
+```go run launcher.go -i <path/to/network input file> -k <path/to/kube config file> -a down```
+#### Local
+To launch fabric network locally using network input file
+```go run launcher.go -i <path/to/network input file> -a up``` or
+```go run launcher.go -i <path/to/network input file>```
+
+To take down launched fabric network locally
+```go run launcher.go -i <path/to/network input file> -a down```
+
+## Verification
+### On Kubernetes Cluster
+To verify if fabric network is launched successfully or not in kubernetes cluster:
+```export KUBECONFIG=<path/to/kube config file>```
+```kubectl get pods```
+```kubectl get services```
+### Local
+To verify if fabric network is launched successfully or not locally:
+``` docker ps -a```
