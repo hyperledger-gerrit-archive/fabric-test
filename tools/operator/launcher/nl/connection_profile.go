@@ -14,37 +14,53 @@ import (
 	"strings"
 	"time"
 
-	helper "fabric-test/tools/operator/networkspec"
+	helper "github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	yaml "gopkg.in/yaml.v2"
 )
 
 func getK8sExternalIP(kubeconfigPath string, networkSpec helper.Config, serviceName string) string {
 
 	var IPAddress string
-	if networkSpec.K8s.ServiceType == "NodePort" {
-		stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%v", kubeconfigPath), "get", "nodes", "-o", `jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }'`).CombinedOutput()
-		if err != nil {
-			fmt.Println("error is", string(stdoutStderr))
+	if kubeconfigPath != "" {
+		if networkSpec.K8s.ServiceType == "NodePort" {
+			stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%v", kubeconfigPath), "get", "nodes", "-o", `jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }'`).CombinedOutput()
+			if err != nil {
+				fmt.Println("error is", string(stdoutStderr))
+			}
+			IPAddressList := strings.Split(string(stdoutStderr)[1:], " ")
+			IPAddress = IPAddressList[0]
+		} else if networkSpec.K8s.ServiceType == "LoadBalancer" {
+			stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%v", kubeconfigPath), "get", "-o", `jsonpath="{.status.loadBalancer.ingress[0].ip}"`, "services", serviceName).CombinedOutput()
+			if err != nil {
+				fmt.Println("error is", string(stdoutStderr))
+			}
+			IPAddress = string(stdoutStderr)[1 : len(string(stdoutStderr))-1]
 		}
-		IPAddressList := strings.Split(string(stdoutStderr)[1:], " ")
-		IPAddress = IPAddressList[0]
-	} else if networkSpec.K8s.ServiceType == "LoadBalancer" {
-		stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%v", kubeconfigPath), "get", "-o", `jsonpath="{.status.loadBalancer.ingress[0].ip}"`, "services", serviceName).CombinedOutput()
-		if err != nil {
-			fmt.Println("error is", string(stdoutStderr))
-		}
-		IPAddress = string(stdoutStderr)[1 : len(string(stdoutStderr))-1]
+	} else {
+		IPAddress = "localhost"
 	}
 	return IPAddress
 }
 
 func getK8sServicePort(kubeconfigPath, serviceName string) string {
-	stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%v", kubeconfigPath), "get", "-o", `jsonpath="{.spec.ports[0].nodePort}"`, "services", serviceName).CombinedOutput()
-	if err != nil {
-		fmt.Println("error is", string(stdoutStderr))
+
+	var port string
+	if kubeconfigPath != "" {
+		stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%v", kubeconfigPath), "get", "-o", `jsonpath="{.spec.ports[0].nodePort}"`, "services", serviceName).CombinedOutput()
+		if err != nil {
+			fmt.Println("error is", string(stdoutStderr))
+		}
+		port = string(stdoutStderr)
+		port = port[1 : len(port)-1]
+	} else {
+		stdoutStderr, err := exec.Command("docker", "port", serviceName).CombinedOutput()
+		if err != nil {
+			fmt.Println("error is", string(stdoutStderr))
+		}
+		port = string(stdoutStderr)
+		port = port[len(port)-6 : len(port)-1]
 	}
-	port := string(stdoutStderr)
-	return port[1 : len(port)-1]
+	return port
 }
 
 func ordererOrganizations(networkSpec helper.Config, kubeconfigPath string) map[string]helper.Orderer {
@@ -64,19 +80,24 @@ func ordererOrganizations(networkSpec helper.Config, kubeconfigPath string) map[
 		for i := 0; i < numOrderers; i++ {
 			var orderer helper.Orderer
 			ordererName := fmt.Sprintf("orderer%v-%v", i, orgName)
-			var portNumber, k8sNodeIP, protocol string
-			if networkSpec.K8s.ServiceType == "NodePort" {
-				portNumber = getK8sServicePort(kubeconfigPath, ordererName)
-				k8sNodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, "")
+			var portNumber, NodeIP, protocol string
+			if kubeconfigPath != "" {
+				if networkSpec.K8s.ServiceType == "NodePort" {
+					portNumber = getK8sServicePort(kubeconfigPath, ordererName)
+					NodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, "")
+				} else {
+					portNumber = "7050"
+					NodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, ordererName)
+				}
 			} else {
-				portNumber = "7050"
-				k8sNodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, ordererName)
+				portNumber = getK8sServicePort(kubeconfigPath, ordererName)
+				NodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, ordererName)
 			}
 			protocol = "grpc"
 			if networkSpec.TLS == "true" || networkSpec.TLS == "mutual" {
 				protocol = "grpcs"
 			}
-			orderer = helper.Orderer{MSPID: ordererOrg.MSPID, URL: fmt.Sprintf("%v://%v:%v", protocol, k8sNodeIP, portNumber), AdminPath: filepath.Join(networkSpec.ArtifactsLocation, fmt.Sprintf("/crypto-config/ordererOrganizations/%v/users/Admin@%v/msp", ordererOrg.Name, ordererOrg.Name))}
+			orderer = helper.Orderer{MSPID: ordererOrg.MSPID, URL: fmt.Sprintf("%v://%v:%v", protocol, NodeIP, portNumber), AdminPath: filepath.Join(networkSpec.ArtifactsLocation, fmt.Sprintf("/crypto-config/ordererOrganizations/%v/users/Admin@%v/msp", ordererOrg.Name, ordererOrg.Name))}
 			orderer.GrpcOptions.SslTarget = ordererName
 			orderer.TLSCACerts.Path = filepath.Join(networkSpec.ArtifactsLocation, fmt.Sprintf("/crypto-config/ordererOrganizations/%v/orderers/%v.%v/msp/tlscacerts/tlsca.%v-cert.pem", orgName, ordererName, orgName, orgName))
 			orderers[ordererName] = orderer
@@ -90,21 +111,26 @@ func certificateAuthorities(peerOrg helper.PeerOrganizations, kubeconfigPath str
 	artifactsLocation := networkSpec.ArtifactsLocation
 	for i := 0; i < peerOrg.NumCA; i++ {
 		var CA helper.CertificateAuthority
-		var portNumber, k8sNodeIP, protocol string
+		var portNumber, NodeIP, protocol string
 		orgName := peerOrg.Name
 		caName := fmt.Sprintf("ca%v-%v", i, orgName)
-		if networkSpec.K8s.ServiceType == "NodePort" {
-			portNumber = getK8sServicePort(kubeconfigPath, caName)
-			k8sNodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, "")
+		if kubeconfigPath != "" {
+			if networkSpec.K8s.ServiceType == "NodePort" {
+				portNumber = getK8sServicePort(kubeconfigPath, caName)
+				NodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, "")
+			} else {
+				portNumber = "7054"
+				NodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, caName)
+			}
 		} else {
-			portNumber = "7054"
-			k8sNodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, caName)
+			portNumber = getK8sServicePort(kubeconfigPath, caName)
+			NodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, caName)
 		}
 		protocol = "http"
 		if networkSpec.TLS == "true" || networkSpec.TLS == "mutual" {
 			protocol = "https"
 		}
-		CA = helper.CertificateAuthority{URL: fmt.Sprintf("%v://%v:%v", protocol, k8sNodeIP, portNumber), CAName: caName}
+		CA = helper.CertificateAuthority{URL: fmt.Sprintf("%v://%v:%v", protocol, NodeIP, portNumber), CAName: caName}
 		CA.TLSCACerts.Path = filepath.Join(artifactsLocation, fmt.Sprintf("/crypto-config/peerOrganizations/%v/ca/ca.%v-cert.pem", orgName, orgName))
 		CA.HTTPOptions.Verify = false
 		CA.Registrar.EnrollID = "admin"
@@ -139,19 +165,24 @@ func peerOrganizations(networkSpec helper.Config, kubeconfigPath string) error {
 		peersList := []string{}
 		for i := 0; i < networkSpec.PeerOrganizations[org].NumPeers; i++ {
 			peerName := fmt.Sprintf("peer%v-%v", i, peerorg.Name)
-			var portNumber, k8sNodeIP, protocol string
-			if networkSpec.K8s.ServiceType == "NodePort" {
-				portNumber = getK8sServicePort(kubeconfigPath, peerName)
-				k8sNodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, "")
+			var portNumber, NodeIP, protocol string
+			if kubeconfigPath != "" {
+				if networkSpec.K8s.ServiceType == "NodePort" {
+					portNumber = getK8sServicePort(kubeconfigPath, peerName)
+					NodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, "")
+				} else {
+					portNumber = "7051"
+					NodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, peerName)
+				}
 			} else {
-				portNumber = "7051"
-				k8sNodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, peerName)
+				portNumber = getK8sServicePort(kubeconfigPath, peerName)
+				NodeIP = getK8sExternalIP(kubeconfigPath, networkSpec, peerName)
 			}
 			protocol = "grpc"
 			if networkSpec.TLS == "true" || networkSpec.TLS == "mutual" {
 				protocol = "grpcs"
 			}
-			peer = helper.Peer{URL: fmt.Sprintf("%v://%v:%v", protocol, k8sNodeIP, portNumber)}
+			peer = helper.Peer{URL: fmt.Sprintf("%v://%v:%v", protocol, NodeIP, portNumber)}
 			peer.GrpcOptions.SslTarget = peerName
 			peer.TLSCACerts.Path = filepath.Join(networkSpec.ArtifactsLocation, fmt.Sprintf("/crypto-config/peerOrganizations/%v/tlsca/tlsca.%v-cert.pem", peerorg.Name, peerorg.Name))
 			peersList = append(peersList, peerName)
