@@ -14,6 +14,7 @@ import (
 	"fabric-test/tools/operator/launcher/nl"
 	"fabric-test/tools/operator/networkspec"
 	"fabric-test/tools/operator/utils"
+	"fabric-test/tools/operator/connectionprofile"
 )
 
 func readArguments() (string, string, string) {
@@ -72,7 +73,7 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 			}
 		}
 
-		err = nl.CreateConnectionProfile(input, kubeConfigPath)
+		err = connectionprofile.CreateConnectionProfile(input, kubeConfigPath)
 		if err != nil {
 			log.Fatalf("Failed to launch k8s components; err = %v", err)
 		}
