@@ -1,0 +1,190 @@
+version: 1.0
+name: Network1
+description: Connection Profile for Blockchain Network
+gopath: GOPATH
+client:
+  organization: org1
+  connection:
+    timeout:
+      peer:
+        endorser: 300
+        eventHub: 600
+        eventReg: 300
+      orderer: 300
+channels:
+  testorgschannel0:
+    orderers:
+    - orderer0-ordererorg1
+    - orderer1-ordererorg1
+    - orderer2-ordererorg1
+    peers:
+    - peer1-org1
+    - peer0-org1
+    chaincodes: []
+  testorgschannel1:
+    orderers:
+    - orderer0-ordererorg1
+    - orderer1-ordererorg1
+    - orderer2-ordererorg1
+    peers:
+    - peer0-org1
+    - peer1-org1
+    chaincodes: []
+  testorgschannel2:
+    orderers:
+    - orderer0-ordererorg1
+    - orderer1-ordererorg1
+    - orderer2-ordererorg1
+    peers:
+    - peer1-org1
+    - peer0-org1
+    chaincodes: []
+  testorgschannel3:
+    orderers:
+    - orderer0-ordererorg1
+    - orderer1-ordererorg1
+    - orderer2-ordererorg1
+    peers:
+    - peer0-org1
+    - peer1-org1
+    chaincodes: []
+  testorgschannel4:
+    orderers:
+    - orderer1-ordererorg1
+    - orderer2-ordererorg1
+    - orderer0-ordererorg1
+    peers:
+    - peer1-org1
+    - peer0-org1
+    chaincodes: []
+  testorgschannel5:
+    orderers:
+    - orderer0-ordererorg1
+    - orderer1-ordererorg1
+    - orderer2-ordererorg1
+    peers:
+    - peer0-org1
+    - peer1-org1
+    chaincodes: []
+  testorgschannel6:
+    orderers:
+    - orderer2-ordererorg1
+    - orderer0-ordererorg1
+    - orderer1-ordererorg1
+    peers:
+    - peer0-org1
+    - peer1-org1
+    chaincodes: []
+  testorgschannel7:
+    orderers:
+    - orderer2-ordererorg1
+    - orderer0-ordererorg1
+    - orderer1-ordererorg1
+    peers:
+    - peer0-org1
+    - peer1-org1
+    chaincodes: []
+  testorgschannel8:
+    orderers:
+    - orderer0-ordererorg1
+    - orderer1-ordererorg1
+    - orderer2-ordererorg1
+    peers:
+    - peer0-org1
+    - peer1-org1
+    chaincodes: []
+  testorgschannel9:
+    orderers:
+    - orderer1-ordererorg1
+    - orderer2-ordererorg1
+    - orderer0-ordererorg1
+    peers:
+    - peer1-org1
+    - peer0-org1
+    chaincodes: []
+orderers:
+  orderer0-ordererorg1:
+    mspid: OrdererOrgExampleCom
+    url: grpcs://169.62.49.117:30568
+    grpcOptions:
+      ssl-target-name-override: orderer0-ordererorg1
+    tlsCACerts:
+      path: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/ordererOrganizations/ordererorg1/orderers/orderer0-ordererorg1.ordererorg1/msp/tlscacerts/tlsca.ordererorg1-cert.pem
+    adminPath: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/ordererOrganizations/ordererorg1/users/Admin@ordererorg1/msp
+peers:
+  peer0-org1:
+    url: grpcs://169.62.49.117:31683
+    grpcOptions:
+      ssl-target-name-override: peer0-org1
+    tlsCACerts:
+      path: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/peerOrganizations/org1/tlsca/tlsca.org1-cert.pem
+
+  peer1-org1:
+    url: grpcs://169.62.49.117:31852
+    grpcOptions:
+      ssl-target-name-override: peer1-org1
+    tlsCACerts:
+      path: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/peerOrganizations/org1/tlsca/tlsca.org1-cert.pem
+
+  peer0-org2:
+    url: grpcs://169.62.49.117:31776
+    grpcOptions:
+      ssl-target-name-override: peer0-org2
+    tlsCACerts:
+      path: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/peerOrganizations/org2/tlsca/tlsca.org2-cert.pem
+
+  peer1-org2:
+    url: grpcs://169.62.49.117:32419
+    grpcOptions:
+      ssl-target-name-override: peer1-org2
+    tlsCACerts:
+      path: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/peerOrganizations/org2/tlsca/tlsca.org2-cert.pem
+
+certificateAuthorities:
+  ca0:
+    url: https://169.62.49.117:30343
+    caName: ca0-org1
+    tlsCACerts:
+      path: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/peerOrganizations/org1/ca/ca.org1-cert.pem
+    httpOptions:
+      verify: false
+    registrar:
+      enrollId: admin
+      enrollSecret: adminpw
+  ca1:
+    url: https://169.62.49.117:30713
+    caName: ca0-org2
+    tlsCACerts:
+      path: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/peerOrganizations/org2/ca/ca.org2-cert.pem
+    httpOptions:
+      verify: false
+    registrar:
+      enrollId: admin
+      enrollSecret: adminpw
+
+organizations:
+  org1:
+    name: org1
+    mspid: Org1ExampleCom
+    peers:
+    - peer0-org1
+    - peer1-org1
+    certificateAuthorities:
+    - ca0
+    adminPrivateKey:
+      path: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/peerOrganizations/org1/users/Admin@org1/msp
+    signedCert:
+      path: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/peerOrganizations/org1/users/Admin@org1/msp
+
+  org2:
+    name: org2
+    mspid: Org2ExampleCom
+    peers:
+    - peer0-org2
+    - peer1-org2
+    certificateAuthorities:
+    - ca1
+    adminPrivateKey:
+      path: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/peerOrganizations/org2/users/Admin@org2/msp
+    signedCert:
+      path: /home/ibmadmin/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/crypto-config/peerOrganizations/org2/users/Admin@org2/msp
