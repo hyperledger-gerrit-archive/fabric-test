@@ -5,17 +5,20 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	// "strings"
 
 	"github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
 	"github.com/hyperledger/fabric-test/tools/operator/client"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 )
 
-func readArguments() (string, string, string) {
+func readArguments() (string, string, string, string) {
 
 	networkSpecPath := flag.String("i", "", "Network spec input file path (required)")
 	kubeConfigPath := flag.String("k", "", "Kube config file path (optional)")
 	action := flag.String("a", "", "Set action (Available options createChannelTxn, migrate)")
+	component := flag.String("c", "", "Component name to query the health (Use only with -a argument)")
+
 	flag.Parse()
 
 	if fmt.Sprintf("%s", *kubeConfigPath) == "" {
@@ -24,10 +27,10 @@ func readArguments() (string, string, string) {
 		log.Fatalf("Input file not provided")
 	}
 
-	return *networkSpecPath, *kubeConfigPath, *action
+	return *networkSpecPath, *kubeConfigPath, *action, *component
 }
 
-func doAction(action, kubeConfigPath string, input networkspec.Config) {
+func doAction(action, kubeConfigPath, componenetName string, input networkspec.Config) {
 
 	switch action {
 	case "createChannelTxn":
@@ -42,6 +45,11 @@ func doAction(action, kubeConfigPath string, input networkspec.Config) {
 		if err != nil {
 			log.Fatalf("Failed to migrate consensus from %v to raft: err=%v", input.Orderer.OrdererType, err)
 		}
+	case "healthz":
+		err := client.CheckComponentsHealth(componenetName, kubeConfigPath, input)
+		if err != nil {
+			log.Fatalf("Failed to get the health for %v", componenetName)
+		}
 	default:
 		log.Fatalf("Incorrect mode (%v). Use createChannelTxn or migrate for mode", action)
 	}
@@ -49,12 +57,12 @@ func doAction(action, kubeConfigPath string, input networkspec.Config) {
 
 func main() {
 
-	networkSpecPath, kubeConfigPath, action := readArguments()
+	networkSpecPath, kubeConfigPath, action, componentName := readArguments()
 	contents, _ := ioutil.ReadFile(networkSpecPath)
 	contents = append([]byte("#@data/values \n"), contents...)
 	inputPath := "templates/input.yaml"
 	ioutil.WriteFile(inputPath, contents, 0644)
 	client.CreateConfigPath()
 	input := nl.GetConfigData(inputPath)
-	doAction(action, kubeConfigPath, input)
+	doAction(action, kubeConfigPath, componentName, input)
 }
