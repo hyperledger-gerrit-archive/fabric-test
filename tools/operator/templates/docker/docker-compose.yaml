@@ -169,6 +169,7 @@
 #@       env.append("CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/artifacts/msp/crypto-config/peerOrganizations/{}/peers/peer{}-{}.{}/msp".format(org.name, j, org.name, org.name))
 #@       env.append("CORE_PEER_LOCALMSPID={}".format(org.msp_id))
 #@       env.append("CORE_PEER_ADDRESS=peer{}-{}:{}".format(j, org.name, 7051))
+#@       env.append("CORE_PEER_OPERATION_LISTENADDRESS=9443")
 #@       env.append("CORE_PEER_CHAINCODEADDRESS=peer{}-{}:{}".format(j, org.name, 7052))
 #@       env.append("CORE_PEER_GOSSIP_EXTERNALENDPOINT=localhost:{}".format(port1))
 #@       if input.tls == "mutual":

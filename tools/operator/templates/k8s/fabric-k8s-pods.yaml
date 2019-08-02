@@ -184,7 +184,7 @@
 #@   if networkSpec.k8s.data_persistence == True or networkSpec.k8s.data_persistence == "local":
 #@     volumeMounts.append({"mountPath": "/shared/data", "name": "orderer-data-storage"})
 #@   end
-#@   resources = {"limits":{"cpu": "1", "memory": "1Gi"}, "requests":{"cpu":"1", "memory":"1Gi"}}
+#@   resources = {"limits":{"cpu": "0.25", "memory": "0.5Gi"}, "requests":{"cpu":"0.25", "memory":"0.5Gi"}}
 #@   orderer_image = "hyperledger/fabric-orderer"
 #@   if networkSpec.fabric_version.endswith("-stable"):
 #@     orderer_image="nexus3.hyperledger.org:10001/hyperledger/fabric-orderer:amd64-{}".format(networkSpec.fabric_version)

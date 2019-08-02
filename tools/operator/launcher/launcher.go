@@ -78,6 +78,19 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 			log.Fatalf("Failed to launch k8s components; err = %v", err)
 		}
 
+		if kubeConfigPath != ""{
+			err = client.CheckContainerState("", kubeConfigPath, input)
+			if err != nil {
+				log.Fatalf("Failed to check pod status; err = %v", err)
+			}
+			
+			err = client.CheckComponentsHealth("", kubeConfigPath, input)
+			if err != nil {
+				log.Fatalf("Failed to check health of fabric components; err = %v", err)
+			}
+			fmt.Println("Network is up and running successfully")
+		}
+
 	case "down":
 		err := nl.NetworkCleanUp(input, kubeConfigPath)
 		if err != nil {
