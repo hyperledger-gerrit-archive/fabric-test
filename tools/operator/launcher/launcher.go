@@ -10,6 +10,7 @@ import (
 	"log"
 
 	"github.com/hyperledger/fabric-test/tools/operator/client"
+	"github.com/hyperledger/fabric-test/tools/operator/helper"
 	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
 	"github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
@@ -126,8 +127,8 @@ func main() {
 		log.Fatalf("In-correct input file path; err:%s", err)
 	}
 	contents = append([]byte("#@data/values \n"), contents...)
-	ioutil.WriteFile("./../templates/input.yaml", contents, 0644)
-	inputPath := "./../templates/input.yaml"
+	inputPath := helper.JoinPath(helper.TemplatesDir(), "input.yaml")
+	ioutil.WriteFile(inputPath, contents, 0644)
 	input, err := nl.GetConfigData(inputPath)
 	if err != nil {
 		log.Fatal(err)
