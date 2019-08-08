@@ -20,7 +20,7 @@ func validateArguments(networkSpecPath *string, kubeConfigPath *string) {
 	if *networkSpecPath == "" {
 		log.Fatalf("Input file not provided")
 	} else if *kubeConfigPath == "" {
-		log.Println("Kube config file not provided, proceeding with local environment")
+		log.Printf("Kube config file not provided, proceeding with local environment")
 	}
 }
 

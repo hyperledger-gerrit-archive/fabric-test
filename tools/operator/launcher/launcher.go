@@ -6,7 +6,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 
@@ -26,7 +25,7 @@ func validateArguments(networkSpecPath *string, kubeConfigPath *string) {
 	if *networkSpecPath == "" {
 		log.Fatalf("Input file not provided")
 	} else if *kubeConfigPath == "" {
-		fmt.Println("Kube config file not provided, proceeding with local environment")
+		log.Printf("Kube config file not provided, proceeding with local environment")
 	}
 }
 
@@ -84,7 +83,7 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 		if err != nil {
 			log.Fatalf("Failed to create connection profile; err = %v", err)
 		}
-		fmt.Println("Network is up and running")
+		log.Printf("Network is up and running")
 
 	case "down":
 		err := nl.NetworkCleanUp(input, kubeConfigPath)
@@ -114,7 +113,10 @@ func checkConsensusType(input networkspec.Config) {
 func main() {
 
 	flag.Parse()
-	utils.DownloadYtt()
+	err := utils.DownloadYtt()
+	if err != nil{
+		log.Fatalf(err)
+	}
 	validateArguments(networkSpecPath, kubeConfigPath)
 	contents, err := ioutil.ReadFile(*networkSpecPath)
 	if err != nil {
