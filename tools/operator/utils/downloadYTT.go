@@ -21,20 +21,20 @@ func DownloadYtt() error{
 
 		resp, err := http.Get(url)
 		if err != nil {
-			log.Printf("Error while downloading the ytt")
+			log.Println("Error while downloading the ytt")
 			return err
 		}
 		defer resp.Body.Close()
 		ytt, err := os.Create("ytt")
 		if err != nil {
-			log.Printf("Error while creating the ytt file")
+			log.Println("Error while creating the ytt file")
 			return err
 		}
 		defer ytt.Close()
 		io.Copy(ytt, resp.Body)
 		err = os.Chmod("ytt", 0777)
 		if err != nil {
-			log.Printf("Failed to change permissions to ytt")
+			log.Println("Failed to change permissions to ytt")
 			return err
 		}
 	}
