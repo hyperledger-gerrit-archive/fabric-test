@@ -20,7 +20,7 @@ func validateArguments(networkSpecPath *string, kubeConfigPath *string) {
 	if *networkSpecPath == "" {
 		log.Fatalf("Input file not provided")
 	} else if *kubeConfigPath == "" {
-		log.Println("Kube config file not provided, proceeding with local environment")
+		log.Printf("Kube config file not provided, proceeding with local environment")
 	}
 }
 
@@ -32,20 +32,20 @@ func doAction(action, kubeConfigPath, componentName string, input networkspec.Co
 		channels := []string{}
 		err := client.GenerateChannelTransaction(input, channels, configTxnPath)
 		if err != nil {
-			log.Fatalf("Failed to create channel transaction: err=%v", err)
+			log.Fatalf("Failed to create channel transaction: err=%s", err)
 		}
 	case "migrate":
 		err := client.MigrateToRaft(input, kubeConfigPath)
 		if err != nil {
-			log.Fatalf("Failed to migrate consensus from %v to raft: err=%v", input.Orderer.OrdererType, err)
+			log.Fatalf("Failed to migrate consensus from %s to raft: err=%s", input.Orderer.OrdererType, err)
 		}
 	case "healthz":
 		err := client.CheckComponentsHealth(componentName, kubeConfigPath, input)
 		if err != nil {
-			log.Fatalf("Failed to get the health for %v: err=%v", componentName, err)
+			log.Fatalf("Failed to get the health for %s: err=%s", componentName, err)
 		}
 	default:
-		log.Fatalf("Incorrect mode (%v). Use createChannelTxn or migrate for mode", action)
+		log.Fatalf("Incorrect mode (%s). Use createChannelTxn or migrate for mode", action)
 	}
 }
 

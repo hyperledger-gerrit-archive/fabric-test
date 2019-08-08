@@ -35,64 +35,67 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 	case "up":
 		err := nl.GenerateConfigurationFiles(kubeConfigPath)
 		if err != nil {
-			log.Fatalf("Failed to generate yaml files; err = %v", err)
+			log.Fatalf("Failed to generate yaml files; err = %s", err)
 		}
 
 		err = nl.GenerateCryptoCerts(input, kubeConfigPath)
 		if err != nil {
-			log.Fatalf("Failed to generate certificates; err = %v", err)
+			log.Fatalf("Failed to generate certificates; err = %s", err)
 		}
 
 		if kubeConfigPath != "" {
-			nl.CreateMspSecret(input, kubeConfigPath)
+			err = nl.CreateMspSecret(input, kubeConfigPath)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 
 		err = nl.GenerateGenesisBlock(input, kubeConfigPath)
 		if err != nil {
-			log.Fatalf("Failed to create orderer genesis block; err = %v", err)
+			log.Fatalf("Failed to create orderer genesis block; err = %s", err)
 		}
 
 		err = client.GenerateChannelTransaction(input, []string{}, "./../configFiles")
 		if err != nil {
-			log.Fatalf("Failed to create channel transactions; err = %v", err)
+			log.Fatalf("Failed to create channel transactions; err = %s", err)
 		}
 
 		if kubeConfigPath != "" {
 			err = nl.LaunchK8sComponents(kubeConfigPath, input.K8s.DataPersistence)
 			if err != nil {
-				log.Fatalf("Failed to launch k8s components; err = %v", err)
+				log.Fatalf("Failed to launch k8s components; err = %s", err)
 			}
 		} else {
 			err = nl.LaunchLocalNetwork()
 			if err != nil {
-				log.Fatalf("Failed to launch k8s components; err = %v", err)
+				log.Fatalf("Failed to launch k8s components; err = %s", err)
 			}
 		}
 
 		err = client.CheckContainersState(kubeConfigPath)
 		if err != nil {
-			log.Fatalf("Failed to check container status; err = %v", err)
+			log.Fatalf("Failed to check container status; err = %s", err)
 		}
 
 		err = client.CheckComponentsHealth("", kubeConfigPath, input)
 		if err != nil {
-			log.Fatalf("Failed to check health of fabric components; err = %v", err)
+			log.Fatalf("Failed to check health of fabric components; err = %s", err)
 		}
 
 		err = connectionprofile.CreateConnectionProfile(input, kubeConfigPath)
 		if err != nil {
-			log.Fatalf("Failed to create connection profile; err = %v", err)
+			log.Fatalf("Failed to create connection profile; err = %s", err)
 		}
 		log.Println("Network is up and running")
 
 	case "down":
 		err := nl.NetworkCleanUp(input, kubeConfigPath)
 		if err != nil {
-			log.Fatalf("Failed to clean up the network:; err = %v", err)
+			log.Fatalf("Failed to clean up the network:; err = %s", err)
 		}
 
 	default:
-		log.Fatalf("Incorrect action (%v). Use up or down for action", action)
+		log.Fatalf("Incorrect action (%s). Use up or down for action", action)
 	}
 }
 
@@ -113,16 +116,22 @@ func checkConsensusType(input networkspec.Config) {
 func main() {
 
 	flag.Parse()
-	utils.DownloadYtt()
+	err := utils.DownloadYtt()
+	if err != nil {
+		log.Fatal(err)
+	}
 	validateArguments(networkSpecPath, kubeConfigPath)
 	contents, err := ioutil.ReadFile(*networkSpecPath)
 	if err != nil {
-		log.Fatalf("In-correct input file path; err:%v", err)
+		log.Fatalf("In-correct input file path; err:%s", err)
 	}
 	contents = append([]byte("#@data/values \n"), contents...)
 	ioutil.WriteFile("./../templates/input.yaml", contents, 0644)
 	inputPath := "./../templates/input.yaml"
-	input := nl.GetConfigData(inputPath)
+	input, err := nl.GetConfigData(inputPath)
+	if err != nil {
+		log.Fatal(err)
+	}
 	checkConsensusType(input)
 	doAction(*action, input, *kubeConfigPath)
 }
