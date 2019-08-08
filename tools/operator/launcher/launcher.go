@@ -126,8 +126,8 @@ func main() {
 		log.Fatalf("In-correct input file path; err:%s", err)
 	}
 	contents = append([]byte("#@data/values \n"), contents...)
-	ioutil.WriteFile("./../templates/input.yaml", contents, 0644)
-	inputPath := "./../templates/input.yaml"
+	inputPath := nl.JoinPath(nl.TemplatesDir(), "input.yaml")
+	ioutil.WriteFile(inputPath, contents, 0644)
 	input, err := nl.GetConfigData(inputPath)
 	if err != nil {
 		log.Fatal(err)

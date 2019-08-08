@@ -5,31 +5,31 @@
 package connectionprofile
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
-    "os"
-    "log"
+	"log"
+	"os"
 	"os/exec"
-	"path/filepath"
 	"reflect"
 	"strings"
-    "time"
-    "errors"
+	"time"
 
+	"github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	yaml "gopkg.in/yaml.v2"
 )
 
 func GetK8sExternalIP(kubeconfigPath string, input networkspec.Config, serviceName string) (string, error) {
 
-    if kubeconfigPath == ""{
-        return "localhost", nil
-    }
-    var IPAddress string
+	if kubeconfigPath == "" {
+		return "localhost", nil
+	}
+	var IPAddress string
 	if input.K8s.ServiceType == "NodePort" {
 		stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%s", kubeconfigPath), "get", "nodes", "-o", `jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }'`).CombinedOutput()
 		if err != nil {
-            log.Printf("Failed to get the external IP for k8s using NodePor")
+			log.Printf("Failed to get the external IP for k8s using NodePor")
 			return "", err
 		}
 		IPAddressList := strings.Split(string(stdoutStderr)[1:], " ")
@@ -37,7 +37,7 @@ func GetK8sExternalIP(kubeconfigPath string, input networkspec.Config, serviceNa
 	} else if input.K8s.ServiceType == "LoadBalancer" {
 		stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%s", kubeconfigPath), "get", "-o", `jsonpath="{.status.loadBalancer.ingress[0].ip}"`, "services", serviceName).CombinedOutput()
 		if err != nil {
-            log.Printf("Failed to get the external IP for k8s using NodePort")
+			log.Printf("Failed to get the external IP for k8s using NodePort")
 			return "", err
 		}
 		IPAddress = string(stdoutStderr)[1 : len(string(stdoutStderr))-1]
@@ -55,7 +55,7 @@ func GetK8sServicePort(kubeconfigPath, serviceName string, forHealth bool) (stri
 			stdoutStderr, err = exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%s", kubeconfigPath), "get", "-o", `jsonpath="{.spec.ports[1].nodePort}"`, "services", serviceName).CombinedOutput()
 		}
 		if err != nil {
-            log.Printf("Failed to get the port number for service %s", serviceName)
+			log.Printf("Failed to get the port number for service %s", serviceName)
 			return "", err
 		}
 		port = string(stdoutStderr)
@@ -63,7 +63,7 @@ func GetK8sServicePort(kubeconfigPath, serviceName string, forHealth bool) (stri
 	} else {
 		stdoutStderr, err := exec.Command("docker", "port", serviceName).CombinedOutput()
 		if err != nil {
-            log.Printf("Failed to get the port number for service %s", serviceName)
+			log.Printf("Failed to get the port number for service %s", serviceName)
 			return "", err
 		}
 		ports := strings.Split(string(stdoutStderr), "\n")
@@ -96,6 +96,8 @@ func GetK8sServicePort(kubeconfigPath, serviceName string, forHealth bool) (stri
 
 func ordererOrganizations(input networkspec.Config, kubeconfigPath string) (map[string]networkspec.Orderer, error) {
 	orderers := make(map[string]networkspec.Orderer)
+	artifactsLocation := input.ArtifactsLocation
+	ordererOrgsPath := nl.OrdererOrgsDir(artifactsLocation)
 	var err error
 	numOrdererOrganizations := len(input.OrdererOrganizations)
 	if input.Orderer.OrdererType == "solo" || input.Orderer.OrdererType == "kafka" {
@@ -144,9 +146,9 @@ func ordererOrganizations(input networkspec.Config, kubeconfigPath string) (map[
 			if input.TLS == "true" || input.TLS == "mutual" {
 				protocol = "grpcs"
 			}
-			orderer = networkspec.Orderer{MSPID: ordererOrg.MSPID, URL: fmt.Sprintf("%s://%s:%s", protocol, NodeIP, portNumber), AdminPath: filepath.Join(input.ArtifactsLocation, fmt.Sprintf("/crypto-config/ordererOrganizations/%s/users/Admin@%s/msp", ordererOrg.Name, ordererOrg.Name))}
+			orderer = networkspec.Orderer{MSPID: ordererOrg.MSPID, URL: fmt.Sprintf("%s://%s:%s", protocol, NodeIP, portNumber), AdminPath: JoinPath(ordererOrgsPath, fmt.Sprintf("%s/users/Admin@%s/msp", ordererOrg.Name, ordererOrg.Name))}
 			orderer.GrpcOptions.SslTarget = ordererName
-			orderer.TLSCACerts.Path = filepath.Join(input.ArtifactsLocation, fmt.Sprintf("/crypto-config/ordererOrganizations/%s/orderers/%s.%s/msp/tlscacerts/tlsca.%s-cert.pem", orgName, ordererName, orgName, orgName))
+			orderer.TLSCACerts.Path = JoinPath(ordererOrgsPath, fmt.Sprintf("%s/orderers/%s.%s/msp/tlscacerts/tlsca.%s-cert.pem", orgName, ordererName, orgName, orgName))
 			orderers[ordererName] = orderer
 		}
 	}
@@ -194,7 +196,7 @@ func certificateAuthorities(peerOrg networkspec.PeerOrganizations, kubeconfigPat
 			protocol = "https"
 		}
 		CA = networkspec.CertificateAuthority{URL: fmt.Sprintf("%s://%s:%s", protocol, NodeIP, portNumber), CAName: caName}
-		CA.TLSCACerts.Path = filepath.Join(artifactsLocation, fmt.Sprintf("/crypto-config/peerOrganizations/%s/ca/ca.%s-cert.pem", orgName, orgName))
+		CA.TLSCACerts.Path = JoinPath(nl.PeerOrgsDir(artifactsLocation), fmt.Sprintf("%s/ca/ca.%s-cert.pem", orgName, orgName))
 		CA.HTTPOptions.Verify = false
 		CA.Registrar.EnrollID = "admin"
 		CA.Registrar.EnrollSecret = "adminpw"
@@ -219,6 +221,7 @@ func getKeysFromMap(newMap interface{}) []string {
 
 func peerOrganizations(input networkspec.Config, kubeconfigPath string) error {
 
+	peerOrgsLocation := nl.PeerOrgsDir(input.ArtifactsLocation)
 	orderersMap, err := ordererOrganizations(input, kubeconfigPath)
 	if err != nil {
 		return err
@@ -266,12 +269,12 @@ func peerOrganizations(input networkspec.Config, kubeconfigPath string) error {
 			}
 			peer = networkspec.Peer{URL: fmt.Sprintf("%s://%s:%s", protocol, NodeIP, portNumber)}
 			peer.GrpcOptions.SslTarget = peerName
-			peer.TLSCACerts.Path = filepath.Join(input.ArtifactsLocation, fmt.Sprintf("/crypto-config/peerOrganizations/%s/tlsca/tlsca.%s-cert.pem", peerorg.Name, peerorg.Name))
+			peer.TLSCACerts.Path = JoinPath(peerOrgsLocation, fmt.Sprintf("%s/tlsca/tlsca.%s-cert.pem", peerorg.Name, peerorg.Name))
 			peersList = append(peersList, peerName)
 			peers[peerName] = peer
 			organization = networkspec.Organization{Name: peerorg.Name, MSPID: peerorg.MSPID}
 		}
-		path := filepath.Join(input.ArtifactsLocation, fmt.Sprintf("/crypto-config/peerOrganizations/%s/users/Admin@%s/msp", peerorg.Name, peerorg.Name))
+		path := JoinPath(peerOrgsLocation, fmt.Sprintf("%s/users/Admin@%s/msp", peerorg.Name, peerorg.Name))
 		organization.AdminPrivateKey.Path = path
 		organization.SignedCert.Path = path
 		ca, err := certificateAuthorities(peerorg, kubeconfigPath, input)
@@ -288,7 +291,7 @@ func peerOrganizations(input networkspec.Config, kubeconfigPath string) error {
 
 		err = generateConnectionProfileFile(kubeconfigPath, peerorg.Name, input, peers, organizations, ca, orderersMap)
 		if err != nil {
-            log.Printf("Failed to generate connection profile")
+			log.Printf("Failed to generate connection profile")
 			return err
 		}
 	}
@@ -298,10 +301,9 @@ func peerOrganizations(input networkspec.Config, kubeconfigPath string) error {
 func generateConnectionProfileFile(kubeconfigPath, orgName string, input networkspec.Config, peerOrganizations map[string]networkspec.Peer, organizations map[string]networkspec.Organization, certificateAuthorities map[string]networkspec.CertificateAuthority, orderersMap map[string]networkspec.Orderer) error {
 
 	var err error
-	path := filepath.Join(input.ArtifactsLocation, "connection-profile")
-	_ = os.Mkdir(path, 0755)
+	path := nl.ConnectionProfilesDir(input.ArtifactsLocation)
 
-	fileName := filepath.Join(path, fmt.Sprintf("connection_profile_%s.yaml", orgName))
+	fileName := JoinPath(path, fmt.Sprintf("connection_profile_%s.yaml", orgName))
 	channels := make(map[string]networkspec.Channel)
 	if err != nil {
 		return err
@@ -322,18 +324,18 @@ func generateConnectionProfileFile(kubeconfigPath, orgName string, input network
 	cp := networkspec.ConnectionProfile{Client: client, Channels: channels, Organizations: organizations, Orderers: orderersMap, Peers: peerOrganizations, CA: certificateAuthorities}
 	yamlBytes, err := yaml.Marshal(cp)
 	if err != nil {
-        log.Printf("Failed to convert the connection profile struct to bytes")
+		log.Printf("Failed to convert the connection profile struct to bytes")
 		return err
 	}
 	_, err = os.Create(fileName)
 	if err != nil {
-        log.Printf("Failed to create %s file")
+		log.Printf("Failed to create %s file")
 		return err
 	}
 	yamlBytes = append([]byte("version: 1.0 \nname: My network \ndescription: Connection Profile for Blockchain Network \n"), yamlBytes...)
 	err = ioutil.WriteFile(fileName, yamlBytes, 0644)
 	if err != nil {
-        log.Printf("Failed to write content to %s file", fileName)
+		log.Printf("Failed to write content to %s file", fileName)
 		return err
 	}
 	log.Printf("Successfully created %s", fileName)
@@ -345,7 +347,7 @@ func CreateConnectionProfile(input networkspec.Config, kubeconfigPath string) er
 	time.Sleep(5 * time.Second)
 	err := peerOrganizations(input, kubeconfigPath)
 	if err != nil {
-        log.Printf("Error occured while generating the connection profile files")
+		log.Printf("Error occured while generating the connection profile files")
 		return err
 	}
 	return nil

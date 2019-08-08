@@ -56,7 +56,7 @@ func main() {
 	networkSpecPath, kubeConfigPath, action, componentName := readArguments()
 	contents, _ := ioutil.ReadFile(networkSpecPath)
 	contents = append([]byte("#@data/values \n"), contents...)
-	inputPath := "templates/input.yaml"
+	inputPath := nl.JoinPath(nl.TemplatesDir(), "input.yaml")
 	ioutil.WriteFile(inputPath, contents, 0644)
 	client.CreateConfigPath()
 	input := nl.GetConfigData(inputPath)

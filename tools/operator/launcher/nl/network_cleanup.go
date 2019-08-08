@@ -17,6 +17,7 @@ import (
 //NetworkCleanUp - to clean up the network
 func NetworkCleanUp(input networkspec.Config, kubeConfigPath string) error {
     var err error
+    artifactsLocation := input.ArtifactsLocation
     if kubeConfigPath != "" {
         numOrdererOrganizations := len(input.OrdererOrganizations)
         for i := 0; i < numOrdererOrganizations; i++ {
@@ -45,14 +46,11 @@ func NetworkCleanUp(input networkspec.Config, kubeConfigPath string) error {
         log.Printf("%s", err)
     }
 
-    err = os.RemoveAll("../configFiles")
-    err = os.RemoveAll("../templates/input.yaml")
-    path := filepath.Join(input.ArtifactsLocation, "channel-artifacts")
-    err = os.RemoveAll(path)
-    path = filepath.Join(input.ArtifactsLocation, "crypto-config")
-    err = os.RemoveAll(path)
-    path = filepath.Join(input.ArtifactsLocation, "connection-profile")
-    err = os.RemoveAll(path)
+    err = os.RemoveAll(ConfigFilesDir())
+    err = os.RemoveAll(JoinPath(TemplatesDir(), "input.yaml"))
+    err = os.RemoveAll(ChannelArtifactsDir(artifactsLocation))
+    err = os.RemoveAll(CryptoConfigDir(artifactsLocation))
+    err = os.RemoveAll(ConnectionProfilesDir(artifactsLocation))
     if input.K8s.DataPersistence == "local" && kubeConfigPath != "" {
         err = client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./scripts/alpine.yaml")
     }
