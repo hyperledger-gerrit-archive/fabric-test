@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 
 	"github.com/hyperledger/fabric-test/tools/operator/client"
+	"github.com/hyperledger/fabric-test/tools/operator/helper"
 	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
 	"github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
@@ -25,7 +26,7 @@ func validateArguments(networkSpecPath *string, kubeConfigPath *string) {
 	if *networkSpecPath == "" {
 		utils.FatalLogs("Input file not provided", nil)
 	} else if *kubeConfigPath == "" {
-		PrintLogs("Kube config file not provided, proceeding with local environment")
+		utils.PrintLogs("Kube config file not provided, proceeding with local environment")
 	}
 }
 
@@ -86,7 +87,7 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 		if err != nil {
 			utils.FatalLogs("Failed to create connection profile", err)
 		}
-		PrintLogs("Network is up and running")
+		utils.PrintLogs("Network is up and running")
 
 	case "down":
 		err := nl.NetworkCleanUp(input, kubeConfigPath)
@@ -126,8 +127,8 @@ func main() {
 		utils.FatalLogs("In-correct input file path", err)
 	}
 	contents = append([]byte("#@data/values \n"), contents...)
-	ioutil.WriteFile("./../templates/input.yaml", contents, 0644)
-	inputPath := "./../templates/input.yaml"
+	inputPath := helper.JoinPath(helper.TemplatesDir(), "input.yaml")
+	ioutil.WriteFile(inputPath, contents, 0644)
 	input, err := nl.GetConfigData(inputPath)
 	if err != nil {
 		utils.FatalLogs("", err)
