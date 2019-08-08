@@ -11,26 +11,23 @@ import (
 	"log"
 
 	"github.com/hyperledger/fabric-test/tools/operator/client"
+	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
 	"github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	"github.com/hyperledger/fabric-test/tools/operator/utils"
-	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
 )
 
-func readArguments() (string, string, string) {
+var networkSpecPath = flag.String("i", "", "Network spec input file path")
+var kubeConfigPath = flag.String("k", "", "Kube config file path")
+var action = flag.String("a", "up", "Set action(up or down)")
 
-	networkSpecPath := flag.String("i", "", "Network spec input file path")
-	kubeConfigPath := flag.String("k", "", "Kube config file path")
-	action := flag.String("a", "up", "Set action(up or down)")
-	flag.Parse()
+func validateArguments(networkSpecPath *string, kubeConfigPath *string) {
 
-	if fmt.Sprintf("%s", *kubeConfigPath) == "" {
-		fmt.Println("Kube config file not provided, proceeding with local environment")
-	} else if fmt.Sprintf("%s", *networkSpecPath) == "" {
+	if *networkSpecPath == "" {
 		log.Fatalf("Input file not provided")
+	} else if *kubeConfigPath == "" {
+		fmt.Println("Kube config file not provided, proceeding with local environment")
 	}
-
-	return *networkSpecPath, *kubeConfigPath, *action
 }
 
 func doAction(action string, input networkspec.Config, kubeConfigPath string) {
@@ -116,10 +113,11 @@ func checkConsensusType(input networkspec.Config) {
 
 func main() {
 
-	networkSpecPath, kubeConfigPath, action := readArguments()
+	flag.Parse()
 	utils.DownloadYtt()
-	contents, err := ioutil.ReadFile(networkSpecPath)
-	if err != nil{
+	validateArguments(networkSpecPath, kubeConfigPath)
+	contents, err := ioutil.ReadFile(*networkSpecPath)
+	if err != nil {
 		log.Fatalf("In-correct input file path; err:%v", err)
 	}
 	contents = append([]byte("#@data/values \n"), contents...)
@@ -127,5 +125,5 @@ func main() {
 	inputPath := "./../templates/input.yaml"
 	input := nl.GetConfigData(inputPath)
 	checkConsensusType(input)
-	doAction(action, input, kubeConfigPath)
+	doAction(*action, input, *kubeConfigPath)
 }
