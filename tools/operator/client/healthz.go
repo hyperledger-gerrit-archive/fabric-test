@@ -132,7 +132,7 @@ func checkK8sContainerState(kubeconfigPath string) error{
 			log.Printf("All pods are up and running")
 			return nil
 		}
-		log.Printf("Waiting up to 10 minutes for pods to be up and running; minute =", i)
+		log.Printf("Waiting up to 10 minutes for pods to be up and running; minute = %d", i)
 		time.Sleep(60 * time.Second)
 	}
 	return errors.New("Waiting time exceeded")
