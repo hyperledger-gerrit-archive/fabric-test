@@ -52,7 +52,7 @@ usage () {
     echo -e "-i, --install\tinstall/instantiate chaincode"
     echo -e "\t\t(Default: No)"
 
-    echo -e "-a, --app\tblank-separated list of chaincodes, [samplecc|samplejs|samplejava|marbles02]"
+    echo -e "-a, --app\tblank-separated list of chaincodes, [sample_cc|sample_js|sample_java|marbles02_go]"
     echo -e "\t\t(Default: None)"
 
     echo -e "-d, --cpdir\tconnection profiles directory"
@@ -111,14 +111,14 @@ usage () {
 
     echo -e "examples:"
     echo -e "./gen_cfgInputs.sh -d CPDir -n testorgschannel1 testorgschannel2 --org org1 org2 -c"
-    echo -e "./gen_cfgInputs.sh -d CPDir --nchan 3 --chanprefix testorgschannel --org org1 org2 -a samplecc -c -i"
-    echo -e "./gen_cfgInputs.sh -d CPDir --nchan 3 --chanprefix testorgschannel --norg 2 -a marbles02 samplecc -i"
-    echo -e "./gen_cfgInputs.sh -d CPDir -n testorgschannel1 --norg 2 -a samplecc samplejs marbles02 -p -t Move -i"
-    echo -e "./gen_cfgInputs.sh -d CPDir -n testorgschannel1 --norg 2 --orgprefix testorg -a samplecc samplejs marbles02 -p -t Move -i"
-    echo -e "./gen_cfgInputs.sh -d CPDir -n testorgschannel1 testorgschannel2 --norg 2 -a samplejava -i -t Move"
-    echo -e "./gen_cfgInputs.sh -d CPDir -n testorgschannel1 --norg 2 --orgprefix org -a samplejava samplejs --freq 10 --rundur 50 --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t move"
-    echo -e "./gen_cfgInputs.sh -d CPDir -n testorgschannel1 --norg 2 -a samplecc --freq 10 --nreq 1000 --nproc 1 --keystart 100 --targetpeers ORGANCHOR --chkpeers ORGANCHOR -t move"
-    echo -e "./gen_cfgInputs.sh -d CPDir --nchan 3 --chanprefix testorgschannel --norg 2 -a samplecc --freq 10 --rundur 50 --nproc 1 --keystart 100 --targetpeers ORGANCHOR --targetorderers RoundRobin --chkpeers ORGANCHOR -t move"
+    echo -e "./gen_cfgInputs.sh -d CPDir --nchan 3 --chanprefix testorgschannel --org org1 org2 -a sample_cc -c -i"
+    echo -e "./gen_cfgInputs.sh -d CPDir --nchan 3 --chanprefix testorgschannel --norg 2 -a marbles02_go sample_cc -i"
+    echo -e "./gen_cfgInputs.sh -d CPDir -n testorgschannel1 --norg 2 -a sample_cc sample_js marbles02_go -p -t Move -i"
+    echo -e "./gen_cfgInputs.sh -d CPDir -n testorgschannel1 --norg 2 --orgprefix testorg -a sample_cc sample_js marbles02_go -p -t Move -i"
+    echo -e "./gen_cfgInputs.sh -d CPDir -n testorgschannel1 testorgschannel2 --norg 2 -a sample_java -i -t Move"
+    echo -e "./gen_cfgInputs.sh -d CPDir -n testorgschannel1 --norg 2 --orgprefix org -a sample_java sample_js --freq 10 --rundur 50 --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t move"
+    echo -e "./gen_cfgInputs.sh -d CPDir -n testorgschannel1 --norg 2 -a sample_cc --freq 10 --nreq 1000 --nproc 1 --keystart 100 --targetpeers ORGANCHOR --chkpeers ORGANCHOR -t move"
+    echo -e "./gen_cfgInputs.sh -d CPDir --nchan 3 --chanprefix testorgschannel --norg 2 -a sample_cc --freq 10 --rundur 50 --nproc 1 --keystart 100 --targetpeers ORGANCHOR --targetorderers RoundRobin --chkpeers ORGANCHOR -t move"
     echo
     exit
 }
@@ -157,6 +157,7 @@ echo "***      CHANPREFIX: $CHANPREFIX                         "
 echo "***      CHANNEL TX PATH: $CHANNELTXPATH                 "
 echo "***      CHANNEL length: ${#CHANNEL[@]}                  "
 echo "***      CHANNEL: ${CHANNEL[@]}                          "
+echo "***      CHAN0: ${CHAN0}                                 "
 echo "***                                                      "
 echo "***      ORGS set name: $setOrgName                      "
 echo "***      ORGS set num: $setOrgNum                        "
@@ -223,8 +224,9 @@ ORGPREFIX="org"                # default org name
 setChanName="no"
 setChanNum="no"
 CHANPREFIX="defaultchannel"    # default channel name
-CHAN0=1                        # default first channel
+CHAN0=0                        # default first channel
 NCHAN=0
+CHANNELID="_ch0"
 NORG=0
 TXMODE="Constant"
 NPROC=1
@@ -261,16 +263,16 @@ MDPath=""
 # $1: chaincode
 getCCPath() {
     cc=$1
-    if [ $cc == "samplecc" ]; then
+    if [ $cc == "sample_cc" ]; then
         CCPath=$CCPathsamplecc
         LANGUAGE="golang"
-    elif [ $cc == "samplejs" ]; then
+    elif [ $cc == "sample_js" ]; then
         CCPath=$CCPathsamplejs
         LANGUAGE="node"
-    elif [ $cc == "samplejava" ]; then
+    elif [ $cc == "sample_java" ]; then
         CCPath=$CCPathsamplejava
         LANGUAGE="java"
-    elif [ $cc == "marbles02" ]; then
+    elif [ $cc == "marbles02_go" ]; then
         CCPath=$CCPathmarbles02
         MDPath=$MatadataPath
         LANGUAGE="golang"
@@ -318,15 +320,18 @@ InsertOrgs() {
 # $1: config file name
 # $2: connection profile path
 # $3: channel
-# $4: chaincode (optional)
+# $4: channelID
+# $5: chaincode (optional)
 PreCFGProc() {
 
     cfgName=$1
     cppath=$2
     chnl=$3
-    echo -e " [PreCFGProc]: cppath=$cppath $chnl=$chnl"
-    if [ $# -eq 4 ]; then
-        cc=$4
+    chnid=$4
+    cc=$5
+    echo -e " [PreCFGProc]: cppath=$cppath chnl=$chnl chnid=$chnid chainid=$cc"
+    if [ $# -eq 5 ]; then
+        cc=$5
         echo -e " [PreCFGProc]: chaincode=$cc"
     else
         cc=""
@@ -342,7 +347,7 @@ PreCFGProc() {
         sed -i -e "s/_TLS_/$TLS/g" $cfgName
         sed -i -e "s/_CHANNELTXPATH_/$channeltxpath/g" $cfgName
         sed -i -e "s/_CHANNELNAME_/$chnl/g" $cfgName
-        sed -i -e "s/_CHANNELID_/$chnl/g" $cfgName
+        sed -i -e "s/_CHANNELID_/$chnid/g" $cfgName
         sed -i -e "s/_CPDIRECTORY_/$cpdir/g" $cfgName
         sed -i -e "s/_CHAINCODEPATH_/$CCPath/g" $cfgName
         sed -i -e "s/_CHAINCODEID_/$cc/g" $cfgName
@@ -388,43 +393,47 @@ PreTXProc() {
 # channel process: create and join
 ChannelProc() {
     # loop on channel list
-    for chan in "${CHANNEL[@]}"; do
+      echo "CHAN0" $CHAN0
+      echo "Channel list" ${CHANNEL[@]}
+    for ((j=0; j<${#CHANNEL[@]}; j++))
+       do
+        echo "CHANNEL"$j ${CHANNEL[$j]}
         # loop on network list
         for cppath in "${CPDIR[@]}"; do
-            fname=$chan
+            channelName=${CHANNEL[$j]}
+            channelID=${CHANNELID[$j]}
             cd $runDir
             echo "process cc $cppath channel $chan"
+            echo "CHANNELID" $channelID
 
-            cfgCREATE=create-$fname".json"
+            cfgCREATE=create-$channelName".json"
             cp $TEMPLATEDIR/template-create.json $cfgCREATE
 
-            PreCFGProc $cfgCREATE $cppath $chan
+            PreCFGProc $cfgCREATE $cppath $channelName $channelID
 
             # create channel
-            runCaseCreate=runCases-create-$fname".txt"
+            runCaseCreate=runCases-create-$channelName".txt"
             tmp=$runDir/$cfgCREATE
             echo "sdk=node $tmp" >> $runCaseCreate
-
             cd $PTEDIR
             echo "create channel on $cppath"
             ./pte_driver.sh $runDir/$runCaseCreate
-
-            sleep 15
+            sleep 10
             # join channel
             cd $runDir
 
-            cfgJOIN=join-$fname".json"
+            cfgJOIN=join-$channelName".json"
             cp $TEMPLATEDIR/template-join.json $cfgJOIN
 
-            PreCFGProc $cfgJOIN $cppath $chan
-
-            runCaseJoin=runCases-join-$fname".txt"
+            PreCFGProc $cfgJOIN $cppath $channelName $channelID
+            runCaseJoin=runCases-join-$channelName".txt"
             tmp=$runDir/$cfgJOIN
             echo "sdk=node $tmp" >> $runCaseJoin
 
             cd $PTEDIR
             echo "join channel on $cppath"
             ./pte_driver.sh $runDir/$runCaseJoin
+
             cd $runDir
         done     # end loop on network list
     done         # end loop on channel list
@@ -439,16 +448,20 @@ ChaincodeProc() {
         # loop on network list
         for cppath in "${CPDIR[@]}"; do
             # loop on channel list
-            for chan in "${CHANNEL[@]}"; do
+            for ((j=0; j<${#CHANNEL[@]}; j++)); do
+            channelName=${CHANNEL[$j]}
+            channelID=${CHANNELID[$j]}
                 cd $runDir
                 echo "[$0] process cc $cppath"
                 echo "[$0] CCPath $CCPath"
+            echo "chaincode" $chaincode
 
-                fname=$chan"-"$chaincode
+                fname=$channelName"-"$chaincode
+           echo "fname" $fname
                 cfgINSTALL=install-$fname".json"
                 cp $TEMPLATEDIR/template-install.json $cfgINSTALL
 
-                PreCFGProc $cfgINSTALL $cppath $chan $chaincode
+                PreCFGProc $cfgINSTALL $cppath $channelName $channelID $chaincode
 
                 # install chaincode
                 runCaseinstall=runCases-install-$fname".txt"
@@ -460,7 +473,7 @@ ChaincodeProc() {
                 cfgINSTAN=instantiate-$fname".json"
                 cp $TEMPLATEDIR/template-instantiate.json $cfgINSTAN
 
-                PreCFGProc $cfgINSTAN $cppath $chan $chaincode
+                PreCFGProc $cfgINSTAN $cppath $channelName $channelID $chaincode
 
                 runCaseinstantiate=runCases-instantiate-$fname".txt"
                 tmp=$runDir/$cfgINSTAN
@@ -495,10 +508,12 @@ TransactionProc() {
         # loop on network list
         for cppath in "${CPDIR[@]}"; do
             # loop on channel list
-            for chan in "${CHANNEL[@]}"; do
-
+            for ((j=0; j<${#CHANNEL[@]}; j++)); do
+                channelName=${CHANNEL[$i]}
+                channelID=${CHANNELID[$i]}
                 echo "process $chaincode tx on $cppath"
-                fname=$chan"-"$chaincode
+                fname=$channelName"-"$chaincode
+                echo "fname" $fname
                 cd $runDir
 
                 pteCfgTX="TX-"$fname".json"
@@ -514,7 +529,7 @@ TransactionProc() {
                 fi
 
                 # create PTE transaction configuration input json
-                PreCFGProc $pteCfgTX $cppath $chan $chaincode
+                PreCFGProc $pteCfgTX $cppath $channelName $chaincode $channelID
                 PreTXProc $pteTXopt $INVOKETYPE
 
                 runCaseTX=runCasesTX-$fname".txt"
@@ -532,8 +547,6 @@ TransactionProc() {
     ./pte_mgr.sh $PTEMgr
 
 }
-
-
 
 # GET CUSTOM OPTIONS
 echo -e "\nAny optional arguments chosen:\n"
@@ -808,11 +821,14 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-    # setup CHANNEL
+    # setup CHANNEL & ChannelID
 if [ $NCHAN -gt 0 ]; then
     for (( i=0; i < $NCHAN; i++ ))
     do
         CHANNEL[$i]=$CHANPREFIX$CHAN0
+        # setup ChannelID to match CITest json files
+        # see an example https://github.com/hyperledger/fabric-test/blob/master/tools/PTE/CITest/FAB-12262-4q/marbles02/marbles02-chan1-FAB-12262-4q-TLS.json#L2
+        CHANNELID[$i]=_ch$CHAN0
         CHAN0=$((CHAN0 + 1))
     done
 fi
