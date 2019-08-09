@@ -9,8 +9,13 @@ cd $SMOKEDIR
 
 echo "======== Behave feature and system tests ========"
 cd ../../feature
+    echo "======== These are all the DAILY tagged behave tests (with results in regression/smoke/) ========"
+    behave --junit --junit-directory ../regression/smoke/. --tags=-skip --tags=daily -k -D logs=y && echo "======== Behave feature tests completed; skipping other tests. ========"
+    exit
 behave --junit --junit-directory ../regression/smoke/. --tags=-skip --tags=smoke -k -D logs=y
 cd -
+
+
 
 echo "======== Ledger component performance tests using LTE ========"
 py.test -v --junitxml results_ledger_lte_smoke.xml ledger_lte_smoke.py
