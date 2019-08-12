@@ -60,7 +60,7 @@ func GenerateCryptoCerts(input networkspec.Config, kubeConfigPath string) error 
 
 	artifactsLocation := input.ArtifactsLocation
 	outputPath := helper.CryptoConfigDir(artifactsLocation)
-	config := helper.JoinPath(helper.ConfigFilesDir(), "crypto-config.yaml")
+	config := helper.ConfigFilePath("crypto-config")
 	generate := client.Cryptogen{Config: config, Output: outputPath}
 	_, err := client.ExecuteCommand("cryptogen", generate.Args(), true)
 	if err != nil {
@@ -96,7 +96,8 @@ func GenerateGenesisBlock(input networkspec.Config, kubeConfigPath string) error
 		return err
 	}
 	if kubeConfigPath != "" {
-		err = client.ExecuteK8sCommand(kubeConfigPath, true, "create", "secret", "generic", "genesisblock", fmt.Sprintf("--from-file=%s/genesis.block", path))
+		args := []string{fmt.Sprintf("--kubeconfig=%s",kubeConfigPath), "create", "secret", "generic", "genesisblock", fmt.Sprintf("--from-file=%s/genesis.block", path)}
+		_, err = client.ExecuteK8sCommand(args, true)
 		if err != nil {
 			return err
 		}

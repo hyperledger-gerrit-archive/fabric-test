@@ -1,7 +1,6 @@
 package client
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/hyperledger/fabric-test/tools/operator/helper"
@@ -12,16 +11,16 @@ import (
 func CreateConfigPath() error {
 
 	var err error
-	configFilesPath := helper.ConfigFilesDir()
+	configFilesDir := helper.ConfigFilesDir()
 	configtxTemplatePath := helper.TemplateFilePath("configtx")
 	inputFilePath := helper.TemplateFilePath("input")
-	configtxPath := fmt.Sprintf("%s/configtx.yaml", configFilesPath)
+	configtxPath := helper.ConfigFilePath("configtx")
 	if _, err = os.Stat(configtxPath); !os.IsNotExist(err) {
 		return nil
 	} else {
 		ytt := helper.YTTPath()
 		input := []string{configtxTemplatePath}
-		yttObject := utils.YTT{InputPath: inputFilePath, OutputPath: configFilesPath}
+		yttObject := utils.YTT{InputPath: inputFilePath, OutputPath: configFilesDir}
 		if _, err = os.Stat(ytt); os.IsNotExist(err) {
 			err = utils.DownloadYtt()
 			if err != nil {

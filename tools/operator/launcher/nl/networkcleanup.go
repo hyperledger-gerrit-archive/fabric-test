@@ -8,7 +8,6 @@ import (
 	"log"
 	"os"
 
-	"github.com/hyperledger/fabric-test/tools/operator/client"
 	"github.com/hyperledger/fabric-test/tools/operator/helper"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 )
@@ -30,9 +29,6 @@ func NetworkCleanUp(input networkspec.Config, kubeConfigPath string) error {
 	err = os.RemoveAll(helper.ChannelArtifactsDir(artifactsLocation))
 	err = os.RemoveAll(helper.CryptoConfigDir(artifactsLocation))
 	err = os.RemoveAll(helper.ConnectionProfilesDir(artifactsLocation))
-	if input.K8s.DataPersistence == "local" && kubeConfigPath != "" {
-		err = client.ExecuteK8sCommand(kubeConfigPath, true, "delete", "-f", "./scripts/alpine.yaml")
-	}
 	if err != nil {
 		return err
 	}
