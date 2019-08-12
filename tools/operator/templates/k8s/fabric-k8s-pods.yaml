@@ -60,7 +60,7 @@
 #@   resources = {"limits":{"cpu": "0.2", "memory": "0.5Gi"}, "requests":{"cpu":"0.2", "memory":"0.5Gi"}}
 #@   volumeMounts = [{"mountPath": "/etc/hyperledger/fabric/certparser", "name": "certsparser"}]
 #@   volumeMounts.append({"mountPath": "/etc/hyperledger/fabric/secret", "name": "mspsecret"})
-#@   output = [{"name": input, "image": ca_image, "imagePullPolicy": "Always", "env": env, "resources": resources, "volumeMounts":volumeMounts, "command":["/bin/bash"], "args":["-c", "cd /etc/hyperledger/fabric/ && cp certparser/certs-parser.sh . && chmod +x ./certs-parser.sh && ./certs-parser.sh {}.json && fabric-ca-server start -b admin:adminpw -d" .format(input)]}]
+#@   output = [{"name": input, "image": ca_image, "imagePullPolicy": "Always", "env": env, "resources": resources, "volumeMounts":volumeMounts, "command":["/bin/sh"], "args":["-c", "cd /etc/hyperledger/fabric/ && cp certparser/certs-parser.sh . && chmod +x ./certs-parser.sh && ./certs-parser.sh {}.json && fabric-ca-server start -b admin:adminpw -d" .format(input)]}]
 #@   return output
 #@ end
 
@@ -139,9 +139,9 @@
 #@     env.append({"name": "CORE_LEDGER_STATE_STATEDATABASE", "value": "CouchDB"})
 #@     env.append({"name": "CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS", "value": "localhost:5984"})
 #@     container = {"name":"couchdb-{}".format(input), "image": "hyperledger/fabric-couchdb", "imagePullPolicy": "Always", "securityContext":{"privileged":True}, "resources":{"limits":{"cpu": "0.1", "memory": "1Gi"}, "requests":{"cpu": "0.1", "memory": "1Gi"}}}
-#@     output = [{"name": "dind", "image": "docker:dind", "securityContext": {"privileged": True}, "resources": resources}, {"name":input, "image": peer_image, "imagePullPolicy": "Always", "securityContext" : { "privileged": True }, "env": env, "volumeMounts":volumeMounts, "command": ["/bin/bash"], "args":["-c", "cd /etc/hyperledger/fabric/ && cp certparser/certs-parser.sh . && chmod +x ./certs-parser.sh && ./certs-parser.sh {}.json && peer node start".format(input)], "resources": resources}, container]
+#@     output = [{"name": "dind", "image": "docker:dind", "securityContext": {"privileged": True}, "resources": resources}, {"name":input, "image": peer_image, "imagePullPolicy": "Always", "securityContext" : { "privileged": True }, "env": env, "volumeMounts":volumeMounts, "command": ["/bin/sh"], "args":["-c", "cd /etc/hyperledger/fabric/ && cp certparser/certs-parser.sh . && chmod +x ./certs-parser.sh && ./certs-parser.sh {}.json && peer node start".format(input)], "resources": resources}, container]
 #@   else:
-#@     output = [{"name": "dind", "image": "docker:dind", "securityContext": {"privileged": True}, "resources": resources}, {"name":input, "image": peer_image, "imagePullPolicy": "Always", "securityContext" : { "privileged": True }, "env": env, "volumeMounts":volumeMounts, "command": ["/bin/bash"], "args":["-c", "cd /etc/hyperledger/fabric/ && cp certparser/certs-parser.sh . && chmod +x ./certs-parser.sh && ./certs-parser.sh {}.json && peer node start".format(input)], "resources": resources}]
+#@     output = [{"name": "dind", "image": "docker:dind", "securityContext": {"privileged": True}, "resources": resources}, {"name":input, "image": peer_image, "imagePullPolicy": "Always", "securityContext" : { "privileged": True }, "env": env, "volumeMounts":volumeMounts, "command": ["/bin/sh"], "args":["-c", "cd /etc/hyperledger/fabric/ && cp certparser/certs-parser.sh . && chmod +x ./certs-parser.sh && ./certs-parser.sh {}.json && peer node start".format(input)], "resources": resources}]
 #@   end
 #@   return output
 #@ end
@@ -189,7 +189,7 @@
 #@   if networkSpec.fabric_version.endswith("-stable"):
 #@     orderer_image="nexus3.hyperledger.org:10001/hyperledger/fabric-orderer:amd64-{}".format(networkSpec.fabric_version)
 #@   end
-#@   output = [{"name": input, "image": orderer_image, "imagePullPolicy": "Always", "env": env, "resources": resources, "volumeMounts": volumeMounts, "command":["/bin/bash"], "args":["-c", "cd /etc/hyperledger/fabric/ && cp certparser/certs-parser.sh . && chmod +x ./certs-parser.sh && ./certs-parser.sh {}.json && orderer".format(input)]}]
+#@   output = [{"name": input, "image": orderer_image, "imagePullPolicy": "Always", "env": env, "resources": resources, "volumeMounts": volumeMounts, "command":["/bin/sh"], "args":["-c", "cd /etc/hyperledger/fabric/ && cp certparser/certs-parser.sh . && chmod +x ./certs-parser.sh && ./certs-parser.sh {}.json && orderer".format(input)]}]
 #@   return output
 #@ end
 
