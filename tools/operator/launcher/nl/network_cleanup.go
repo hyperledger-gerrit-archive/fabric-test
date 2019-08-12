@@ -36,7 +36,6 @@ func NetworkCleanUp(input networkspec.Config, kubeConfigPath string) error {
         }
         err = client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./../configFiles/fabric-k8s-service.yaml")
         err = client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./../configFiles/fabric-k8s-pvc.yaml")
-        err = client.ExecuteK8sCommand(kubeConfigPath, "delete", "configmaps", "certsparser")
     } else {
         err = client.ExecuteCommand("docker-compose", "-f", "./../configFiles/docker-compose.yaml", "down")
     }
