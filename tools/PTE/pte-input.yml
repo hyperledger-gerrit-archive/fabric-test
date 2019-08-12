@@ -1,0 +1,96 @@
+tls: true
+organizations:
+  - name: org1
+    connProfilePath: $PWD/connection-profile-org1.yml 
+  - name: org2
+    connProfilePath: $PWD/connection-profile-org2.yml
+
+createChannel:
+  - channelName: testorgschannel1
+    channelTxPath: $PWD/testorgschannel1.tx
+    organizations: org1
+
+  - channelPrefix: testorgschannel
+    numChannels: 10
+    channelTxPath: $PWD/
+    organizations: org1
+
+anchorPeerUpdate:
+  - channelName: testorgschannel1
+    organization: org1
+    anchorPeerUpdateTxn: $PWD/anchorpeer-org1-testorgschannel1.tx
+  - channelName: testorgschannel1
+    organization: org2
+    anchorPeerUpdateTxn: $PWD/anchorpeer-org2-testorgschannel1.tx
+ 
+joinChannel:
+  - channelName: testorgschannel1
+    organizations: org1, org2
+
+installChaincode:
+  - chaincodeName: samplecc
+    ccVersion: v1
+    chaincodePath: $PWD/samplecc
+    organizations: org1, org2
+    language: go
+    metadataPath: $PWD/txt.json
+
+  - chaincodeName: samplejs
+    ccVersion: v1
+    chaincodePath: $PWD/samplejs
+    organizations: org1, org2
+    language: node
+    metadataPath: $PWD/txt.json
+
+instantiateChaincode:
+  - channelName: testorgschannel1
+    chaincodeName: samplecc
+    ccVersion: v1
+    args: ",2,3,4"
+    organizations: org1
+    endorsementPolicy: 2of(org1, org2)
+    collectionPath: $PWD/txt.json
+
+  - channelName: testorgschannel1
+    chaincodeName: samplejs
+    ccVersion: v1
+    args: "1,2,3,4"
+    organizations: org1
+    endorsementPolicy: 2of(org1, org2)
+    collectionPath: $PWD/txt.json
+
+invokes:
+  - channelName: testorgschannel1
+    targetPeers: OrgAnchor
+    nProcPerOrg: 2
+    nRequest: 1000
+    runDur: 0
+    organizations: org1,org2
+    txnOpts:
+      - mode: constant
+        options: "Hist,0,0"
+    queryCheck: 100
+    eventOpt:
+      type: Channel
+      listener:  Block
+      timeout: 240000
+    ccOpt:
+      keyStart: 0
+      payLoadMin: 1024
+      payLoadMax: 2048
+    queryArgs: "get,a1"
+    moveArgs: "put,a1,1"
+
+queries:
+  - channelName: testorgschannel1
+    targetPeers: OrgAnchor
+    nProcPerOrg: 2
+    nRequest: 1000
+    runDur: 0
+    organizations: org1,org2
+    eventOpt:
+      type: Channel
+      listener:  Block
+      timeout: 240000
+    queryArgs: "get,a1"
+    moveArgs: "put,a1,1"
