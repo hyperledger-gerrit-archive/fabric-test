@@ -7,14 +7,28 @@ package utils
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
-	"log"
 	"runtime"
 )
 
+type YTT struct {
+	InputPath  string
+	OutputPath string
+}
+
+func (y YTT) Args(input []string) []string {
+	args := []string{}
+	for i:=0; i<len(input); i++{
+		args = append(args, []string{"-f", input[i]}...)
+	}
+	args = append(args, []string{"-f", y.InputPath, y.OutputPath}...)
+	return args
+}
+
 //DownloadYtt - to download ytt
-func DownloadYtt() error{
+func DownloadYtt() error {
 	if _, err := os.Stat("ytt"); os.IsNotExist(err) {
 		name := runtime.GOOS
 		url := fmt.Sprintf("https://github.com/k14s/ytt/releases/download/v0.13.0/ytt-%s-amd64", name)
