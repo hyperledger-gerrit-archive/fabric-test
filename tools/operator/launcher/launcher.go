@@ -48,7 +48,7 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 		}
 
 		if kubeConfigPath != "" {
-			nl.CreateMspSecret(input, kubeConfigPath)
+			nl.Msp(input, kubeConfigPath)
 		}
 
 		err = nl.GenerateGenesisBlock(input, kubeConfigPath)
