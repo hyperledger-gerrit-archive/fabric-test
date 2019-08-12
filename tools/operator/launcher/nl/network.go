@@ -24,17 +24,18 @@ func GetConfigData(networkSpecPath string) networkspec.Config {
 	var config networkspec.Config
 	yamlFile, err := ioutil.ReadFile(networkSpecPath)
 	if err != nil {
-		log.Fatalf("Failed to read input file; err = %v", err)
+		log.Fatalf("Failed to read input file; err = %s", err)
 	}
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
-		log.Fatalf("Failed to create config object; err = %v", err)
+		log.Fatalf("Failed to create config object; err = %s", err)
 	}
 	return config
 }
 
 //GenerateConfigurationFiles - to generate all the configuration files
 func GenerateConfigurationFiles(kubeConfigPath string) error {
+
 	var err error
 	if kubeConfigPath != "" {
 		err = client.ExecuteCommand("./ytt", "-f", "../templates/configtx.yaml", "-f", "../templates/crypto-config.yaml", "-f", "../templates/k8s/", "-f", "../templates/input.yaml", "--output=./../configFiles/")
@@ -51,32 +52,30 @@ func GenerateConfigurationFiles(kubeConfigPath string) error {
 func GenerateCryptoCerts(input networkspec.Config, kubeConfigPath string) error {
 
 	configPath := filepath.Join(input.ArtifactsLocation, "crypto-config")
-	err := client.ExecuteCommand("cryptogen", "generate", "--config=./../configFiles/crypto-config.yaml", fmt.Sprintf("--output=%v", configPath))
+	err := client.ExecuteCommand("cryptogen", "generate", "--config=./../configFiles/crypto-config.yaml", fmt.Sprintf("--output=%s", configPath))
 	if err != nil {
 		return err
 	}
-	if kubeConfigPath == "" {
-		for i := 0; i < len(input.OrdererOrganizations); i++ {
-			org := input.OrdererOrganizations[i]
-			err = changeKeyName(input.ArtifactsLocation, "orderer", org.Name, "ca", org.NumCA)
-			if err != nil {
-				return err
-			}
-			err = changeKeyName(input.ArtifactsLocation, "orderer", org.Name, "tlsca", org.NumCA)
-			if err != nil {
-				return err
-			}
+	for i := 0; i < len(input.OrdererOrganizations); i++ {
+		org := input.OrdererOrganizations[i]
+		err = changeKeyName(input.ArtifactsLocation, "orderer", org.Name, "ca")
+		if err != nil {
+			return err
 		}
-		for i := 0; i < len(input.PeerOrganizations); i++ {
-			org := input.PeerOrganizations[i]
-			err = changeKeyName(input.ArtifactsLocation, "peer", org.Name, "ca", org.NumCA)
-			if err != nil {
-				return err
-			}
-			err = changeKeyName(input.ArtifactsLocation, "peer", org.Name, "tlsca", org.NumCA)
-			if err != nil {
-				return err
-			}
+		err = changeKeyName(input.ArtifactsLocation, "orderer", org.Name, "tlsca")
+		if err != nil {
+			return err
+		}
+	}
+	for i := 0; i < len(input.PeerOrganizations); i++ {
+		org := input.PeerOrganizations[i]
+		err = changeKeyName(input.ArtifactsLocation, "peer", org.Name, "ca")
+		if err != nil {
+			return err
+		}
+		err = changeKeyName(input.ArtifactsLocation, "peer", org.Name, "tlsca")
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -88,13 +87,13 @@ func GenerateGenesisBlock(input networkspec.Config, kubeConfigPath string) error
 	path := filepath.Join(input.ArtifactsLocation, "channel-artifacts")
 	_ = os.Mkdir(path, 0755)
 
-	err := client.ExecuteCommand("configtxgen", "-profile", "testOrgsOrdererGenesis", "-channelID", "orderersystemchannel", "-outputBlock", fmt.Sprintf("%v/genesis.block", path), "-configPath=./../configFiles/")
+	err := client.ExecuteCommand("configtxgen", "-profile", "testOrgsOrdererGenesis", "-channelID", "orderersystemchannel", "-outputBlock", fmt.Sprintf("%s/genesis.block", path), "-configPath=./../configFiles/")
 	if err != nil {
 		return err
 	}
 
 	if kubeConfigPath != "" {
-		err = client.ExecuteK8sCommand(kubeConfigPath, "create", "secret", "generic", "genesisblock", fmt.Sprintf("--from-file=%v/genesis.block", path))
+		err = client.ExecuteK8sCommand(kubeConfigPath, "create", "secret", "generic", "genesisblock", fmt.Sprintf("--from-file=%s/genesis.block", path))
 		if err != nil {
 			return err
 		}
@@ -106,12 +105,7 @@ func GenerateGenesisBlock(input networkspec.Config, kubeConfigPath string) error
 //LaunchK8sComponents - to launch the kubernates components
 func LaunchK8sComponents(kubeConfigPath string, isDataPersistence string) error {
 
-	err := client.ExecuteK8sCommand(kubeConfigPath, "create", "configmap", "certsparser", "--from-file=./scripts/certs-parser.sh")
-	if err != nil {
-		return err
-	}
-
-	err = client.ExecuteK8sCommand(kubeConfigPath, "apply", "-f", "./../configFiles/fabric-k8s-service.yaml", "-f", "./../configFiles/fabric-k8s-pods.yaml")
+	err := client.ExecuteK8sCommand(kubeConfigPath, "apply", "-f", "./../configFiles/fabric-k8s-service.yaml", "-f", "./../configFiles/fabric-k8s-pods.yaml")
 	if err != nil {
 		return err
 	}
@@ -128,6 +122,7 @@ func LaunchK8sComponents(kubeConfigPath string, isDataPersistence string) error 
 
 //LaunchLocalNetwork - to launch the network in the local environment
 func LaunchLocalNetwork() error {
+
 	cmd := exec.Command("docker-compose", "-f", "./../configFiles/docker-compose.yaml", "up", "-d")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -138,20 +133,18 @@ func LaunchLocalNetwork() error {
 	return nil
 }
 
-func changeKeyName(artifactsLocation, orgType, orgName, caType string, numCA int) error {
+func changeKeyName(artifactsLocation, orgType, orgName, caType string) error {
 
-	path := filepath.Join(artifactsLocation, fmt.Sprintf("crypto-config/%vOrganizations/%v/%v", orgType, orgName, caType))
-	for j := 0; j < numCA; j++ {
-		files, err := ioutil.ReadDir(path)
-		if err != nil {
-			return fmt.Errorf("Failed to read files; err:%v", err)
-		}
-		for _, file := range files {
-			if strings.HasSuffix(file.Name(), "_sk") && file.Name() != "priv_sk" {
-				err = client.ExecuteCommand("cp", filepath.Join(path, file.Name()), filepath.Join(path, "priv_sk"))
-				if err != nil {
-					return fmt.Errorf("Failed to copy files; err:%v", err)
-				}
+	path := filepath.Join(artifactsLocation, fmt.Sprintf("crypto-config/%sOrganizations/%s/%s", orgType, orgName, caType))
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		return fmt.Errorf("Failed to read files; err:%s", err)
+	}
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), "_sk") {
+			err = client.ExecuteCommand("mv", filepath.Join(path, file.Name()), filepath.Join(path, fmt.Sprintf("%s-priv_sk", caType)))
+			if err != nil {
+				return fmt.Errorf("Failed to copy files; err:%s", err)
 			}
 		}
 	}
