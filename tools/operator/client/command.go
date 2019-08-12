@@ -29,14 +29,11 @@ func ExecuteCommand(name string, args []string, printLogs bool) (string, error) 
 }
 
 //ExecuteK8sCommand - to execute the k8s commands
-func ExecuteK8sCommand(kubeConfigPath string,  printLogs bool, args ...string) error {
+func ExecuteK8sCommand(args []string, printLogs bool) (string, error) {
 
-	kubeconfig := fmt.Sprintf("--kubeconfig=%s", kubeConfigPath)
-	newArgs := []string{kubeconfig}
-	newArgs = append(newArgs, args...)
-	_, err := ExecuteCommand("kubectl", newArgs, printLogs)
+	output, err := ExecuteCommand("kubectl", args, printLogs)
 	if err != nil {
-		return fmt.Errorf("err: %s", err)
+		return output, fmt.Errorf("err: %s", err)
 	}
-	return nil
+	return output, nil
 }
