@@ -10,8 +10,8 @@ import (
 	"log"
 
 	"github.com/hyperledger/fabric-test/tools/operator/client"
-	"github.com/hyperledger/fabric-test/tools/operator/health"
 	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
+	"github.com/hyperledger/fabric-test/tools/operator/health"
 	"github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	"github.com/hyperledger/fabric-test/tools/operator/utils"
@@ -45,9 +45,9 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 		}
 
 		if kubeConfigPath != "" {
-			err = nl.CreateMspSecret(input, kubeConfigPath)
+			err = nl.Msp(input, kubeConfigPath)
 			if err != nil {
-				log.Fatal(err)
+				log.Fatal("Failed to create msp; err = %s", err)
 			}
 		}
 
@@ -69,7 +69,7 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 		} else {
 			err = nl.LaunchLocalNetwork()
 			if err != nil {
-				log.Fatalf("Failed to launch k8s components; err = %s", err)
+				log.Fatalf("Failed to launch docker containers; err = %s", err)
 			}
 		}
 
@@ -92,7 +92,7 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 	case "down":
 		err := nl.NetworkCleanUp(input, kubeConfigPath)
 		if err != nil {
-			log.Fatalf("Failed to clean up the network:; err = %s", err)
+			log.Fatalf("Failed to clean up the network; err = %s", err)
 		}
 
 	default:
