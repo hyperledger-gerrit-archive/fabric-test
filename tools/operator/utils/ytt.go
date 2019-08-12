@@ -7,10 +7,25 @@ package utils
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"runtime"
 )
+
+type YTT struct {
+	InputPath  string
+	OutputPath string
+}
+
+func (y YTT) Args(input []string) []string {
+	args := []string{}
+	for i:=0; i<len(input); i++{
+		args = append(args, []string{"-f", input[i]}...)
+	}
+	args = append(args, []string{"-f", y.InputPath, y.OutputPath}...)
+	return args
+}
 
 //DownloadYtt - to download ytt
 func DownloadYtt() error {

@@ -1,4 +1,4 @@
-package client
+package health
 
 import (
 	"errors"
@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hyperledger/fabric-test/tools/operator/client"
 	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	"github.com/hyperledger/fabric-test/tools/operator/utils"
@@ -57,24 +58,24 @@ func checkHealth(componentName, kubeconfigPath string, input networkspec.Config)
 
 	utils.PrintLogs(fmt.Sprintf("Checking health for %s", componentName))
 	var NodeIP string
-	portNumber, err := connectionprofile.GetK8sServicePort(kubeconfigPath, componentName, true)
+	portNumber, err := connectionprofile.ServicePort(kubeconfigPath, componentName, input.K8s.ServiceType, true)
 	if err != nil {
 		utils.PrintLogs(fmt.Sprintf("Failed to get the port for %s", componentName))
 		return err
 	}
 	if kubeconfigPath != "" {
-		NodeIP, err = connectionprofile.GetK8sExternalIP(kubeconfigPath, input, componentName)
+		NodeIP, err = connectionprofile.ExternalIP(kubeconfigPath, input, componentName)
 		if err != nil {
 			utils.PrintLogs(fmt.Sprintf("Failed to get the IP address for %s", componentName))
 			return err
 		}
 	} else {
-		stdoutStderr, err := exec.Command("curl", "api.ipify.org").CombinedOutput()
+		output, err := client.ExecuteCommand("curl", []string{"api.ipify.org"}, false)
 		if err != nil {
 			utils.PrintLogs("Error occured while retrieving the local IP")
 			return err
 		}
-		IPArr := strings.Split(string(stdoutStderr), "\n")
+		IPArr := strings.Split(string(output), "\n")
 		NodeIP = IPArr[len(IPArr)-1]
 	}
 
@@ -143,29 +144,32 @@ func checkK8sContainerState(kubeconfigPath string) error {
 
 func checkDockerContainerState() error {
 
-	stdoutStderr, err := exec.Command("docker", "ps", "-a").CombinedOutput()
+	args := []string{"ps", "-a"}
+	output, err := client.ExecuteCommand("docker", args, false)
 	if err != nil {
 		utils.PrintLogs("Error occured while listing all the containers")
 		return err
 	}
-	numContainers := fmt.Sprintf("%d", len(strings.Split(string(stdoutStderr), "\n")))
+	numContainers := fmt.Sprintf("%d", len(strings.Split(string(output), "\n")))
 	for i := 0; i < 6; i++ {
-		stdoutStderr, err = exec.Command("docker", "ps", "-af", "status=running").CombinedOutput()
+		args = []string{"ps", "-af", "status=running"}
+		output, err = client.ExecuteCommand("docker", args, false)
 		if err != nil {
 			utils.PrintLogs("Error occured while listing the running containers")
 			return err
 		}
-		runningContainers := fmt.Sprintf("%d", len(strings.Split(string(stdoutStderr), "\n")))
+		runningContainers := fmt.Sprintf("%d", len(strings.Split(string(output), "\n")))
 		if numContainers == runningContainers {
 			utils.PrintLogs("All the containers are up and running")
 			return nil
 		}
-		stdoutStderr, err = exec.Command("docker", "ps", "-af", "status=exited").CombinedOutput()
+		args = []string{"ps", "-af", "status=exited"}
+		output, err = client.ExecuteCommand("docker", args, false)
 		if err != nil {
 			utils.PrintLogs("Error occured while listing the exited containers")
 			return err
 		}
-		exitedContainers := len(strings.Split(strings.TrimSpace(string(stdoutStderr)), "\n"))
+		exitedContainers := len(strings.Split(strings.TrimSpace(string(output)), "\n"))
 		if exitedContainers > 1 {
 			return errors.New("Containers exited")
 		}
