@@ -45,7 +45,7 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 		}
 
 		if kubeConfigPath != "" {
-			err = nl.CreateMspSecret(input, kubeConfigPath)
+			err = nl.Msp(input, kubeConfigPath)
 			if err != nil {
 				log.Fatal(err)
 			}
