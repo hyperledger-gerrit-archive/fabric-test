@@ -10,8 +10,9 @@ import (
 	"log"
 
 	"github.com/hyperledger/fabric-test/tools/operator/client"
-	"github.com/hyperledger/fabric-test/tools/operator/helper"
+	"github.com/hyperledger/fabric-test/tools/operator/health"
 	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
+	"github.com/hyperledger/fabric-test/tools/operator/helper"
 	"github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	"github.com/hyperledger/fabric-test/tools/operator/utils"
@@ -32,13 +33,13 @@ func validateArguments(networkSpecPath *string, kubeConfigPath *string) {
 
 func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 
+	configFilesPath := helper.ConfigFilesDir()
 	switch action {
 	case "up":
 		err := nl.GenerateConfigurationFiles(kubeConfigPath)
 		if err != nil {
 			log.Fatalf("Failed to generate yaml files; err = %s", err)
 		}
-
 		err = nl.GenerateCryptoCerts(input, kubeConfigPath)
 		if err != nil {
 			log.Fatalf("Failed to generate certificates; err = %s", err)
@@ -56,7 +57,7 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 			log.Fatalf("Failed to create orderer genesis block; err = %s", err)
 		}
 
-		err = client.GenerateChannelTransaction(input, []string{}, "./../configFiles")
+		err = client.GenerateChannelTransaction(input, configFilesPath)
 		if err != nil {
 			log.Fatalf("Failed to create channel transactions; err = %s", err)
 		}
@@ -73,17 +74,17 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 			}
 		}
 
-		err = client.CheckContainersState(kubeConfigPath)
+		err = health.CheckContainersState(kubeConfigPath)
 		if err != nil {
 			log.Fatalf("Failed to check container status; err = %s", err)
 		}
 
-		err = client.CheckComponentsHealth("", kubeConfigPath, input)
+		err = health.CheckComponentsHealth("", kubeConfigPath, input)
 		if err != nil {
 			log.Fatalf("Failed to check health of fabric components; err = %s", err)
 		}
 
-		err = connectionprofile.CreateConnectionProfile(input, kubeConfigPath)
+		err = connectionprofile.GenerateConnectionProfiles(input, kubeConfigPath)
 		if err != nil {
 			log.Fatalf("Failed to create connection profile; err = %s", err)
 		}

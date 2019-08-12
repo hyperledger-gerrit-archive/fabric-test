@@ -100,7 +100,7 @@ func createMspJSON(input networkspec.Config, path string, caPath string, compone
 	b, _ := json.MarshalIndent(component, "", "  ")
 	_ = ioutil.WriteFile(fmt.Sprintf("./../configFiles/%s.json", componentName), b, 0644)
 
-	err = client.ExecuteK8sCommand(kubeConfigPath, "create", "secret", "generic", fmt.Sprintf("%s", componentName), fmt.Sprintf("--from-file=./../configFiles/%s.json", componentName))
+	err = client.ExecuteK8sCommand(kubeConfigPath,  true, "create", "secret", "generic", fmt.Sprintf("%s", componentName), fmt.Sprintf("--from-file=./../configFiles/%s.json", componentName))
 	if err != nil {
 		return err
 	}
@@ -164,7 +164,7 @@ func launchMspSecret(numComponents int, isCA bool, componentType, orgName, kubeC
 		}
 	}
 	if isCA == false && input.TLS == "mutual" {
-		err := client.ExecuteK8sCommand(kubeConfigPath, "create", "secret", "generic", fmt.Sprintf("%s-clientrootca-secret", orgName), fmt.Sprintf("--from-file=%s/%sOrganizations/%s/ca/ca.%s-cert.pem", cryptoConfigPath, componentType, orgName, orgName))
+		err := client.ExecuteK8sCommand(kubeConfigPath, true, "create", "secret", "generic", fmt.Sprintf("%s-clientrootca-secret", orgName), fmt.Sprintf("--from-file=%s/%sOrganizations/%s/ca/ca.%s-cert.pem", cryptoConfigPath, componentType, orgName, orgName))
 		if err != nil {
 			log.Printf("Failed to create msp secret with client root CA for %s", componentName)
 			return err
