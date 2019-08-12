@@ -22,21 +22,27 @@ func ExternalIP(kubeconfigPath string, input networkspec.Config, serviceName str
 		return "localhost", nil
 	}
 	var IPAddress string
+	var input []string
+	var k8s nl.K8s
 	if input.K8s.ServiceType == "NodePort" {
-		stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%s", kubeconfigPath), "get", "nodes", "-o", `jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }'`).CombinedOutput()
+		input = []string{"get", "nodes", "-o", `jsonpath='{ $.items[*].status.addresses[?(@.type=="ExternalIP")].address }'`}
+		k8s.Input = input
+		output, err := client.ExecuteK8sCommand(k8s.Args(kubeconfigPath))
 		if err != nil {
 			log.Println("Failed to get the external IP for k8s using NodePor")
 			return "", err
 		}
-		IPAddressList := strings.Split(string(stdoutStderr)[1:], " ")
+		IPAddressList := strings.Split(string(output)[1:], " ")
 		IPAddress = IPAddressList[0]
 	} else if input.K8s.ServiceType == "LoadBalancer" {
-		stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%s", kubeconfigPath), "get", "-o", `jsonpath="{.status.loadBalancer.ingress[0].ip}"`, "services", serviceName).CombinedOutput()
+		input = {"get", "-o", `jsonpath="{.status.loadBalancer.ingress[0].ip}"`, "services", serviceName}
+		k8s.Input = input
+		output, err := client.ExecuteK8sCommand(k8s.Args(kubeconfigPath))
 		if err != nil {
 			log.Println("Failed to get the external IP for k8s using NodePort")
 			return "", err
 		}
-		IPAddress = string(stdoutStderr)[1 : len(string(stdoutStderr))-1]
+		IPAddress = string(output)[1 : len(string(output))-1]
 	}
 
 	return IPAddress, nil
@@ -69,12 +75,14 @@ func k8sServicePort(kubeconfigPath, serviceName, serviceType string, forHealth b
 	if forHealth {
 		index = 1
 	}
-	stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%s", kubeconfigPath), "get", "-o", fmt.Sprintf(`jsonpath="{.spec.ports[%v].nodePort}"`, index), "services", serviceName).CombinedOutput()
+	input := {"get", "-o", fmt.Sprintf(`jsonpath="{.spec.ports[%v].nodePort}"`, index), "services", serviceName}
+	k8s := nl.K8s{Action:"", Input:input}
+	output, err := client.ExecuteK8sCommand(k8s.Args(kubeconfigPath))
 	if err != nil {
 		log.Printf("Failed to get the port number for service %s", serviceName)
 		return "", err
 	}
-	port = string(stdoutStderr)
+	port = string(output)
 	port = port[1 : len(port)-1]
 	return port, nil
 }

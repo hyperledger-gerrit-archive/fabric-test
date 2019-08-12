@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/hyperledger/fabric-test/tools/operator/client"
+	"github.com/hyperledger/fabric-test/tools/operator/nl"
 	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	// k8s "k8s.io/client-go/kubernetes"
@@ -123,12 +124,14 @@ func checkK8sContainerState(kubeconfigPath string) error {
 		if status == "No resources found." {
 			return nil
 		}
-		stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%s", kubeconfigPath), "get", "pods", "--field-selector=status.phase!=Running").CombinedOutput()
+		input := []string{"get", "pods", "--field-selector=status.phase!=Running"}
+		k8s := nl.K8s{Action:"", Input: input}
+		output, err := client.ExecuteK8sCommand(k8s.Args(kubeconfigPath))
 		if err != nil {
 			log.Println("Error occured while getting the number of containers in running state")
 			return err
 		}
-		status = strings.TrimSpace(string(stdoutStderr))
+		status = strings.TrimSpace(string(output))
 		if status == "No resources found." {
 			log.Println("All pods are up and running")
 			return nil

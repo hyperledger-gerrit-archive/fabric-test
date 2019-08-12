@@ -60,7 +60,7 @@ func GenerateCryptoCerts(input networkspec.Config, kubeConfigPath string) error 
 
 	artifactsLocation := input.ArtifactsLocation
 	outputPath := helper.CryptoConfigDir(artifactsLocation)
-	config := helper.JoinPath(helper.ConfigFilesDir(), "crypto-config.yaml")
+	config := helper.ConfigFilePath("crypto-config")
 	generate := client.Cryptogen{Config: config, Output: outputPath}
 	_, err := client.ExecuteCommand("cryptogen", generate.Args(), true)
 	if err != nil {
