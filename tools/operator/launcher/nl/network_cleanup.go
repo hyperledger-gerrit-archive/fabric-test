@@ -21,13 +21,11 @@ func NetworkCleanUp(input networkspec.Config, kubeConfigPath string) error {
         for i := 0; i < numOrdererOrganizations; i++ {
             ordererOrg := input.OrdererOrganizations[i]
             numOrderers := ordererOrg.NumOrderers
-            deleteSecrets(numOrderers, "orderer", input.OrdererOrganizations[i].Name, kubeConfigPath, input.TLS)
-            deleteSecrets(input.OrdererOrganizations[i].NumCA, "ca", input.OrdererOrganizations[i].Name, kubeConfigPath, input.TLS)
+            deleteType(numOrderers, ordererOrg.NumCA, "orderer", input.OrdererOrganizations[i].Name, kubeConfigPath, input.TLS)
         }
 
         for i := 0; i < len(input.PeerOrganizations); i++ {
-            deleteSecrets(input.PeerOrganizations[i].NumPeers, "peer", input.PeerOrganizations[i].Name, kubeConfigPath, input.TLS)
-            deleteSecrets(input.PeerOrganizations[i].NumCA, "ca", input.PeerOrganizations[i].Name, kubeConfigPath, input.TLS)
+            deleteType(input.PeerOrganizations[i].NumPeers, input.PeerOrganizations[i].NumCA, "peer", input.PeerOrganizations[i].Name, kubeConfigPath, input.TLS)
         }
         err = client.ExecuteK8sCommand(kubeConfigPath, "delete", "secrets", "genesisblock")
         err = client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./../configFiles/fabric-k8s-pods.yaml")
@@ -35,8 +33,9 @@ func NetworkCleanUp(input networkspec.Config, kubeConfigPath string) error {
             err = client.ExecuteK8sCommand(kubeConfigPath, "apply", "-f", "./scripts/alpine.yaml")
         }
         err = client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./../configFiles/fabric-k8s-service.yaml")
-        err = client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./../configFiles/fabric-k8s-pvc.yaml")
-        err = client.ExecuteK8sCommand(kubeConfigPath, "delete", "configmaps", "certsparser")
+        if input.K8s.DataPersistence == "true" {
+            err = client.ExecuteK8sCommand(kubeConfigPath, "delete", "-f", "./../configFiles/fabric-k8s-pvc.yaml")
+        }
     } else {
         err = client.ExecuteCommand("docker-compose", "-f", "./../configFiles/docker-compose.yaml", "down")
     }
@@ -58,15 +57,22 @@ func NetworkCleanUp(input networkspec.Config, kubeConfigPath string) error {
     return nil
 }
 
-func deleteSecrets(numComponents int, componentType, orgName, kubeConfigPath, tls string) {
+func deleteType(numComponents int, numCa int, componentType, orgName, kubeConfigPath, tls string) {
 
     for j := 0; j < numComponents; j++ {
         componentName := fmt.Sprintf("%s%d-%s", componentType, j, orgName)
-        err := client.ExecuteK8sCommand(kubeConfigPath, "delete", "secrets", componentName)
+        err := client.ExecuteK8sCommand(kubeConfigPath, "delete", "configmap", fmt.Sprintf("%s-msp", componentName), fmt.Sprintf("%s-tls", componentName))
+        if err != nil {
+            fmt.Println(err.Error())
+        }
+    }
+    if numCa > 0 {
+        err := client.ExecuteK8sCommand(kubeConfigPath, "delete", "configmap", fmt.Sprintf("%s-ca", orgName))
         if err != nil {
             utils.PrintLogs("", err)
         }
     }
+
     if (componentType == "peer" || componentType == "orderer") && tls == "mutual" {
         err := client.ExecuteK8sCommand(kubeConfigPath, "delete", "secrets", fmt.Sprintf("%s-clientrootca-secret", orgName))
         if err != nil {

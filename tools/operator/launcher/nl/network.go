@@ -37,6 +37,7 @@ func GetConfigData(networkSpecPath string) (networkspec.Config, error) {
 
 //GenerateConfigurationFiles - to generate all the configuration files
 func GenerateConfigurationFiles(kubeConfigPath string) error {
+
 	var err error
 	configtxPath := helper.TemplateFilePath("configtx")
 	cryptoConfigPath := helper.TemplateFilePath("crypto-config")
@@ -64,28 +65,26 @@ func GenerateCryptoCerts(input networkspec.Config, kubeConfigPath string) error 
 	if err != nil {
 		return err
 	}
-	if kubeConfigPath == "" {
-		for i := 0; i < len(input.OrdererOrganizations); i++ {
-			org := input.OrdererOrganizations[i]
-			err = changeKeyName(input.ArtifactsLocation, "orderer", org.Name, "ca", org.NumCA)
-			if err != nil {
-				return err
-			}
-			err = changeKeyName(input.ArtifactsLocation, "orderer", org.Name, "tlsca", org.NumCA)
-			if err != nil {
-				return err
-			}
+	for i := 0; i < len(input.OrdererOrganizations); i++ {
+		org := input.OrdererOrganizations[i]
+		err = changeKeyName(input.ArtifactsLocation, "orderer", org.Name, "ca")
+		if err != nil {
+			return err
 		}
-		for i := 0; i < len(input.PeerOrganizations); i++ {
-			org := input.PeerOrganizations[i]
-			err = changeKeyName(input.ArtifactsLocation, "peer", org.Name, "ca", org.NumCA)
-			if err != nil {
-				return err
-			}
-			err = changeKeyName(input.ArtifactsLocation, "peer", org.Name, "tlsca", org.NumCA)
-			if err != nil {
-				return err
-			}
+		err = changeKeyName(input.ArtifactsLocation, "orderer", org.Name, "tlsca")
+		if err != nil {
+			return err
+		}
+	}
+	for i := 0; i < len(input.PeerOrganizations); i++ {
+		org := input.PeerOrganizations[i]
+		err = changeKeyName(input.ArtifactsLocation, "peer", org.Name, "ca")
+		if err != nil {
+			return err
+		}
+		err = changeKeyName(input.ArtifactsLocation, "peer", org.Name, "tlsca")
+		if err != nil {
+			return err
 		}
 	}
 	return nil
@@ -114,12 +113,7 @@ func GenerateGenesisBlock(input networkspec.Config, kubeConfigPath string) error
 //LaunchK8sComponents - to launch the kubernates components
 func LaunchK8sComponents(kubeConfigPath string, isDataPersistence string) error {
 
-	err := client.ExecuteK8sCommand(kubeConfigPath, "create", "configmap", "certsparser", "--from-file=./scripts/certs-parser.sh")
-	if err != nil {
-		return err
-	}
-
-	err = client.ExecuteK8sCommand(kubeConfigPath, "apply", "-f", "./../configFiles/fabric-k8s-service.yaml", "-f", "./../configFiles/fabric-k8s-pods.yaml")
+	err := client.ExecuteK8sCommand(kubeConfigPath, "apply", "-f", "./../configFiles/fabric-k8s-service.yaml", "-f", "./../configFiles/fabric-k8s-pods.yaml")
 	if err != nil {
 		return err
 	}
@@ -136,6 +130,7 @@ func LaunchK8sComponents(kubeConfigPath string, isDataPersistence string) error 
 
 //LaunchLocalNetwork - to launch the network in the local environment
 func LaunchLocalNetwork() error {
+
 	cmd := exec.Command("docker-compose", "-f", "./../configFiles/docker-compose.yaml", "up", "-d")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -146,22 +141,19 @@ func LaunchLocalNetwork() error {
 	return nil
 }
 
-func changeKeyName(artifactsLocation, orgType, orgName, caType string, numCA int) error {
+func changeKeyName(artifactsLocation, orgType, orgName, caType string) error {
 
-	path := helper.JoinPath(artifactsLocation, fmt.Sprintf("crypto-config/%sOrganizations/%s/%s", orgType, orgName, caType))
-	for j := 0; j < numCA; j++ {
-		files, err := ioutil.ReadDir(path)
-		if err != nil {
-			utils.PrintLogs("Failed to read files")
-			return err
-		}
-		for _, file := range files {
-			if strings.HasSuffix(file.Name(), "_sk") && file.Name() != "priv_sk" {
-				err = client.ExecuteCommand("cp", helper.JoinPath(path, file.Name()), helper.JoinPath(path, "priv_sk"))
-				if err != nil {
-					utils.PrintLogs("Failed to copy files")
-					return err
-				}
+	path := filepath.Join(artifactsLocation, fmt.Sprintf("crypto-config/%sOrganizations/%s/%s", orgType, orgName, caType))
+	files, err := ioutil.ReadDir(path)
+	if err != nil {
+		utils.PrintLogs("Failed to read files; err")
+	}
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), "_sk") {
+			err = client.ExecuteCommand("mv", filepath.Join(path, file.Name()), filepath.Join(path, fmt.Sprintf("%s-priv_sk", caType)))
+			if err != nil {
+				utils.PrintLogs("Failed to copy files")
+				return err
 			}
 		}
 	}
