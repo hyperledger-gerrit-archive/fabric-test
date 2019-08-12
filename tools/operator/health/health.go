@@ -1,56 +1,55 @@
 package health
 
 import (
-	"errors"
-	"fmt"
-	"io/ioutil"
-	"net/http"
-	"os/exec"
-	"strings"
-	"time"
+    "errors"
+    "fmt"
+    "io/ioutil"
+    "net/http"
+    "strings"
+    "time"
 
-	"github.com/hyperledger/fabric-test/tools/operator/client"
-	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
-	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
-	"github.com/hyperledger/fabric-test/tools/operator/utils"
-	// k8s "k8s.io/client-go/kubernetes"
+    "github.com/hyperledger/fabric-test/tools/operator/client"
+    "github.com/hyperledger/fabric-test/tools/operator/utils"
+   "github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
+    "github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
+    "github.com/hyperledger/fabric-test/tools/operator/networkspec"
 )
 
 //CheckComponentsHealth -- to check the health of a peer or an orderer
 func CheckComponentsHealth(componentName, kubeconfigPath string, input networkspec.Config) error {
 
-	var err error
-	time.Sleep(15 * time.Second)
-	if componentName != "" {
-		err = checkHealth(componentName, kubeconfigPath, input)
-		if err != nil {
-			return err
-		}
-	} else {
-		for i := 0; i < len(input.OrdererOrganizations); i++ {
-			org := input.OrdererOrganizations[i]
-			for j := 0; j < org.NumOrderers; j++ {
-				ordererName := fmt.Sprintf("orderer%d-%s", j, org.Name)
-				err = checkHealth(ordererName, kubeconfigPath, input)
-				if err != nil {
-					return err
-				}
-			}
-		}
+    var err error
+    time.Sleep(15 * time.Second)
+    if componentName != "" {
+        err = checkHealth(componentName, kubeconfigPath, input)
+        if err != nil {
+            return err
+        }
+    } else {
+        for i := 0; i < len(input.OrdererOrganizations); i++ {
+            org := input.OrdererOrganizations[i]
+            for j := 0; j < org.NumOrderers; j++ {
+                ordererName := fmt.Sprintf("orderer%d-%s", j, org.Name)
+                err = checkHealth(ordererName, kubeconfigPath, input)
+                if err != nil {
+                    return err
+                }
+            }
+        }
 
-		for i := 0; i < len(input.PeerOrganizations); i++ {
-			org := input.PeerOrganizations[i]
-			for j := 0; j < org.NumPeers; j++ {
-				peerName := fmt.Sprintf("peer%d-%s", j, org.Name)
-				err = checkHealth(peerName, kubeconfigPath, input)
-				if err != nil {
-					return err
-				}
-			}
-		}
-	}
+        for i := 0; i < len(input.PeerOrganizations); i++ {
+            org := input.PeerOrganizations[i]
+            for j := 0; j < org.NumPeers; j++ {
+                peerName := fmt.Sprintf("peer%d-%s", j, org.Name)
+                err = checkHealth(peerName, kubeconfigPath, input)
+                if err != nil {
+                    return err
+                }
+            }
+        }
+    }
 
-	return nil
+    return nil
 }
 
 func checkHealth(componentName, kubeconfigPath string, input networkspec.Config) error {
@@ -100,43 +99,45 @@ func checkHealth(componentName, kubeconfigPath string, input networkspec.Config)
 //CheckContainersState -- Checks whether the pod is running or not
 func VerifyContainersAreRunning(kubeconfigPath string) error {
 
-	utils.PrintLogs("Checking the state of all the containers")
-	var err error
-	if kubeconfigPath != "" {
-		err = checkK8sContainerState(kubeconfigPath)
-		if err != nil {
-			return err
-		}
-	} else {
-		err = checkDockerContainerState()
-		if err != nil {
-			return err
-		}
-	}
-	return nil
+    utils.PrintLogs("Checking the state of all the containers")
+    var err error
+    if kubeconfigPath != "" {
+        err = checkK8sContainerState(kubeconfigPath)
+        if err != nil {
+            return err
+        }
+    } else {
+        err = checkDockerContainerState()
+        if err != nil {
+            return err
+        }
+    }
+    return nil
 }
 
 func checkK8sContainerState(kubeconfigPath string) error {
 
-	var status string
-	for i := 0; i < 10; i++ {
-		if status == "No resources found." {
-			return nil
-		}
-		stdoutStderr, err := exec.Command("kubectl", fmt.Sprintf("--kubeconfig=%s", kubeconfigPath), "get", "pods", "--field-selector=status.phase!=Running").CombinedOutput()
-		if err != nil {
-			utils.PrintLogs("Error occured while getting the number of containers in running state")
-			return err
-		}
-		status = strings.TrimSpace(string(stdoutStderr))
-		if status == "No resources found." {
-			utils.PrintLogs("All pods are up and running")
-			return nil
-		}
-		utils.PrintLogs(fmt.Sprintf("Waiting up to 10 minutes for pods to be up and running; minute = %d", i))
-		time.Sleep(60 * time.Second)
-	}
-	return errors.New("Waiting time exceeded")
+    var status string
+    for i := 0; i < 10; i++ {
+        if status == "No resources found." {
+            return nil
+        }
+        input := []string{"get", "pods", "--field-selector=status.phase!=Running"}
+        k8s := nl.K8s{Action:"", Input: input}
+        output, err := client.ExecuteK8sCommand(k8s.Args(kubeconfigPath), false)
+        if err != nil {
+            utils.PrintLogs("Error occured while getting the number of containers in running state")
+            return err
+        }
+        status = strings.TrimSpace(string(output))
+        if status == "No resources found." {
+            utils.PrintLogs("All pods are up and running")
+            return nil
+        }
+        utils.PrintLogs(fmt.Sprintf("Waiting up to 10 minutes for pods to be up and running; minute = %d", i))
+        time.Sleep(60 * time.Second)
+    }
+    return errors.New("Waiting time exceeded")
 }
 
 func checkDockerContainerState() error {
