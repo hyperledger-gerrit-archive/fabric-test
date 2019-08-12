@@ -1,11 +1,10 @@
-package helper
+package utils
 
 import (
 	"log"
 	"os"
 	"path/filepath"
 	"strings"
-	"fmt"
 )
 
 //CryptoConfigDir --
@@ -99,7 +98,7 @@ func createDirectory(dirPath string) error {
 	if err != nil {
 		return err
 	}
-	return nil 
+	return nil
 }
 
 func componentPath(artifactsLocation, component string) string {
