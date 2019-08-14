@@ -6,6 +6,7 @@ package nl
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/hyperledger/fabric-test/tools/operator/client"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
@@ -53,7 +54,7 @@ func createCertsConfigmap(numComponents int, numCA int, componentType, orgName, 
 		k8sComponentName = fmt.Sprintf("%s-msp", componentName)
 		err = createConfigmapsNSecrets(inputPaths, k8sComponentName, "configmap", kubeConfigPath)
 		if err != nil {
-			utils.PrintLogs(fmt.Sprintf("Failed to create msp configmap for %s", componentName))
+			log.Printf("Failed to create msp configmap for %s", componentName)
 			return err
 		}
 		k8sComponentName = fmt.Sprintf("%s-tls", componentName)
@@ -61,7 +62,7 @@ func createCertsConfigmap(numComponents int, numCA int, componentType, orgName, 
 		// Creating tls configmap for components
 		err = createConfigmapsNSecrets(inputPaths, k8sComponentName, "configmap", kubeConfigPath)
 		if err != nil {
-			utils.PrintLogs(fmt.Sprintf("Failed to create tls configmap for %s", componentName))
+			log.Printf("Failed to create tls configmap for %s", componentName)
 			return err
 		}
 	}
@@ -73,7 +74,7 @@ func createCertsConfigmap(numComponents int, numCA int, componentType, orgName, 
 		inputPaths = []string{fmt.Sprintf("%s/ca/", caPath), fmt.Sprintf("%s/tlsca/", caPath)}
 		err = createConfigmapsNSecrets(inputPaths, k8sComponentName, "configmap", kubeConfigPath)
 		if err != nil {
-			utils.PrintLogs(fmt.Sprintf("Failed to create ca configmap for %s", componentName))
+			log.Printf("Failed to create ca configmap for %s", componentName)
 			return err
 		}
 	}
@@ -83,7 +84,7 @@ func createCertsConfigmap(numComponents int, numCA int, componentType, orgName, 
 		path = utils.JoinPath(cryptoConfigPath, fmt.Sprintf("%sOrganizations/%s/ca/ca.%s-cert.pem", componentType, orgName, orgName))
 		err = createConfigmapsNSecrets(inputPaths, k8sComponentName, "secret", kubeConfigPath)
 		if err != nil {
-			utils.PrintLogs(fmt.Sprintf("Failed to create secret for %s client root CA", componentName))
+			log.Printf("Failed to create secret for %s client root CA", componentName)
 			return err
 		}
 	}

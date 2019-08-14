@@ -7,6 +7,8 @@ package nl
 import (
 	"os"
 	"fmt"
+	"log"
+
 	"github.com/hyperledger/fabric-test/tools/operator/utils"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 )
@@ -21,7 +23,7 @@ func NetworkCleanUp(input networkspec.Config, kubeConfigPath string) error {
 		err = DownLocalNetwork()
 	}
 	if err != nil {
-		utils.PrintLogs(fmt.Sprintf("%s", err))
+		log.Println(err)
 	}
 	err = os.RemoveAll(utils.ConfigFilesDir())
 	err = os.RemoveAll(utils.JoinPath(utils.TemplatesDir(), "input.yaml"))
