@@ -3,8 +3,8 @@ package client
 import (
 	"fmt"
 	"strings"
+	"log"
 
-	"github.com/hyperledger/fabric-test/tools/operator/utils"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 )
 
@@ -24,6 +24,6 @@ func MigrateToRaft(input networkspec.Config, kubeConfigPath string) error {
 	if err != nil {
 		return err
 	}
-	utils.PrintLogs("Successfully migrated from kafka to etcdraft")
+	log.Println("Successfully migrated from kafka to etcdraft")
 	return nil
 }
