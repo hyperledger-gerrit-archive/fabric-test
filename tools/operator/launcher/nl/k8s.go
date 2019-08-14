@@ -6,6 +6,7 @@ package nl
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/hyperledger/fabric-test/tools/operator/client"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
@@ -68,7 +69,7 @@ func LaunchK8sComponents(kubeConfigPath string, isDataPersistence string) error 
 	k8s := K8s{Action: "apply", Input: inputPaths}
 	_, err := client.ExecuteK8sCommand(k8s.Args(kubeConfigPath), true)
 	if err != nil {
-		utils.PrintLogs(fmt.Sprintf("Failed to launch the fabric k8s components"))
+		log.Println("Failed to launch the fabric k8s components")
 		return err
 	}
 	return nil
@@ -86,7 +87,7 @@ func DownK8sComponents(kubeConfigPath string, input networkspec.Config) error {
 		numComponents = ordererOrg.NumOrderers
 		err = deleteConfigMaps(numComponents, "orderer", ordererOrg.Name, kubeConfigPath, input.TLS, "configmaps")
 		if err != nil {
-			utils.PrintLogs(fmt.Sprintf("Failed to delete orderer configmaps in %s", ordererOrg.Name))
+			log.Printf("Failed to delete orderer configmaps in %s", ordererOrg.Name)
 		}
 		if input.TLS == "mutual" {
 			secrets = append(secrets, fmt.Sprintf("%s-clientrootca-secret", ordererOrg.Name))
@@ -98,7 +99,7 @@ func DownK8sComponents(kubeConfigPath string, input networkspec.Config) error {
 		numComponents = peerOrg.NumPeers
 		err = deleteConfigMaps(numComponents, "peer", peerOrg.Name, kubeConfigPath, input.TLS, "configmaps")
 		if err != nil {
-			utils.PrintLogs(fmt.Sprintf("Failed to delete peer secrets in %s", peerOrg.Name))
+			log.Printf("Failed to delete peer secrets in %s", peerOrg.Name)
 		}
 		if input.TLS == "mutual" {
 			secrets = append(secrets, fmt.Sprintf("%s-clientrootca-secret", peerOrg.Name))
@@ -114,7 +115,7 @@ func DownK8sComponents(kubeConfigPath string, input networkspec.Config) error {
 		k8s = K8s{Action: "apply", Input: inputPaths}
 		_, err = client.ExecuteK8sCommand(k8s.Args(kubeConfigPath), true)
 		if err != nil {
-			utils.PrintLogs("Failed to launch k8s pod")
+			log.Println("Failed to launch k8s pod")
 		}
 	}
 	inputPaths = []string{k8sServicesFile, k8sPodsFile}
@@ -125,14 +126,14 @@ func DownK8sComponents(kubeConfigPath string, input networkspec.Config) error {
 	k8s = K8s{Action: "delete", Input: inputPaths}
 	_, err = client.ExecuteK8sCommand(k8s.Args(kubeConfigPath), true)
 	if err != nil {
-		utils.PrintLogs("Failed to down k8s pods")
+		log.Println("Failed to down k8s pods")
 	}
 	inputArgs := []string{"delete", "secrets"}
 	inputArgs = append(inputArgs, secrets...)
 	k8s = K8s{Action: "", Input: inputArgs}
 	_, err = client.ExecuteK8sCommand(k8s.Args(kubeConfigPath), true)
 	if err != nil {
-		utils.PrintLogs("Failed to delete secrets")
+		log.Println("Failed to delete secrets")
 	}
 	return nil
 }
@@ -141,7 +142,7 @@ func dataPersistenceFilePath(input networkspec.Config) string {
 	var path string
 	currDir, err := utils.GetCurrentDir()
 	if err != nil {
-		utils.PrintLogs("Failed to get the current working directory")
+		log.Println("Failed to get the current working directory")
 	}
 	switch input.K8s.DataPersistence {
 	case "local":
