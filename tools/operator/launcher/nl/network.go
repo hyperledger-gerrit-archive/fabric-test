@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	
 
+	"github.com/hyperledger/fabric-test/tools/operator/logger"
 	"github.com/hyperledger/fabric-test/tools/operator/client"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	"github.com/hyperledger/fabric-test/tools/operator/utils"
@@ -21,12 +23,12 @@ func GetConfigData(networkSpecPath string) (networkspec.Config, error) {
 	var config networkspec.Config
 	yamlFile, err := ioutil.ReadFile(networkSpecPath)
 	if err != nil {
-		utils.PrintLogs("Failed to read input file")
+		logger.INFO("Failed to read input file")
 		return config, err
 	}
 	err = yaml.Unmarshal(yamlFile, &config)
 	if err != nil {
-		utils.PrintLogs("Failed to create config object")
+		logger.INFO("Failed to create config object")
 		return config, err
 	}
 	return config, nil
@@ -135,7 +137,7 @@ func moveKey(path, fileName string) error {
 	var err error
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		utils.PrintLogs("Failed to read files")
+		logger.INFO("Failed to read files")
 		return err
 	}
 	for _, file := range files {
@@ -143,7 +145,7 @@ func moveKey(path, fileName string) error {
 			args := []string{utils.JoinPath(path, file.Name()), utils.JoinPath(path, fileName)}
 			_, err = client.ExecuteCommand("mv", args, true)
 			if err != nil {
-				utils.PrintLogs("Failed to copy files")
+				logger.INFO("Failed to copy files")
 				return err
 			}
 		}
