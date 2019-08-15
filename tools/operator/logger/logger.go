@@ -22,5 +22,5 @@ func ERROR(err error, message ...string) {
 	if err == nil {
 		error.Fatalln(strings.Join(message, ""))
 	}
-	error.Fatalf("%s; err: %s", strings.Join(message, ""), err)
+	error.Fatalf("%s", strings.Join(message, ""), err)
 }
