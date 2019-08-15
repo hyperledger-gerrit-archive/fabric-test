@@ -1,9 +1,10 @@
 package utils
 
 import (
-	
+	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/hyperledger/fabric-test/tools/operator/logger"
@@ -79,11 +80,11 @@ func ConfigFilesDir() string {
 func ConfigFilePath(fileName string) string {
 	configFiles := map[string]string{
 		"crypto-config": "crypto-config.yaml",
-		"configtx": "configtx.yaml",
-		"docker":   "docker-compose.yaml",
-		"services": "fabric-k8s-service.yaml",
-		"pods":     "fabric-k8s-pods.yaml",
-		"pvc":      "fabric-k8s-pvc.yaml",
+		"configtx":      "configtx.yaml",
+		"docker":        "docker-compose.yaml",
+		"services":      "fabric-k8s-service.yaml",
+		"pods":          "fabric-k8s-pods.yaml",
+		"pvc":           "fabric-k8s-pvc.yaml",
 	}
 	return JoinPath(ConfigFilesDir(), configFiles[fileName])
 }
@@ -131,4 +132,20 @@ func componentPath(artifactsLocation, component string) string {
 //JoinPath ---
 func JoinPath(oldPath, newPath string) string {
 	return filepath.Join(oldPath, newPath)
+}
+
+//GetKeysFromMap --
+func GetKeysFromMap(newMap interface{}) []string {
+
+	var componentsList []string
+	v := reflect.ValueOf(newMap)
+	if v.Kind() != reflect.Map {
+		logger.ERROR("not a map!")
+		return nil
+	}
+	keys := v.MapKeys()
+	for i := range keys {
+		componentsList = append(componentsList, fmt.Sprintf("%s", keys[i]))
+	}
+	return componentsList
 }
