@@ -1,9 +1,10 @@
-package utils
+package paths
 
 import (
-	
+	"fmt"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 
 	"github.com/hyperledger/fabric-test/tools/operator/logger"
@@ -79,11 +80,11 @@ func ConfigFilesDir() string {
 func ConfigFilePath(fileName string) string {
 	configFiles := map[string]string{
 		"crypto-config": "crypto-config.yaml",
-		"configtx": "configtx.yaml",
-		"docker":   "docker-compose.yaml",
-		"services": "fabric-k8s-service.yaml",
-		"pods":     "fabric-k8s-pods.yaml",
-		"pvc":      "fabric-k8s-pvc.yaml",
+		"configtx":      "configtx.yaml",
+		"docker":        "docker-compose.yaml",
+		"services":      "fabric-k8s-service.yaml",
+		"pods":          "fabric-k8s-pods.yaml",
+		"pvc":           "fabric-k8s-pvc.yaml",
 	}
 	return JoinPath(ConfigFilesDir(), configFiles[fileName])
 }
