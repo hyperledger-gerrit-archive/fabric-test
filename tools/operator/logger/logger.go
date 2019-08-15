@@ -8,6 +8,7 @@ import (
 
 //INFO -- To print the info logs
 func INFO(message ...string) {
+
 	info := log.New(os.Stdout,
 		"INFO: ",
 		log.Ldate|log.Ltime)
