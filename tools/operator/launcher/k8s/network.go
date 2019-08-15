@@ -1,25 +1,23 @@
-// Copyright IBM Corp. All Rights Reserved.
-//
-// SPDX-License-Identifier: Apache-2.0
-
-package nl
+package k8s
 
 import (
 	"fmt"
 
 	"github.com/hyperledger/fabric-test/tools/operator/client"
+	"github.com/hyperledger/fabric-test/tools/operator/nl"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	"github.com/hyperledger/fabric-test/tools/operator/utils"
 )
 
 type K8s struct {
-	Action string
-	Input  []string
+	KubeConfigPath string
+	Action         string
+	Input          []string
 }
 
-func (k K8s) Args(kubeConfigPath string) []string {
+func (k K8s) Args() []string {
 
-	kubeConfigPath = fmt.Sprintf("--kubeconfig=%s", kubeConfigPath)
+	kubeConfigPath = fmt.Sprintf("--kubeconfig=%s", k.KubeConfigPath)
 	args := []string{kubeConfigPath}
 	if k.Action != "" {
 		args = append(args, k.Action)
@@ -36,9 +34,9 @@ func (k K8s) Args(kubeConfigPath string) []string {
 	return args
 }
 
-func (k K8s) ConfigMapsNSecretsArgs(kubeConfigPath, componentName, k8sType string) []string {
+func (k K8s) ConfigMapsNSecretsArgs(componentName, k8sType string) []string {
 
-	kubeConfigPath = fmt.Sprintf("--kubeconfig=%s", kubeConfigPath)
+	kubeConfigPath = fmt.Sprintf("--kubeconfig=%s", k.KubeConfigPath)
 	args := []string{kubeConfigPath, k.Action, k8sType}
 	if k8sType == "secret" {
 		args = append(args, "generic")
@@ -56,8 +54,31 @@ func (k K8s) ConfigMapsNSecretsArgs(kubeConfigPath, componentName, k8sType strin
 	return args
 }
 
-//LaunchK8sComponents - to launch the kubernates components
-func LaunchK8sComponents(kubeConfigPath string, isDataPersistence string) error {
+//GenerateConfigurationFiles - to generate all the configuration files
+func (k K8s) GenerateConfigurationFiles() error {
+	network := nl.Network{TemplatesDir: utils.TemplateFilePath("k8s")}
+	err := network.GenerateConfigurationFiles()
+	if err != nil{
+		return err
+	}
+	return nil
+}
+
+//LaunchK8sNetwork - to launch the kubernates components
+func (k K8s) LaunchK8sNetwork(kubeConfigPath string, isDataPersistence string) error {
+
+	err := k.GenerateConfigurationFiles()
+	if err != nil{
+		return err
+	}
+	// from network.go file
+	inputArgs := []string{utils.JoinPath(path, "genesis.block")}
+	k = K8s{KubeConfigPath: kubeConfigPath, Action: "create", Input: inputArgs}
+	_, err = client.ExecuteK8sCommand(k.ConfigMapsNSecretsArgs(k.KubeConfigPath, "genesisblock", "secret"), true)
+	if err != nil {
+		return err
+	}
+	//
 	k8sServicesFile := utils.ConfigFilePath("services")
 	k8sPodsFile := utils.ConfigFilePath("pods")
 	inputPaths := []string{k8sServicesFile, k8sPodsFile}
@@ -66,7 +87,7 @@ func LaunchK8sComponents(kubeConfigPath string, isDataPersistence string) error 
 		inputPaths = append(inputPaths, k8sPvcFile)
 	}
 	k8s := K8s{Action: "apply", Input: inputPaths}
-	_, err := client.ExecuteK8sCommand(k8s.Args(kubeConfigPath), true)
+	_, err := client.ExecuteK8sCommand(k8s.Args(), true)
 	if err != nil {
 		utils.PrintLogs(fmt.Sprintf("Failed to launch the fabric k8s components"))
 		return err
@@ -74,17 +95,18 @@ func LaunchK8sComponents(kubeConfigPath string, isDataPersistence string) error 
 	return nil
 }
 
-//DownK8sComponents - To tear down the kubernates network
-func DownK8sComponents(kubeConfigPath string, input networkspec.Config) error {
+//DownK8sNetwork - To tear down the kubernates network
+func (k K8s) DownK8sNetwork(kubeConfigPath string, input networkspec.Config) error {
 
 	var err error
 	var numComponents int
 	secrets := []string{"genesisblock"}
+	k.KubeConfigPath = kubeConfigPath
 	numOrdererOrganizations := len(input.OrdererOrganizations)
 	for i := 0; i < numOrdererOrganizations; i++ {
 		ordererOrg := input.OrdererOrganizations[i]
 		numComponents = ordererOrg.NumOrderers
-		err = deleteConfigMaps(numComponents, "orderer", ordererOrg.Name, kubeConfigPath, input.TLS, "configmaps")
+		err = deleteConfigMaps(numComponents, "orderer", ordererOrg.Name, input.TLS, "configmaps")
 		if err != nil {
 			utils.PrintLogs(fmt.Sprintf("Failed to delete orderer configmaps in %s", ordererOrg.Name))
 		}
@@ -96,7 +118,7 @@ func DownK8sComponents(kubeConfigPath string, input networkspec.Config) error {
 	for i := 0; i < len(input.PeerOrganizations); i++ {
 		peerOrg := input.PeerOrganizations[i]
 		numComponents = peerOrg.NumPeers
-		err = deleteConfigMaps(numComponents, "peer", peerOrg.Name, kubeConfigPath, input.TLS, "configmaps")
+		err = deleteConfigMaps(numComponents, "peer", peerOrg.Name, input.TLS, "configmaps")
 		if err != nil {
 			utils.PrintLogs(fmt.Sprintf("Failed to delete peer secrets in %s", peerOrg.Name))
 		}
@@ -108,11 +130,10 @@ func DownK8sComponents(kubeConfigPath string, input networkspec.Config) error {
 	k8sPodsFile := utils.ConfigFilePath("pods")
 
 	var inputPaths []string
-	var k8s K8s
 	if input.K8s.DataPersistence == "local" {
 		inputPaths = []string{dataPersistenceFilePath(input)}
-		k8s = K8s{Action: "apply", Input: inputPaths}
-		_, err = client.ExecuteK8sCommand(k8s.Args(kubeConfigPath), true)
+		k = K8s{KubeConfigPath: kubeConfigPath, Action: "apply", Input: inputPaths}
+		_, err = client.ExecuteK8sCommand(k.Args(), true)
 		if err != nil {
 			utils.PrintLogs("Failed to launch k8s pod")
 		}
@@ -122,22 +143,23 @@ func DownK8sComponents(kubeConfigPath string, input networkspec.Config) error {
 		inputPaths = append(inputPaths, dataPersistenceFilePath(input))
 	}
 
-	k8s = K8s{Action: "delete", Input: inputPaths}
-	_, err = client.ExecuteK8sCommand(k8s.Args(kubeConfigPath), true)
+	k = K8s{KubeConfigPath: kubeConfigPath, Action: "delete", Input: inputPaths}
+	_, err = client.ExecuteK8sCommand(k8s.Args(), true)
 	if err != nil {
 		utils.PrintLogs("Failed to down k8s pods")
 	}
+
 	inputArgs := []string{"delete", "secrets"}
 	inputArgs = append(inputArgs, secrets...)
-	k8s = K8s{Action: "", Input: inputArgs}
-	_, err = client.ExecuteK8sCommand(k8s.Args(kubeConfigPath), true)
+	k = K8s{KubeConfigPath: kubeConfigPath, Input: inputPaths}
+	_, err = client.ExecuteK8sCommand(k.Args(), true)
 	if err != nil {
 		utils.PrintLogs("Failed to delete secrets")
 	}
 	return nil
 }
 
-func dataPersistenceFilePath(input networkspec.Config) string {
+func (k K8s) dataPersistenceFilePath(input networkspec.Config) string {
 	var path string
 	currDir, err := utils.GetCurrentDir()
 	if err != nil {
@@ -152,7 +174,7 @@ func dataPersistenceFilePath(input networkspec.Config) string {
 	return path
 }
 
-func deleteConfigMaps(numComponents int, componentType, orgName, kubeConfigPath, tls, k8sType string) error {
+func (k K8s) deleteConfigMaps(numComponents int, componentType, orgName, tls, k8sType string) error {
 
 	componentsList := []string{fmt.Sprintf("%s-ca", orgName)}
 	var componentName string
@@ -162,8 +184,8 @@ func deleteConfigMaps(numComponents int, componentType, orgName, kubeConfigPath,
 	}
 	input := []string{"delete", k8sType}
 	input = append(input, componentsList...)
-	k8s := K8s{Action: "", Input: input}
-	_, err := client.ExecuteK8sCommand(k8s.Args(kubeConfigPath), true)
+	k.Input = input
+	_, err := client.ExecuteK8sCommand(k.Args(), true)
 	if err != nil {
 		return err
 	}
