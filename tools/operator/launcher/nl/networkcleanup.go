@@ -6,24 +6,15 @@ package nl
 
 import (
 	"os"
-	"log"
 
 	"github.com/hyperledger/fabric-test/tools/operator/utils"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 )
 
 //NetworkCleanUp - to clean up the network
-func NetworkCleanUp(input networkspec.Config, kubeConfigPath string) error {
+func (n Network) NetworkCleanUp(input networkspec.Config) error {
 	var err error
 	artifactsLocation := input.ArtifactsLocation
-	if kubeConfigPath != "" {
-		err = DownK8sComponents(kubeConfigPath, input)
-	} else {
-		err = DownLocalNetwork()
-	}
-	if err != nil {
-		log.Println(err)
-	}
 	err = os.RemoveAll(utils.ConfigFilesDir())
 	err = os.RemoveAll(utils.JoinPath(utils.TemplatesDir(), "input.yaml"))
 	err = os.RemoveAll(utils.ChannelArtifactsDir(artifactsLocation))

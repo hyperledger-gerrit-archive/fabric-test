@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"bytes"
+	"log"
 )
 
 //ExecuteCommand - to execute the cli commands
@@ -30,6 +31,7 @@ func ExecuteCommand(name string, args []string, printLogs bool) (string, error) 
 //ExecuteK8sCommand - to execute the k8s commands
 func ExecuteK8sCommand(args []string, printLogs bool) (string, error) {
 
+	log.Println("kubectl", args)
 	output, err := ExecuteCommand("kubectl", args, printLogs)
 	if err != nil {
 		return output, err
