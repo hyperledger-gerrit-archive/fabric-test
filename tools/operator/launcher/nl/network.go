@@ -16,8 +16,12 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
+type Network struct{
+	TemplatesDir string
+}
+
 //GetConfigData - to read the yaml file and parse the data
-func GetConfigData(networkSpecPath string) (networkspec.Config, error) {
+func (n Network) GetConfigData(networkSpecPath string) (networkspec.Config, error) {
 
 	var config networkspec.Config
 	yamlFile, err := ioutil.ReadFile(networkSpecPath)
@@ -34,7 +38,7 @@ func GetConfigData(networkSpecPath string) (networkspec.Config, error) {
 }
 
 //GenerateConfigurationFiles - to generate all the configuration files
-func GenerateConfigurationFiles(kubeConfigPath string) error {
+func (n Network) GenerateConfigurationFiles(kubeConfigPath string) error {
 
 	configtxPath := utils.TemplateFilePath("configtx")
 	cryptoConfigPath := utils.TemplateFilePath("crypto-config")
@@ -55,7 +59,7 @@ func GenerateConfigurationFiles(kubeConfigPath string) error {
 }
 
 // GenerateCryptoCerts -  to generate the crypto certs
-func GenerateCryptoCerts(input networkspec.Config, kubeConfigPath string) error {
+func (n Network) GenerateCryptoCerts(input networkspec.Config) error {
 
 	artifactsLocation := input.ArtifactsLocation
 	outputPath := utils.CryptoConfigDir(artifactsLocation)
@@ -67,14 +71,14 @@ func GenerateCryptoCerts(input networkspec.Config, kubeConfigPath string) error 
 	}
 	for i := 0; i < len(input.OrdererOrganizations); i++ {
 		org := input.OrdererOrganizations[i]
-		err = changeKeyName(artifactsLocation, "orderer", org.Name, org.NumOrderers)
+		err = n.changeKeyName(artifactsLocation, "orderer", org.Name, org.NumOrderers)
 		if err != nil {
 			return err
 		}
 	}
 	for i := 0; i < len(input.PeerOrganizations); i++ {
 		org := input.PeerOrganizations[i]
-		err = changeKeyName(artifactsLocation, "peer", org.Name, org.NumPeers)
+		err = n.changeKeyName(artifactsLocation, "peer", org.Name, org.NumPeers)
 		if err != nil {
 			return err
 		}
@@ -83,7 +87,7 @@ func GenerateCryptoCerts(input networkspec.Config, kubeConfigPath string) error 
 }
 
 //GenerateGenesisBlock - to generate a genesis block and to create channel transactions
-func GenerateGenesisBlock(input networkspec.Config, kubeConfigPath string) error {
+func (n Network) GenerateGenesisBlock(input networkspec.Config, kubeConfigPath string) error {
 
 	artifactsLocation := input.ArtifactsLocation
 	path := utils.ChannelArtifactsDir(artifactsLocation)
@@ -94,18 +98,10 @@ func GenerateGenesisBlock(input networkspec.Config, kubeConfigPath string) error
 	if err != nil {
 		return err
 	}
-	if kubeConfigPath != "" {
-		inputArgs := []string{utils.JoinPath(path, "genesis.block")}
-		k8s := K8s{Action: "create", Input: inputArgs}
-		_, err = client.ExecuteK8sCommand(k8s.ConfigMapsNSecretsArgs(kubeConfigPath, "genesisblock", "secret"), true)
-		if err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
-func changeKeyName(artifactsLocation, orgType, orgName string, numComponents int) error {
+func (n Network) changeKeyName(artifactsLocation, orgType, orgName string, numComponents int) error {
 
 	var path string
 	var err error
@@ -114,7 +110,7 @@ func changeKeyName(artifactsLocation, orgType, orgName string, numComponents int
 	for i := 0; i < len(caArr); i++ {
 		path = utils.JoinPath(cryptoConfigPath, fmt.Sprintf("%sOrganizations/%s/%s", orgType, orgName, caArr[i]))
 		fileName := fmt.Sprintf("%v-priv_sk", caArr[i])
-		err = moveKey(path, fileName)
+		err = n.moveKey(path, fileName)
 		if err != nil {
 			return err
 		}
@@ -122,7 +118,7 @@ func changeKeyName(artifactsLocation, orgType, orgName string, numComponents int
 	for i := 0; i < numComponents; i++ {
 		componentName := fmt.Sprintf("%s%d-%s.%s", orgType, i, orgName, orgName)
 		path = utils.JoinPath(artifactsLocation, fmt.Sprintf("crypto-config/%sOrganizations/%s/%ss/%s/msp/keystore", orgType, orgName, orgType, componentName))
-		err = moveKey(path, "priv_sk")
+		err = n.moveKey(path, "priv_sk")
 		if err != nil {
 			return err
 		}
@@ -131,7 +127,7 @@ func changeKeyName(artifactsLocation, orgType, orgName string, numComponents int
 	return nil
 }
 
-func moveKey(path, fileName string) error {
+func (n Network) moveKey(path, fileName string) error {
 
 	var err error
 	files, err := ioutil.ReadDir(path)
@@ -150,4 +146,32 @@ func moveKey(path, fileName string) error {
 		}
 	}
 	return err
+}
+
+func (n Network) Generate(input networkspec.Config) error{
+
+	configFilesPath := utils.ConfigFilesDir()
+	err := n.GenerateConfigurationFiles()
+	if err != nil {
+		log.Println("Failed to generate yaml files")
+		return err
+	}
+	err = n.GenerateCryptoCerts(input)
+	if err != nil {
+		log.Println("Failed to generate certificates")
+		return err
+	}
+
+	err = n.GenerateGenesisBlock(input)
+	if err != nil {
+		log.Println("Failed to create orderer genesis block")
+		return err
+	}
+
+	err = client.GenerateChannelTransaction(input, configFilesPath)
+	if err != nil {
+		log.Println("Failed to create channel transaction")
+		return err
+
+	}
 }
