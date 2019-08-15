@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"reflect"
 
 	"github.com/hyperledger/fabric-test/tools/operator/logger"
 )
@@ -131,4 +132,20 @@ func componentPath(artifactsLocation, component string) string {
 //JoinPath ---
 func JoinPath(oldPath, newPath string) string {
 	return filepath.Join(oldPath, newPath)
+}
+
+//GetKeysFromMap --
+func GetKeysFromMap(newMap interface{}) []string {
+
+	var componentsList []string
+	v := reflect.ValueOf(newMap)
+	if v.Kind() != reflect.Map {
+		logger.INFO("not a map!")
+		return nil
+	}
+	keys := v.MapKeys()
+	for i := range keys {
+		componentsList = append(componentsList, fmt.Sprintf("%s", keys[i]))
+	}
+	return componentsList
 }
