@@ -2,6 +2,7 @@ package client
 
 import (
 	"os"
+
 	"github.com/hyperledger/fabric-test/tools/operator/utils"
 )
 
@@ -15,20 +16,19 @@ func CreateConfigPath() error {
 	configtxPath := utils.ConfigFilePath("configtx")
 	if _, err = os.Stat(configtxPath); !os.IsNotExist(err) {
 		return nil
-	} else {
-		ytt := utils.YTTPath()
-		input := []string{configtxTemplatePath}
-		yttObject := utils.YTT{InputPath: inputFilePath, OutputPath: configFilesDir}
-		if _, err = os.Stat(ytt); os.IsNotExist(err) {
-			err = utils.DownloadYtt()
-			if err != nil {
-				return err
-			}
-		}
-		_, err = ExecuteCommand(ytt, yttObject.Args(input), true)
+	}
+	ytt := utils.YTTPath()
+	input := []string{configtxTemplatePath}
+	yttObject := utils.YTT{InputPath: inputFilePath, OutputPath: configFilesDir}
+	if _, err = os.Stat(ytt); os.IsNotExist(err) {
+		err = utils.DownloadYtt()
 		if err != nil {
 			return err
 		}
+	}
+	_, err = ExecuteCommand(ytt, yttObject.Args(input), true)
+	if err != nil {
+		return err
 	}
 	return nil
 }
