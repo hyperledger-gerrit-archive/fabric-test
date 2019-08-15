@@ -10,6 +10,8 @@ import (
 	"log"
 
 	"github.com/hyperledger/fabric-test/tools/operator/client"
+	"github.com/hyperledger/fabric-test/tools/operator/dockercompose"
+	"github.com/hyperledger/fabric-test/tools/operator/k8s"
 	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
 	"github.com/hyperledger/fabric-test/tools/operator/health"
 	"github.com/hyperledger/fabric-test/tools/operator/launcher/nl"
@@ -30,73 +32,17 @@ func validateArguments(networkSpecPath *string, kubeConfigPath *string) {
 	}
 }
 
-func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 
-	configFilesPath := utils.ConfigFilesDir()
-	switch action {
-	case "up":
-		err := nl.GenerateConfigurationFiles(kubeConfigPath)
-		if err != nil {
-			log.Fatalf("Failed to generate yaml files; err: %s", err)
-		}
-		err = nl.GenerateCryptoCerts(input, kubeConfigPath)
-		if err != nil {
-			log.Fatalf("Failed to generate certificates; err: %s", err)
-		}
 
-		if kubeConfigPath != "" {
-			err = nl.CreateMSPConfigMaps(input, kubeConfigPath)
-			if err != nil {
-				log.Fatalf("Failed to create config maps; err: %s", err)
-			}
-		}
+func doAction(action, env, kubeConfigPath string, input networkspec.Config) {
 
-		err = nl.GenerateGenesisBlock(input, kubeConfigPath)
-		if err != nil {
-			log.Fatalf("Failed to create orderer genesis block; err: %s", err)
-		}
-
-		err = client.GenerateChannelTransaction(input, configFilesPath)
-		if err != nil {
-			log.Fatalf("Failed to create channel transactions; err: %s", err)
-		}
-
-		if kubeConfigPath != "" {
-			err = nl.LaunchK8sComponents(kubeConfigPath, input.K8s.DataPersistence)
-			if err != nil {
-				log.Fatalf("Failed to launch k8s components; err: %s", err)
-			}
-		} else {
-			err = nl.LaunchLocalNetwork()
-			if err != nil {
-				log.Fatalf("Failed to launch docker containers; err: %s", err)
-			}
-		}
-
-		err = health.VerifyContainersAreRunning(kubeConfigPath)
-		if err != nil {
-			log.Fatalf("Failed to check container status; err: %s", err)
-		}
-
-		err = health.CheckComponentsHealth("", kubeConfigPath, input)
-		if err != nil {
-			log.Fatalf("Failed to check health of fabric components; err: %s", err)
-		}
-
-		err = connectionprofile.GenerateConnectionProfiles(input, kubeConfigPath)
-		if err != nil {
-			log.Fatalf("Failed to create connection profile; err: %s", err)
-		}
-		log.Println("Network is up and running")
-
-	case "down":
-		err := nl.NetworkCleanUp(input, kubeConfigPath)
-		if err != nil {
-			log.Fatalf("Failed to clean up the network; err: %s", err)
-		}
-
-	default:
-		log.Fatalf("Incorrect action (%s). Use up or down for action", action)
+	switch env  {
+	case "k8s":
+		k8s := k8s.K8s{KubeConfigPath: kubeConfigPath, Input: input}
+		k8s.K8sNetwork(action)
+	case "docker":
+		dc := dockercompose.DockerCompose{Input: input}
+		dc.DockerNetwork(action)
 	}
 }
 
@@ -122,6 +68,10 @@ func main() {
 		log.Fatalln(err)
 	}
 	validateArguments(networkSpecPath, kubeConfigPath)
+	env := "docker"
+	if *kubeConfigPath != ""{
+		env = "k8s"
+	}
 	contents, err := ioutil.ReadFile(*networkSpecPath)
 	if err != nil {
 		log.Fatalf("In-correct input file path; err: %s", err)
@@ -134,5 +84,5 @@ func main() {
 		log.Fatalln(err)
 	}
 	checkConsensusType(input)
-	doAction(*action, input, *kubeConfigPath)
+	doAction(*action, env, *kubeConfigPath, input)
 }
