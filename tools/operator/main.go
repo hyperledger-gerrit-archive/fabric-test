@@ -27,23 +27,23 @@ func validateArguments(networkSpecPath *string, kubeConfigPath *string) {
 	}
 }
 
-func doAction(action, kubeConfigPath, componentName string, input networkspec.Config) {
+func doAction(action, kubeConfigPath, componentName string, config networkspec.Config) {
 
 	switch action {
 	case "createChannelTxn":
 		configTxnPath := "./configFiles"
 		channels := []string{}
-		err := client.GenerateChannelTransaction(input, channels, configTxnPath)
+		err := client.GenerateChannelTransaction(config, channels, configTxnPath)
 		if err != nil {
 			logger.CRIT(err, "Failed to create channel transaction")
 		}
 	case "migrate":
-		err := client.MigrateToRaft(input, kubeConfigPath)
+		err := client.MigrateToRaft(config, kubeConfigPath)
 		if err != nil {
-			logger.CRIT(err, "Failed to migrate consensus to raft from", input.Orderer.OrdererType)
+			logger.CRIT(err, "Failed to migrate consensus to raft from", config.Orderer.OrdererType)
 		}
 	case "healthz":
-		err := client.CheckComponentsHealth(componentName, kubeConfigPath, input)
+		err := client.CheckComponentsHealth(componentName, kubeConfigPath, config)
 		if err != nil {
 			logger.CRIT(err, "Failed to get the health for", componentName, )
 		}
@@ -62,6 +62,9 @@ func main() {
 	inputPath := utils.JoinPath(utils.TemplatesDir(), "input.yaml")
 	ioutil.WriteFile(inputPath, contents, 0644)
 	client.CreateConfigPath()
-	input := nl.GetConfigData(inputPath)
-	doAction(action, kubeConfigPath, componentName, input)
+	config, err := nl.GetConfigData(inputPath)
+	if err != nil {
+		logger.CRIT(err)
+	}
+	doAction(action, kubeConfigPath, componentName, config)
 }
