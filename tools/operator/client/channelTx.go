@@ -3,17 +3,17 @@ package client
 import (
 	"fmt"
 
-	"github.com/hyperledger/fabric-test/tools/operator/utils"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
+	"github.com/hyperledger/fabric-test/tools/operator/utils"
 )
 
 //GenerateChannelTransaction - to generate channel transactions
-func GenerateChannelTransaction(input networkspec.Config, configtxPath string) error {
+func GenerateChannelTransaction(config networkspec.Config, configtxPath string) error {
 
-	artifactsLocation := utils.ChannelArtifactsDir(input.ArtifactsLocation)
+	artifactsLocation := utils.ChannelArtifactsDir(config.ArtifactsLocation)
 	configtxgen := Configtxgen{Config: configtxPath}
 	var outputPath string
-	for i := 0; i < input.NumChannels; i++ {
+	for i := 0; i < config.NumChannels; i++ {
 		channelName := fmt.Sprintf("testorgschannel%d", i)
 		outputPath = utils.JoinPath(artifactsLocation, fmt.Sprintf("%s.tx", channelName))
 		configtxgen.OutputPath = outputPath
@@ -22,10 +22,10 @@ func GenerateChannelTransaction(input networkspec.Config, configtxPath string) e
 			return err
 		}
 
-		for j := 0; j < len(input.PeerOrganizations); j++ {
-			outputPath = utils.JoinPath(artifactsLocation, fmt.Sprintf("%s%sanchor.tx", channelName, input.PeerOrganizations[j].MSPID))
+		for j := 0; j < len(config.PeerOrganizations); j++ {
+			outputPath = utils.JoinPath(artifactsLocation, fmt.Sprintf("%s%sanchor.tx", channelName, config.PeerOrganizations[j].MSPID))
 			configtxgen.OutputPath = outputPath
-			_, err := ExecuteCommand("configtxgen", configtxgen.AnchorPeersUpdateTxArgs(channelName, input.PeerOrganizations[j].Name), true)
+			_, err := ExecuteCommand("configtxgen", configtxgen.AnchorPeersUpdateTxArgs(channelName, config.PeerOrganizations[j].Name), true)
 			if err != nil {
 				return err
 			}
