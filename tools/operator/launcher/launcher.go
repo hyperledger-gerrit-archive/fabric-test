@@ -17,6 +17,11 @@ import (
 	"github.com/hyperledger/fabric-test/tools/operator/utils"
 )
 
+type Environment struct{
+	Env string
+	FilePath string
+}
+
 var networkSpecPath = flag.String("i", "", "Network spec input file path")
 var kubeConfigPath = flag.String("k", "", "Kube config file path")
 var action = flag.String("a", "up", "Set action(up or down)")
@@ -30,16 +35,16 @@ func validateArguments(networkSpecPath *string, kubeConfigPath *string) {
 	}
 }
 
-func doAction(action string, input networkspec.Config, kubeConfigPath string) {
+func doAction(action string, input networkspec.Config) {
 
 	configFilesPath := utils.ConfigFilesDir()
 	switch action {
 	case "up":
-		err := nl.GenerateConfigurationFiles(kubeConfigPath)
+		err := nl.GenerateConfigurationFiles()
 		if err != nil {
 			log.Fatalf("Failed to generate yaml files; err: %s", err)
 		}
-		err = nl.GenerateCryptoCerts(input, kubeConfigPath)
+		err = nl.GenerateCryptoCerts(input)
 		if err != nil {
 			log.Fatalf("Failed to generate certificates; err: %s", err)
 		}
@@ -51,7 +56,7 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 			}
 		}
 
-		err = nl.GenerateGenesisBlock(input, kubeConfigPath)
+		err = nl.GenerateGenesisBlock(input)
 		if err != nil {
 			log.Fatalf("Failed to create orderer genesis block; err: %s", err)
 		}
@@ -99,6 +104,16 @@ func doAction(action string, input networkspec.Config, kubeConfigPath string) {
 		log.Fatalf("Incorrect action (%s). Use up or down for action", action)
 	}
 }
+
+func (e Environment) network(){
+	switch e.Env{
+	case "docker":
+		
+	case "k8s":
+	default:
+	}
+}
+
 
 func checkConsensusType(input networkspec.Config) {
 
