@@ -51,6 +51,7 @@
 #@     volumeMounts.append({"mountPath": "/etc/hyperledger/fabric/artifacts/msp/signcerts/", "name": "signcerts"})
 #@     volumeMounts.append({"mountPath": "/etc/hyperledger/fabric/artifacts/msp/keystore/", "name": "keystore"})
 #@     volumeMounts.append({"mountPath": "/etc/hyperledger/fabric/artifacts/msp/tlscacerts/", "name": "tlscacerts"})
+#@     volumeMounts.append({"mountPath": "/etc/hyperledger/fabric/artifacts/msp/", "name": "config"})
 #@     volumeMounts.append({"mountPath": "/etc/hyperledger/fabric/artifacts/tls/", "name": "tls"})
 #@   end
 #@   return volumeMounts
@@ -237,11 +238,12 @@
 #@   type = {}
 #@   specData = {}
 #@   metadata = {}
-#@   initVolumes = [{"name": "admincerts", "configMap": {"name": "{}-msp".format(input), "items": [{"key": "admincerts", "path": "cert.pem"}]}},
+#@   initVolumes = [{"name": "admincerts", "configMap": {"name": "{}-admincerts".format(orgName)}},
 #@                  {"name": "cacerts", "configMap": {"name": "{}-msp".format(input), "items": [{"key": "cacerts", "path": "ca-cert.pem"}]}},
 #@                  {"name": "signcerts", "configMap": {"name": "{}-msp".format(input), "items": [{"key": "signcerts", "path": "cert.pem"}]}},
 #@                  {"name": "tlscacerts", "configMap": {"name": "{}-msp".format(input), "items": [{"key": "tlscacerts", "path": "tlsca-cert.pem"}]}},
 #@                  {"name": "keystore", "configMap": {"name": "{}-msp".format(input), "items": [{"key": "keystore", "path": "priv_sk"}]}},
+#@                  {"name": "config", "configMap": {"name": "{}-msp".format(input), "items": [{"key": "config", "path": "config.yaml"}]}},
 #@                  {"name": "tls", "configMap": {"name": "{}-tls".format(input)}}]
 #@   if input.startswith("ca"):
 #@     type = "ca"
