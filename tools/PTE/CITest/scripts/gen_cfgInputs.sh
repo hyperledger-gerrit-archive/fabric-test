@@ -255,6 +255,8 @@ GRPCTIMEOUT=30000
 # chaincode path
 CCPathsamplecc="github.com/hyperledger/fabric-test/chaincodes/samplecc/go"
 CCPathsamplecc="${CCPathsamplecc//\//\\/}"
+CCPathsamplesbe="github.com/hyperledger/fabric-test/chaincodes/sbe"
+CCPathsamplecc="${CCPathsamplesbe//\//\\/}"
 CCPathsamplejs="github.com/hyperledger/fabric-test/chaincodes/samplecc/node"
 CCPathsamplejs="${CCPathsamplejs//\//\\/}"
 CCPathsamplejava="github.com/hyperledger/fabric-test/chaincodes/samplecc/java"
@@ -273,6 +275,9 @@ getCCPath() {
     cc=$1
     if [ $cc == "sample_cc" ]; then
         CCPath=$CCPathsamplecc
+        LANGUAGE="golang"
+    elif [ $cc == "sample_sbe" ]; then
+        CCPath=$CCPathsamplesbe
         LANGUAGE="golang"
     elif [ $cc == "sample_js" ]; then
         CCPath=$CCPathsamplejs
