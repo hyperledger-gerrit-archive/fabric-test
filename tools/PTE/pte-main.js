@@ -54,34 +54,46 @@ var logger = new testUtil.PTELogger({"prefix":loggerMsg, "level":"info"});
 var localTime = new Date();
 logger.info('The local time is: %j', localTime.toLocaleString());
 
-var Nid = parseInt(process.argv[2]);
+var Nid, tStart
 var uiFile = process.argv[3];
-var tStart = parseInt(process.argv[4]);
-logger.info('input parameters: Nid=%d, uiFile=%s, tStart=%d PTEid=%d', Nid, uiFile, tStart, PTEid);
-var uiContent = testUtil.readConfigFileSubmitter(uiFile);
-logger.info('[Nid=%d pte-main] input uiContent[%s]: %j', Nid, uiFile, uiContent);
-
+console.log(process.argv)
 var txCfgPtr;
 var txCfgTmp;
-if ( typeof(uiContent.txCfgPtr) === 'undefined' ) {
-    txCfgTmp = uiFile;
-} else {
-    txCfgTmp = uiContent.txCfgPtr;
-}
-txCfgPtr = testUtil.readConfigFileSubmitter(txCfgTmp);
-logger.info('[Nid=%d pte-main] input txCfgPtr[%s]: %j', Nid, txCfgTmp, txCfgPtr);
-
-
 var ccDfnPtr;
 var ccDfnTmp;
-if ( typeof(uiContent.ccDfnPtr) === 'undefined' ) {
-    ccDfnTmp = uiFile;
-} else {
-    ccDfnTmp = uiContent.ccDfnPtr;
-}
-ccDfnPtr = testUtil.readConfigFileSubmitter(ccDfnTmp);
-logger.info('[Nid=%d pte-main] input ccDfnPtr[%s]: %j', Nid, ccDfnTmp, ccDfnPtr);
+var uiContent;
+if (uiFile) {
+    console.log("uifile provided")
+    Nid = parseInt(process.argv[2]);
+    tStart = parseInt(process.argv[4]);
+    logger.info('input parameters: Nid=%d, uiFile=%s, tStart=%d PTEid=%d', Nid, uiFile, tStart, PTEid);
+    uiContent = testUtil.readConfigFileSubmitter(uiFile);
+    logger.info('[Nid=%d pte-main] input uiContent[%s]: %j', Nid, uiFile, uiContent);
 
+    if (typeof (uiContent.txCfgPtr) === 'undefined') {
+        txCfgTmp = uiFile;
+    } else {
+        txCfgTmp = uiContent.txCfgPtr;
+    }
+    txCfgPtr = testUtil.readConfigFileSubmitter(txCfgTmp);
+    logger.info('[Nid=%d pte-main] input txCfgPtr[%s]: %j', Nid, txCfgTmp, txCfgPtr);
+
+    if (typeof (uiContent.ccDfnPtr) === 'undefined') {
+        ccDfnTmp = uiFile;
+    } else {
+        ccDfnTmp = uiContent.ccDfnPtr;
+    }
+    ccDfnPtr = testUtil.readConfigFileSubmitter(ccDfnTmp);
+    logger.info('[Nid=%d pte-main] input ccDfnPtr[%s]: %j', Nid, ccDfnTmp, ccDfnPtr);
+}
+else {
+    console.log("here")
+    uiFile = process.argv[2]
+    uiContent = JSON.parse(uiFile)
+    logger.info('[Nid=%d pte-main] input uiContent[%s]: %j', Nid, uiFile, uiContent.deploy);
+    txCfgPtr = uiContent
+    ccDfnPtr = uiContent
+}
 
 var TLS=testUtil.setTLS(txCfgPtr);
 logger.info('[Nid=%d pte-main] TLS= %d', Nid, TLS);
@@ -1382,7 +1394,9 @@ async function performance_main() {
         let client = new hfc();
 
         if ( transType == 'INSTALL' ) {
+            console.log("inside performance_main install case")
             initDeploy(org);
+            console.log("inside performance_main install case")
             let username=testUtil.getOrgEnrollIdSubmitter(cpf, org);
             let secret=testUtil.getOrgEnrollSecretSubmitter(cpf, org);
             logger.info('[performance_main] Deploy: user= %s, secret= %s', username, secret);
