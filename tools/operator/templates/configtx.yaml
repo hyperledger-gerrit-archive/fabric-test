@@ -6,15 +6,13 @@
 #@ def orgPolicies(mspId, type):
 #@   output = {}
 #@   readers = {}
-#@   writers = {}
-#@   admins = {"Type": "Signature", "Rule": "OR('{}.admin')".format(mspId)}
-#@   if type == "orderer":
-#@     readers = {"Type": "Signature", "Rule": "OR('{}.member')".format(mspId)}
-#@     writers = {"Type": "Signature", "Rule": "OR('{}.member')".format(mspId)}
+#@   if type == "peer":
+#@     readers = {"Type": "Signature", "Rule": "OR('{}.admin', '{}.{}', '{}.client')".format(mspId, mspId, type, mspId)}
 #@   else:
-#@     readers = {"Type": "Signature", "Rule": "OR('{}.admin', '{}.peer')".format(mspId, mspId)}
-#@     writers = {"Type": "Signature", "Rule": "OR('{}.admin', '{}.client')".format(mspId, mspId)}
+#@     readers = {"Type": "Signature", "Rule": "OR('{}.admin', '{}.{}', '{}.client')".format(mspId, mspId, type, mspId)}
 #@   end
+#@   writers = {"Type": "Signature", "Rule": "OR('{}.admin', '{}.{}', '{}.client')".format(mspId, mspId, type, mspId)}
+#@   admins = {"Type": "Signature", "Rule": "OR('{}.admin')".format(mspId)}
 #@   output = {"Readers": readers, "Writers": writers, "Admins": admins}
 #@   return output
 #@ end
@@ -109,14 +107,6 @@
 #@ end
 Organizations: #@ organizations(data.values, "orderer") + organizations(data.values, "peer")
 
-Orderer: #@ orderer(data.values)
-Application:
-  Organizations: #@ organizations(data.values, "peer")
-  Policies: #@ policies("peer")
-  Capabilities: #@ data.values.application_capabilities
-Channel:
-  Policies: #@ policies("channel")
-  Capabilities: #@ data.values.channel_capabilities
 Profiles:
   testorgschannel:
     Policies: #@ policies("channel")
