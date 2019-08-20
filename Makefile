@@ -264,11 +264,6 @@ pte:
 	docker build -t $(PTE_IMAGE) images/PTE
 	docker tag $(PTE_IMAGE) $(PTE_IMAGE):$(PROJECT_TOOL_VERSION)
 
-.PHONY: test-viewer
-test-viewer:
-	docker build -t $(TEST_VIEWER_IMAGE) tools/Testviewer
-	docker tag $(TEST_VIEWER_IMAGE) $(TEST_VIEWER_IMAGE):$(PROJECT_TOOL_VERSION)
-
 .PHONY: clean
 clean:
 	-docker ps -aq | xargs -I '{}' docker rm -f '{}' || true
