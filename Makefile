@@ -32,7 +32,6 @@
 #   - git-init                 - init git submodules.
 #   - pre-setup                - installs node, govendor and behave pre-requisites.
 #   - pte                      - builds pte docker image
-#   - test-viewer              - builds test-viewer docker image
 #   - clean                    - cleans the docker containers and images.
 #
 # ------------------------------------------------------------------
@@ -53,8 +52,13 @@ CA_DIR = $(HYPERLEDGER_DIR)/fabric-ca
 CHAINCODE-JAVA_DIR = $(HYPERLEDGER_DIR)/fabric-chaincode-java
 PRE_SETUP = $(GOPATH)/src/github.com/hyperledger/fabric-test/scripts/pre_setup.sh
 PTE_IMAGE = $(DOCKER_NS)/fabric-pte
+<<<<<<< HEAD   (37462d Update makefile on 1.4 branch)
 TEST_VIEWER_IMAGE = $(DOCKER_NS)/fabric-testviewer
 TARGET = pte test-viewer
+=======
+TARGET = pte
+STABLE_TAG ?= $(ARCH)-$(BRANCH)-stable
+>>>>>>> CHANGE (546565 [FAB-15917] remove fabric-test/tools/Testviewer)
 
 .PHONY: ci-smoke
 ci-smoke: fabric pull-images pull-binaries pull-thirdparty-images build-sdk-wrapper smoke-tests
@@ -234,11 +238,14 @@ pte:
 	docker build -t $(PTE_IMAGE) images/PTE
 	docker tag $(PTE_IMAGE) $(PTE_IMAGE):$(PROJECT_VERSION)
 
+<<<<<<< HEAD   (37462d Update makefile on 1.4 branch)
 .PHONY: test-viewer
 test-viewer:
 	docker build -t $(TEST_VIEWER_IMAGE) tools/Testviewer
 	docker tag $(TEST_VIEWER_IMAGE) $(TEST_VIEWER_IMAGE):$(PROJECT_VERSION)
 
+=======
+>>>>>>> CHANGE (546565 [FAB-15917] remove fabric-test/tools/Testviewer)
 .PHONY: clean
 clean:
 	-docker ps -aq | xargs -I '{}' docker rm -f '{}' || true
