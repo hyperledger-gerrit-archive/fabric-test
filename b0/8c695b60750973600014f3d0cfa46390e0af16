@@ -1,0 +1,7 @@
+Verified+1: Hyperledger Jobbuilder <jobbuilder@jenkins.hyperledger.org>
+Code-Review+2: Dongming Hwang <dongming@ibm.com>
+Submitted-by: Dongming Hwang <dongming@ibm.com>
+Submitted-at: Tue, 20 Aug 2019 15:24:04 +0000
+Reviewed-on: https://gerrit.hyperledger.org/r/c/fabric-test/+/33042
+Project: fabric-test
+Branch: refs/heads/master
