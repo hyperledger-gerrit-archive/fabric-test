@@ -16,6 +16,7 @@ import (
 
 func (d DockerCompose) VerifyContainersAreRunning() error {
 
+	count := 0
 	args := []string{"ps", "-a"}
 	output, err := client.ExecuteCommand("docker", args, false)
 	if err != nil {
@@ -23,7 +24,9 @@ func (d DockerCompose) VerifyContainersAreRunning() error {
 		return err
 	}
 	numContainers := len(strings.Split(string(output), "\n"))
-	for i := 0; i < 6; i++ {
+	ticker := time.NewTicker(5 * time.Second)
+	for _ = range ticker.C {
+		logger.INFO("here", strconv.Itoa(count))
 		args = []string{"ps", "-af", "status=running"}
 		output, err = client.ExecuteCommand("docker", args, false)
 		if err != nil {
@@ -46,9 +49,14 @@ func (d DockerCompose) VerifyContainersAreRunning() error {
 			logger.ERROR("Exited Containers: ", strings.Join(exitedContainers, ","))
 			return errors.New("Containers exited")
 		}
-		time.Sleep(10 * time.Second)
+		count += 1
+		if count >= 6{
+			ticker.Stop()
+			return errors.New("Waiting time to bring up containers exceeded 1 minute")
+		}
 	}
-	return errors.New("Waiting time to bring up containers exceeded 1 minute")
+	ticker.Stop()
+	return nil
 }
 
 func (d DockerCompose) checkHealth(componentName string, config networkspec.Config) error {
@@ -90,7 +98,6 @@ func (d DockerCompose) checkHealth(componentName string, config networkspec.Conf
 func (d DockerCompose) CheckDockerContainersHealth(config networkspec.Config) error {
 
 	var err error
-	time.Sleep(15 * time.Second)
 	for i := 0; i < len(config.OrdererOrganizations); i++ {
 		org := config.OrdererOrganizations[i]
 		for j := 0; j < org.NumOrderers; j++ {

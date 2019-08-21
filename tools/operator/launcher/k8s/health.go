@@ -17,7 +17,9 @@ import (
 func (k K8s) VerifyContainersAreRunning() error {
 
 	var status string
-	for i := 0; i < 10; i++ {
+	count := 0
+	ticker := time.NewTicker(1 * time.Minute)
+	for _ = range ticker.C {
 		if status == "No resources found." {
 			return nil
 		}
@@ -32,10 +34,15 @@ func (k K8s) VerifyContainersAreRunning() error {
 			logger.INFO("All pods are up and running")
 			return nil
 		}
-		logger.INFO("Waiting up to 10 minutes for pods to be up and running; minute = ", strconv.Itoa(i))
-		time.Sleep(60 * time.Second)
+		logger.INFO("Waiting up to 10 minutes for pods to be up and running; minute = ", strconv.Itoa(count))
+		count += 1
+		if count >= 10{
+			ticker.Stop()
+			return errors.New("Waiting time exceeded")
+		}
 	}
-	return errors.New("Waiting time exceeded")
+	ticker.Stop()
+	return nil
 }
 
 func (k K8s) checkHealth(componentName string, config networkspec.Config) error {
@@ -80,7 +87,6 @@ func (k K8s) CheckK8sComponentsHealth(config networkspec.Config, kubeconfigPath 
 
 	k.KubeConfigPath = kubeconfigPath
 	var err error
-	time.Sleep(15 * time.Second)
 	for i := 0; i < len(config.OrdererOrganizations); i++ {
 		org := config.OrdererOrganizations[i]
 		for j := 0; j < org.NumOrderers; j++ {
