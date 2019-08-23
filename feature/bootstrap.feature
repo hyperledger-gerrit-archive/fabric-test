@@ -80,13 +80,16 @@ Scenario: Setting of environment variables
     And the ORDERER_GENERAL_TLS_ENABLED environment variable is true on node "orderer2.example.com"
     And the CORE_PEER_TLS_ENABLED environment variable is true on node "peer0.org1.example.com"
     And the FABRIC_LOGGING_SPEC environment variable is gossip.discovery=DEBUG:nodeCmd=DEBUG on node "peer1.org2.example.com"
-    And the logs on peer1.org2.example.com contains "\[gossip.discovery\] periodicalSendAlive -> DEBU" within 5 seconds
-    And the logs on peer1.org2.example.com contains "\[nodeCmd\] serve -> DEBU" within 5 seconds
+    And the logs on peer1.org2.example.com contains "\[gossip.discovery\] periodicalSendAlive -> DEBU" within 30 seconds
+    And the logs on peer1.org2.example.com contains "\[nodeCmd\] serve -> DEBU" within 15 seconds
 
 
+#@doNotDecompose
 @daily
-Scenario Outline: FAB-4776/FAB-4777: Bring up a kafka based network and check peers
-    Given I have a bootstrapped fabric network of type kafka using state-database <database>
+#Scenario Outline: FAB-4776/FAB-4777: Bring up a kafka based network and check peers
+   #Given I have a bootstrapped fabric network of type kafka using state-database <database>
+Scenario Outline: FAB-4776/FAB-4777: Bring up a solo based network and check peers
+    Given I have a bootstrapped fabric network of type solo using state-database <database>
     When an admin sets up a channel
     And an admin deploys chaincode
     And the orderer node logs receiving the orderer block
@@ -103,7 +106,7 @@ Scenario Outline: FAB-4776/FAB-4777: Bring up a kafka based network and check pe
 Examples:
     | database |
     | leveldb  |
-    | couchdb  |
+#   | couchdb  |
 
 
 @daily
