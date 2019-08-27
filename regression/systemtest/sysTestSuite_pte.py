@@ -26,7 +26,7 @@ class System_Tests_Kafka_Couchdb_TLS(unittest.TestCase):
         '''
 
         # Teardown the network
-        returncode = subprocess.call("./operator.sh -a down", cwd=k8s_testsuite, shell=True)
+        returncode = subprocess.call("./operator.sh -a down -f kafka_couchdb_tls.yaml", cwd=k8s_testsuite, shell=True)
         self.assertEqual(returncode, 0, msg=testScriptFailed)
 
 
@@ -37,7 +37,7 @@ class System_Tests_Kafka_Couchdb_TLS(unittest.TestCase):
         '''
 
         # Launch the network
-        returncode = subprocess.call("./operator.sh -a up", cwd=k8s_testsuite, shell=True)
+        returncode = subprocess.call("./operator.sh -a up -f kafka_couchdb_tls.yaml", cwd=k8s_testsuite, shell=True)
         self.assertEqual(returncode, 0, msg=testScriptFailed)
 
     def test_3createJoinChannel(self):
@@ -80,27 +80,28 @@ class System_Tests_Kafka_Couchdb_TLS(unittest.TestCase):
         self.assertEqual(int(count.strip()), 1, msg=queryCountFailure)
 
 
-    def test_6samplejs_orgAnchor_2Chan(self):
+    def test_6sbe_go_2chan_endorse(self):
         '''
         Description:
 
         '''
 
         # Run the test scenario: Execute invokes and query tests.
-        returncode = subprocess.call("./operator.sh -t samplejs_node_2chan", cwd=k8s_testsuite, shell=True)
+        returncode = subprocess.call("./operator.sh -t sbe_go_2chan_endorse", cwd=k8s_testsuite, shell=True)
         self.assertEqual(returncode, 0, msg=testScriptFailed)
 
         # check the counts
         count = subprocess.check_output(
-                "grep \"CONSTANT INVOKE Overall transactions: sent 4000 received 4000\" samplejs_node_2chan_i_pteReport.txt | wc -l",
+                "grep \"CONSTANT INVOKE Overall transactions: sent 4000 received 4000\" sbe_go_2chan_endorse_2chan_i_pteReport.txt | wc -l",
                 cwd=logs_directory, shell=True)
         self.assertEqual(int(count.strip()), 1, msg=invokeFailure)
 
         # check the counts
         count = subprocess.check_output(
-                "grep \"CONSTANT QUERY Overall transactions: sent 4000 received 4000 failures 0\" samplejs_node_2chan_q_pteReport.txt | wc -l",
+                "grep \"CONSTANT QUERY Overall transactions: sent 4000 received 4000 failures 0\" sbe_go_2chan_endorse_2chan_q_pteReport.txt | wc -l",
                 cwd=logs_directory, shell=True)
         self.assertEqual(int(count.strip()), 1, msg=queryCountFailure)
+
 
     def test_7tearDownNetwork(self):
         '''
@@ -109,5 +110,5 @@ class System_Tests_Kafka_Couchdb_TLS(unittest.TestCase):
         '''
 
         # Teardown the network
-        returncode = subprocess.call("./operator.sh -a down", cwd=k8s_testsuite, shell=True)
+        returncode = subprocess.call("./operator.sh -a down -f kafka_couchdb_tls.yaml", cwd=k8s_testsuite, shell=True)
         self.assertEqual(returncode, 0, msg=testScriptFailed)
