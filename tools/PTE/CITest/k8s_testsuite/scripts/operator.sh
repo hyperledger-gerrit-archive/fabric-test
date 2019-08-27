@@ -6,7 +6,7 @@
 #
 #
 
-while getopts ":a:t:p:ci" opt;
+while getopts ":f:a:t:p:ci" opt;
   do
     case $opt in
       a) # action with up/down
@@ -23,6 +23,9 @@ while getopts ":a:t:p:ci" opt;
         ;;
       i)  # Install & Instantiate
         insta="y"
+        ;;
+      f)  # network spec file
+        nws="${OPTARG}"
         ;;
       \?)
         echo "Error: Unrecognized command line argument:"
@@ -42,7 +45,7 @@ startNw() {
   # Create fabric network on k8s cluster
   cd "$OperatorDir"/launcher || exit 1
   # export kubeconfig file to KUBECONFIG
-  go run launcher.go -i "$PTEDir"/CITest/k8s_testsuite/networkSpecFiles/kafka_couchdb_tls.yaml -k "$KUBECONFIG"
+  go run launcher.go -i "$PTEDir"/CITest/k8s_testsuite/networkSpecFiles/$1 -k "$KUBECONFIG"
   cd "$GOPATH"/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen || exit 1
   ls
   mkdir -p ordererOrganizations
@@ -64,7 +67,7 @@ startNw() {
 stopNw() {
   cd "$OperatorDir"/launcher || exit 1
   # provide networkspec 1 and kubeconfig 1 here
-  go run launcher.go -i "$PTEDir"/CITest/k8s_testsuite/networkSpecFiles/kafka_couchdb_tls.yaml -k "$KUBECONFIG" -a down
+  go run launcher.go -i "$PTEDir"/CITest/k8s_testsuite/networkSpecFiles/$1 -k "$KUBECONFIG" -a down
   cd -
 }
 
@@ -136,6 +139,24 @@ samplejs_node_2chan() {
   rm -rf "$PTEDir"/pteReport.txt
 }
 
+
+sbe_go_2chan_endorse() {
+
+  cd "$PTEDir" || exit 1
+  echo "-------> Execute Invoke"
+  echo "=== Install & Instantiate SBE chaincode"
+  ./pte_driver.sh tools/PTE/CITest/FAB-11615-2i/preconfig/sbe_cc/runCases-chan-install-TLS.txt >& "$PTEDir"/sbeinstall.log
+  sleep 60
+  ./pte_driver.sh tools/PTE/CITest/FAB-11615-2i/preconfig/sbe_cc/runCases-chan-instantiate-TLS.txt >& "$PTEDir"/sbeInstantiate.log
+  sleep 60
+  ./pte_driver.sh tools/PTE/CITest/FAB-11615-2i/sbe_cc/PTEMgr-constant-iVal-TLS.txt >& "$PTEDir"/sbecc_go_2chan_endorse_i.log
+  cp -r "$PTEDir"/pteReport.txt sbe_go_2chan_endorse_2chan_i_pteReport.txt
+  # Convert Test Report into Aggregate summary
+  node get_pteReport.js sbe_go_2chan_endorse_2chan_i_pteReport.txt
+  # remove PTE Report
+  rm -rf "$PTEDir"/pteReport.txt
+}
+
 # Install npm
 if [ "$preReq" == "y" ]; then
   npmInstall
@@ -143,12 +164,12 @@ fi
 case "$action" in
   up)
     echo "Start Network"
-    startNw
+    startNw $nws
     exit
     ;;
   down)
     echo "Down Network"
-    stopNw
+    stopNw $nws
     exit
     ;;
 esac
