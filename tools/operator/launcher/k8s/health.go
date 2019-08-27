@@ -18,6 +18,7 @@ func (k K8s) VerifyContainersAreRunning() error {
 
 	logger.INFO("Verifying all the pods are running")
 	var status string
+	var err error
 	for i := 0; i < 10; i++ {
 		if status == "No resources found." {
 			return nil
@@ -36,7 +37,30 @@ func (k K8s) VerifyContainersAreRunning() error {
 		logger.INFO("Waiting up to 10 minutes for pods to be up and running; minute = ", strconv.Itoa(i))
 		time.Sleep(60 * time.Second)
 	}
-	return errors.New("Waiting time exceeded")
+	err = k.verifyContainersEvents()
+	logger.ERROR("Waiting time exceeded")
+	return err
+}
+
+func (k K8s) verifyContainersEvents() error {
+
+	var errArr []string
+	k.Arguments = []string{"get", "pods", "--template", `{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}`, "--field-selector=status.phase!=Running"}
+	output, err := client.ExecuteK8sCommand(k.Args(), false)
+	if err != nil {
+		logger.ERROR("Failed to get the list of containers, which are not in running state")
+		return err
+	}
+	containers := strings.Split(output, "\n")
+	for i := 0; i < len(containers); i++ {
+		k.Arguments = []string{"describe", "pod", containers[i]}
+		output, err = client.ExecuteK8sCommand(k.Args(), false)
+		if err != nil {
+			logger.ERROR("Failed to get the reason for the failure of ", containers[i])
+		}
+		errArr = append(errArr, fmt.Sprintf("%s:%s", containers[i], strings.Split(output, "Events:")[1]))
+	}
+	return errors.New(strings.Join(errArr, "\n"))
 }
 
 func (k K8s) checkHealth(componentName string, config networkspec.Config) error {
