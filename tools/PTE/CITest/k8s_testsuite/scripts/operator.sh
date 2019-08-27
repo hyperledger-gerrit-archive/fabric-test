@@ -6,7 +6,7 @@
 #
 #
 
-while getopts ":a:t:p:ci" opt;
+while getopts ":f:a:t:p:ci" opt;
   do
     case $opt in
       a) # action with up/down
@@ -24,6 +24,10 @@ while getopts ":a:t:p:ci" opt;
       i)  # Install & Instantiate
         insta="y"
         ;;
+      f)  # network spec file
+        nws="${OPTARG}"
+        ;;
+
       \?)
         echo "Error: Unrecognized command line argument:"
         exit 1
@@ -42,7 +46,7 @@ startNw() {
   # Create fabric network on k8s cluster
   cd "$OperatorDir"/launcher || exit 1
   # export kubeconfig file to KUBECONFIG
-  go run launcher.go -i "$PTEDir"/CITest/k8s_testsuite/networkSpecFiles/kafka_couchdb_tls.yaml -k "$KUBECONFIG"
+  go run launcher.go -i "$PTEDir"/CITest/k8s_testsuite/networkSpecFiles/$1 -k "$KUBECONFIG"
   cd "$GOPATH"/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen || exit 1
   ls
   mkdir -p ordererOrganizations
@@ -64,7 +68,7 @@ startNw() {
 stopNw() {
   cd "$OperatorDir"/launcher || exit 1
   # provide networkspec 1 and kubeconfig 1 here
-  go run launcher.go -i "$PTEDir"/CITest/k8s_testsuite/networkSpecFiles/kafka_couchdb_tls.yaml -k "$KUBECONFIG" -a down
+  go run launcher.go -i "$PTEDir"/CITest/k8s_testsuite/networkSpecFiles/$1 -k "$KUBECONFIG" -a down
   cd -
 }
 
@@ -80,7 +84,7 @@ createJoinChannel() {
   cd "$PTEDir/CITest/scripts" || exit 1
   echo "-------> Create & Join Channel"
   export hfc_logging='{"debug":"console"}'
-  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 3 --chan0 0 --chantxpath "$Chantxpath" --chanprefix testorgschannel --norg 1 -c > "$PTEDir"/createChannel.log
+  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 3 --chan0 0 --chantxpath "$Chantxpath" --chanprefix testorgschannel --norg 2 -c > "$PTEDir"/createChannel.log
   sleep 60
 }
 
@@ -90,7 +94,7 @@ installInstantiate() {
   # Install and Instantiate chaincode
   echo "-------> Install & Instantiate Chaincode"
   export hfc_logging='{"debug":"console"}'
-  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 3 --chan0 0 --chantxpath "$Chantxpath" --chanprefix testorgschannel --norg 1 -a sample_cc sample_js -i > "$PTEDir"/installInstantiate.log
+  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 3 --chan0 0 --chantxpath "$Chantxpath" --chanprefix testorgschannel --norg 2 -a sample_cc sample_js -i > "$PTEDir"/installInstantiate.log
   sleep 120
 }
 
@@ -100,14 +104,14 @@ samplecc_go_2chan() {
   cd "$PTEDir"/CITest/scripts || exit 1
   echo "-------> Execute Invoke"
   export hfc_logging='{"debug":"console"}'
-  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 2 --chan0 0 --norg 1 --chanprefix testorgschannel --chantxpath "$Chantxpath" -a sample_cc --freq 10 --nreq 1000  --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t move > "$PTEDir"/samplecc_go_2chan_i.log
+  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 2 --chan0 0 --norg 2 --chanprefix testorgschannel --chantxpath "$Chantxpath" -a sample_cc --freq 10 --nreq 1000  --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t move > "$PTEDir"/samplecc_go_2chan_i.log
   sleep 60
   cp -r "$PTEDir"/pteReport.txt samplecc_go_2chan_i_pteReport.txt
   node get_pteReport.js samplecc_go_2chan_i_pteReport.txt
   rm -rf "$PTEDir"/pteReport.txt
   echo "-------> Execute Query"
   export hfc_logging='{"debug":"console"}'
-  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 2 --chan0 0 --norg 1 --chanprefix testorgschannel --chantxpath "$Chantxpath" -a sample_cc --freq 10 --nreq 1000  --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t query > "$PTEDir"/samplecc_go_2chan_q.log
+  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 2 --chan0 0 --norg 2 --chanprefix testorgschannel --chantxpath "$Chantxpath" -a sample_cc --freq 10 --nreq 1000  --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t query > "$PTEDir"/samplecc_go_2chan_q.log
   sleep 60
   cp -r "$PTEDir"/pteReport.txt samplecc_go_2chan_q_pteReport.txt
   # Convert Test Report into Aggregate summary
@@ -120,7 +124,7 @@ samplecc_go_2chan() {
 samplejs_node_2chan() {
   cd "$PTEDir"/CITest/scripts || exit 1
   echo "-------> Execute Invoke"
-  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 2 --chan0 0 --norg 1 --chantxpath "$Chantxpath" --chanprefix testorgschannel -a sample_js --freq 10 --nreq 1000  --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t move > "$PTEDir"/samplejs_node_2chan_i.log
+  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 2 --chan0 0 --norg 2 --chantxpath "$Chantxpath" --chanprefix testorgschannel -a sample_js --freq 10 --nreq 1000  --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t move > "$PTEDir"/samplejs_node_2chan_i.log
     cp -r "$PTEDir"/pteReport.txt samplejs_node_2chan_i_pteReport.txt
   # Convert Test Report into Aggregate summary
   node get_pteReport.js samplejs_node_2chan_i_pteReport.txt
@@ -128,10 +132,30 @@ samplejs_node_2chan() {
   rm -rf "$PTEDir"/pteReport.txt
   sleep 60
   echo "-------> Execute Query"
-  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 2 --chan0 0 --norg 1 --chantxpath "$Chantxpath" --chanprefix testorgschannel -a sample_js --freq 10 --nreq 1000  --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t query > "$PTEDir"/samplejs_node_2chan_q.log
+  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 2 --chan0 0 --norg 2 --chantxpath "$Chantxpath" --chanprefix testorgschannel -a sample_js --freq 10 --nreq 1000  --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t query > "$PTEDir"/samplejs_node_2chan_q.log
   cp -r "$PTEDir"/pteReport.txt samplejs_node_2chan_q_pteReport.txt
   # Convert Test Report into Aggregate summary
   node get_pteReport.js samplejs_node_2chan_q_pteReport.txt
+  # remove PTE Report
+  rm -rf "$PTEDir"/pteReport.txt
+}
+
+# Execute samplecc(go) chaincode 2 channel with 2 threads send 4000 tx's to OrgAnchors - 12hr lognrun
+samplecc_go_12hr() {
+  # Execute Test Case
+  cd "$PTEDir"/CITest/scripts || exit 1
+  echo "-------> Execute Invoke"
+  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 2 --chan0 0 --norg 2 --chanprefix testorgschannel --chantxpath "$Chantxpath" -a sample_cc --freq 10 --rundur 43200 --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t move > "$PTEDir"/samplecc_go_2chan_12hr_i.log
+  sleep 60
+  cp -r "$PTEDir"/pteReport.txt samplecc_go_2chan_12hr_i_pteReport.txt
+  node get_pteReport.js samplecc_go_2chan_12hr_i_pteReport.txt
+  rm -rf "$PTEDir"/pteReport.txt
+  echo "-------> Execute Query"
+  ./gen_cfgInputs.sh -d "$ConnProfile" --nchan 2 --chan0 0 --norg 2 --chanprefix testorgschannel --chantxpath "$Chantxpath" -a sample_cc --freq 10 --nreq 1000  --nproc 2 --keystart 100 --targetpeers ORGANCHOR -t query > "$PTEDir"/samplecc_go_2chan_12hr_q.log
+  sleep 60
+  cp -r "$PTEDir"/pteReport.txt samplecc_go_2chan_12hr_q_pteReport.txt
+  # Convert Test Report into Aggregate summary
+  node get_pteReport.js samplecc_go_2chan_12hr_q_pteReport.txt
   # remove PTE Report
   rm -rf "$PTEDir"/pteReport.txt
 }
@@ -143,12 +167,12 @@ fi
 case "$action" in
   up)
     echo "Start Network"
-    startNw
+    startNw $nws
     exit
     ;;
   down)
     echo "Down Network"
-    stopNw
+    stopNw $nws
     exit
     ;;
 esac
