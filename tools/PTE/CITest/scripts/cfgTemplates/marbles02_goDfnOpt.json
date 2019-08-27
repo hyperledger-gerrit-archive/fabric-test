@@ -4,8 +4,8 @@
         "keyIdx": [0],
         "keyPayLoad": [2],
         "keyStart": "_KEYSTART_",
-        "payLoadMin": "8",
-        "payLoadMax": "8"
+        "payLoadMin": "1024",
+        "payLoadMax": "1024"
     },
     "invoke": {
         "query": {
