@@ -1,4 +1,4 @@
-package networkspec
+package pte
 
 //Config --
 type Config struct {
@@ -30,19 +30,6 @@ type Channel struct {
 	Organizations string `yaml:"organizations,omitempty"`
 	ChannelPrefix string `yaml:"channelPrefix,omitempty"`
 	NumChannels   int    `yaml:"numChannels,omitempty"`
-}
-
-//ChannelObject --
-type ChannelObject struct {
-	TransType  string `json:"transType,omitempty"`
-	TLS        string `json:"TLS,omitempty"`
-	ChannelOpt struct {
-		Name      string   `json:"name,omitempty"`
-		ChannelTX string   `json:"channelTX,omitempty"`
-		Action    string   `json:"action,omitempty"`
-		OrgName   []string `json:"orgName,omitempty"`
-	} `json:"channelOpt,omitempty"`
-	ConnProfilePath string `json:"ConnProfilePath,omitempty"`
 }
 
 //ChainCodeObject --
