@@ -131,3 +131,14 @@ func componentPath(artifactsLocation, component string) string {
 func JoinPath(oldPath, newPath string) string {
 	return filepath.Join(oldPath, newPath)
 }
+
+//PTEpath --
+func PTEpath() string{
+
+	path, err := GetCurrentDir()
+	if err != nil{
+		logger.CRIT(err, "Failed to get the current working directory")
+	}
+	path = JoinPath(path, "../../PTE/pte-main.js")
+	return path
+}
