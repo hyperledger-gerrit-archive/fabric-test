@@ -22,15 +22,15 @@ createChannel:
 
 anchorPeerUpdate:
   - channelName: testorgschannel1
-    organization: org1
+    organizations: org1
     anchorPeerUpdateTxPath: $PWD/anchorpeer-org1-testorgschannel1.tx
   - channelName: testorgschannel1
-    organization: org2
+    organizations: org2
     anchorPeerUpdateTxPath: $PWD/anchorpeer-org2-testorgschannel1.tx
 
   - channelPrefix: testorgschannel
     numChannels: 10
-    organization: org2
+    organizations: org2
     anchorPeerUpdateTxPath: $PWD/
 
 joinChannel:
@@ -91,7 +91,7 @@ invokes:
     nRequest: 1000
     runDur: 0
     organizations: org1,org2
-    txnOpts:
+    txnOpt:
       - mode: constant
         options: "0,0"
     queryCheck: 100
