@@ -21,6 +21,11 @@
  *        - uiFile: user input file
  *        - tStart: tStart
  *        - PTEid: PTE id
+ *      node pte-main.js <Nid> <jsonObject> <tStart> <PTEid>
+ *        - Nid: Network id
+ *        - uiFile: user input jsonObject
+ *        - tStart: tStart
+ *        - PTEid: PTE id
  */
 // This is an end-to-end test that focuses on exercising all parts of the fabric APIs
 // in a happy-path scenario
@@ -47,6 +52,7 @@ var procDone=0;
 
 // input: userinput json file
 var PTEid = parseInt(process.argv[5]);
+PTEid = PTEid ? PTEid : 0
 var loggerMsg='PTE ' + PTEid + ' main';
 var logger = new testUtil.PTELogger({"prefix":loggerMsg, "level":"info"});
 
@@ -57,31 +63,37 @@ logger.info('The local time is: %j', localTime.toLocaleString());
 var Nid = parseInt(process.argv[2]);
 var uiFile = process.argv[3];
 var tStart = parseInt(process.argv[4]);
-logger.info('input parameters: Nid=%d, uiFile=%s, tStart=%d PTEid=%d', Nid, uiFile, tStart, PTEid);
-var uiContent = testUtil.readConfigFileSubmitter(uiFile);
-logger.info('[Nid=%d pte-main] input uiContent[%s]: %j', Nid, uiFile, uiContent);
-
 var txCfgPtr;
 var txCfgTmp;
-if ( typeof(uiContent.txCfgPtr) === 'undefined' ) {
-    txCfgTmp = uiFile;
-} else {
-    txCfgTmp = uiContent.txCfgPtr;
-}
-txCfgPtr = testUtil.readConfigFileSubmitter(txCfgTmp);
-logger.info('[Nid=%d pte-main] input txCfgPtr[%s]: %j', Nid, txCfgTmp, txCfgPtr);
-
-
 var ccDfnPtr;
 var ccDfnTmp;
-if ( typeof(uiContent.ccDfnPtr) === 'undefined' ) {
-    ccDfnTmp = uiFile;
-} else {
-    ccDfnTmp = uiContent.ccDfnPtr;
-}
-ccDfnPtr = testUtil.readConfigFileSubmitter(ccDfnTmp);
-logger.info('[Nid=%d pte-main] input ccDfnPtr[%s]: %j', Nid, ccDfnTmp, ccDfnPtr);
+var uiContent;
+if (uiFile.endsWith(".json") || uiFile.endsWith(".yaml")  || uiFile.endsWith(".yml")) {
+    uiContent = testUtil.readConfigFileSubmitter(uiFile);
+    logger.info('[Nid=%d pte-main] input uiContent[%s]: %j', Nid, uiFile, uiContent);
 
+    if (typeof (uiContent.txCfgPtr) === 'undefined') {
+        txCfgTmp = uiFile;
+    } else {
+        txCfgTmp = uiContent.txCfgPtr;
+    }
+    txCfgPtr = testUtil.readConfigFileSubmitter(txCfgTmp);
+
+    if (typeof (uiContent.ccDfnPtr) === 'undefined') {
+        ccDfnTmp = uiFile;
+    } else {
+        ccDfnTmp = uiContent.ccDfnPtr;
+    }
+    ccDfnPtr = testUtil.readConfigFileSubmitter(ccDfnTmp);
+}
+else {
+    uiContent = JSON.parse(uiFile)
+    logger.info('[Nid=%d pte-main] input uiContent[%s]: %j', Nid, uiFile, uiContent.deploy);
+    txCfgPtr = uiContent
+    ccDfnPtr = uiContent
+}
+logger.info('input parameters: Nid=%d, uiFile=%s, tStart=%d PTEid=%d', Nid, uiFile, tStart, PTEid);
+logger.info('[Nid=%d pte-main] input ccDfnPtr[%s]: %j', txCfgPtr, Nid, ccDfnTmp, ccDfnPtr);
 
 var TLS=testUtil.setTLS(txCfgPtr);
 logger.info('[Nid=%d pte-main] TLS= %d', Nid, TLS);
@@ -137,13 +149,15 @@ var testDeployArgs = [];
 var chaincodePath;
 var metadataPath;
 var collectionsConfigPath;
-function initDeploy(org) {
+function initDeploy(org, transType) {
     if ((typeof( ccDfnPtr.deploy.language ) !== 'undefined')) {
         language=ccDfnPtr.deploy.language.toLowerCase();
     }
 
-    for (i=0; i<ccDfnPtr.deploy.args.length; i++) {
-        testDeployArgs.push(ccDfnPtr.deploy.args[i]);
+    if (transType){
+        for (i=0; i<ccDfnPtr.deploy.args.length; i++) {
+            testDeployArgs.push(ccDfnPtr.deploy.args[i]);
+        }
     }
 
     var cpf=testUtil.findOrgConnProfileSubmitter(cpList, org);
@@ -539,7 +553,10 @@ var chaincode_id;
 var chaincode_ver;
 function getCCID() {
     var channelID = uiContent.channelID;
-    chaincode_id = uiContent.chaincodeID+channelID;
+    chaincode_id = uiContent.chaincodeID
+    if (channelID){
+        chaincode_id = uiContent.chaincodeID+channelID;
+    }
     chaincode_ver = uiContent.chaincodeVer;
     logger.info('[getCCID] Nid: %d, chaincode_id: %s, chaincode_ver: %s', Nid, chaincode_id, chaincode_ver);
 }
@@ -1416,7 +1433,7 @@ async function performance_main() {
                     process.exit(1);
                 });
         } else if ( transType == 'INSTANTIATE' ) {
-            initDeploy(org);
+            initDeploy(org, transType);
             let username=testUtil.getOrgEnrollIdSubmitter(cpf, org);
             let secret=testUtil.getOrgEnrollSecretSubmitter(cpf, org);
             logger.info('[performance_main] instantiate: user= %s, secret= %s', username, secret);
