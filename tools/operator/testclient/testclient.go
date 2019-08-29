@@ -54,7 +54,7 @@ func doAction(action string, config helper.Config) {
 		tls = "clientauth"
 	}
 	if action == "all" {
-		actions = append(actions, []string{"create"}...)
+		actions = append(actions, []string{"create", "anchorpeer"}...)
 	} else {
 		actions = append(actions, action)
 	}
@@ -66,10 +66,16 @@ func doAction(action string, config helper.Config) {
 			if err != nil {
 				logger.CRIT(err, "Failed to create channels")
 			}
+		case "anchorpeer":
+            var anchorpeer operations.AnchorPeerUpdateObject
+            err := anchorpeer.AnchorPeerUpdate(config, tls)
+            if err != nil {
+                logger.CRIT(err, "Failed to update anchor peer")
+            }
 		default:
 			logger.CRIT(nil, "Incorrect Unknown (", action, ").Supported actions:", supportedActions)
 		}
-	}
+    }
 }
 
 func main() {
