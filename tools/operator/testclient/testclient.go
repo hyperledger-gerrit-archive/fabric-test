@@ -55,8 +55,14 @@ func doAction(action string, config helper.Config){
             if err != nil {
                 logger.CRIT(err, "Failed to create channels")
             }
+        case "anchorpeer":
+            var anchorpeer operations.AnchorPeerUpdateObject
+            err := anchorpeer.AnchorPeerUpdate(config)
+            if err != nil {
+                logger.CRIT(err, "Failed to update anchor peer")
+            }
         default:
-            logger.CRIT(nil, "Incorrect action: ", action, " Use create for action")
+            logger.CRIT(nil, "Incorrect action: (%v). Use create, anchorpeer for action", action)
         }
     }
 }
