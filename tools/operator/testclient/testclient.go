@@ -53,7 +53,7 @@ func doAction(action string, config helper.Config) {
 		tls = "clientauth"
 	}
 	if action == "all" {
-		actions = append(actions, []string{"create", "anchorpeer"}...)
+		actions = append(actions, []string{"create", "anchorpeer", "join"}...)
 	} else {
 		actions = append(actions, action)
 	}
@@ -71,9 +71,15 @@ func doAction(action string, config helper.Config) {
             if err != nil {
                 logger.CRIT(err, "Failed to update anchor peer")
             }
-		default:
-			logger.CRIT(nil, "Incorrect action: ", action, " Use create for action")
-		}
+        case "join":
+            var join operations.JoinChannelObject
+            err := join.JoinChannels(config, tls)
+            if err != nil {
+                logger.CRIT(err, "Failed to join peers to channels")
+            }
+        default:
+            logger.CRIT(nil, "Incorrect action: (%v). Use create, anchorpeer, join for action", action)
+        }
     }
 }
 
