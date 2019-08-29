@@ -134,7 +134,6 @@ func JoinPath(oldPath, newPath string) string {
 
 //PTEPath --
 func PTEPath() string{
-
 	path, err := GetCurrentDir()
 	if err != nil{
 		logger.CRIT(err, "Failed to get the current working directory")
