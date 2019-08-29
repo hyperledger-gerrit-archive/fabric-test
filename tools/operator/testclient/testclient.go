@@ -42,24 +42,30 @@ func GetInputData(inputFilePath string) (helper.Config, error) {
 
 func doAction(action string, config helper.Config) {
 
-	var actions []string
-	if action == "all" {
-		actions = append(actions, []string{"create"}...)
-	} else {
-		actions = append(actions, action)
-	}
-	for i := 0; i < len(actions); i++ {
-		switch actions[i] {
-		case "create":
-			var create operations.CreateChannelObject
-			err := create.CreateChannels(config)
-			if err != nil {
-				logger.CRIT(err, "Failed to create channels")
-			}
-		default:
-			logger.CRIT(nil, "Incorrect action: ", action, " Use create for action")
-		}
-	}
+    var actions []string
+    if action == "all"{
+        actions = append(actions, []string{"create"}...)
+    } else{
+        actions = append(actions, action)
+    }
+    for i:=0; i<len(actions); i++{
+        switch actions[i] {
+        case "create":
+            var create operations.CreateChannelObject
+            err := create.CreateChannels(config)
+            if err != nil {
+                logger.CRIT(err, "Failed to create channels")
+            }
+        case "anchorpeer":
+            var anchorpeer operations.AnchorPeerUpdateObject
+            err := anchorpeer.AnchorPeerUpdate(config)
+            if err != nil {
+                logger.CRIT(err, "Failed to update anchor peer")
+            }
+        default:
+            logger.CRIT(nil, "Incorrect action: (%v). Use create, anchorpeer for action", action)
+        }
+    }
 }
 
 func main() {
