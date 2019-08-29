@@ -17,6 +17,8 @@ orderer_fabric_logging_spec: error
 tls: true
 #! fabric metrics with prometheus (true/false)
 metrics: false
+#! enable node ou's in fabric network (true/false)
+enableNodeOUs: true
 
 #! Location where crypto-config and channel-artifacts are stored
 artifacts_location: /home/testuser/go/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/
