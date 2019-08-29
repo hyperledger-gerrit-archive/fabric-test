@@ -62,8 +62,14 @@ func doAction(action string, config helper.Config) {
             if err != nil {
                 logger.CRIT(err, "Failed to update anchor peer")
             }
+        case "join":
+            var join operations.JoinChannelObject
+            err := join.JoinChannels(config)
+            if err != nil {
+                logger.CRIT(err, "Failed to join peers to channels")
+            }
         default:
-            logger.CRIT(nil, "Incorrect action: (%v). Use create, anchorpeer for action", action)
+            logger.CRIT(nil, "Incorrect action: (%v). Use create, anchorpeer, join for action", action)
         }
     }
 }
