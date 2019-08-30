@@ -54,7 +54,7 @@ func doAction(action string, config inputStructs.Config) {
 		tls = "clientauth"
 	}
 	if action == "all" {
-		actions = append(actions, []string{"create", "anchorpeer", "join"}...)
+		actions = append(actions, []string{"create", "anchorpeer", "join", "install"}...)
 	} else {
 		actions = append(actions, action)
 	}
@@ -62,10 +62,16 @@ func doAction(action string, config inputStructs.Config) {
 		switch actions[i] {
 		case "create", "join", "anchorpeer":
 			var channelUIObject operations.ChannelUIObject
-			err := channelUIObject.CreateChannelUIObjects(config, tls, action)
+			err := channelUIObject.ChannelConfigs(config, tls, action)
 			if err != nil {
 				logger.CRIT(err, "Failed to perform ", action, "action on channels")
 			}
+		case "install":
+            var installCCUIObject operations.InstallCCUIObject
+            err := installCCUIObject.InstallCC(config, tls)
+            if err != nil {
+                logger.CRIT(err, "Failed to install chaincode")
+            }
 		default:
 			logger.CRIT(nil, "Incorrect Unknown (", action, ").Supported actions:", supportedActions)
 		}

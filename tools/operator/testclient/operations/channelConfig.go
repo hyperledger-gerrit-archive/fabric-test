@@ -28,8 +28,8 @@ type ChannelOptions struct {
 	OrgName   []string `json:"orgName,omitempty"`
 }
 
-//CreateChannelUIObjects -- To create channel objects based on create, join and anchorpeer
-func (c ChannelUIObject) CreateChannelUIObjects(config inputStructs.Config, tls, action string) error {
+//ChannelConfigs -- To create channel objects based on create, join and anchorpeer and perform the channel configs
+func (c ChannelUIObject) ChannelConfigs(config inputStructs.Config, tls, action string) error {
 
 	var err error
 	var channelUIObjects, channelObjects []ChannelUIObject
