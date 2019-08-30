@@ -8,6 +8,7 @@ type Config struct {
 	CreateChannel     []Channel          `yaml:"createChannel,omitempty"`
 	AnchorPeerUpdate  []AnchorPeerUpdate `yaml:"anchorPeerUpdate,omitempty"`
 	JoinChannel       []Channel          `yaml:"joinChannel,omitempty"`
+	InstallCC         []InstallCC        `yaml:"installChaincode,omitempty"`
 }
 
 //Channel --
@@ -34,18 +35,14 @@ type Organization struct {
 	ConnProfilePath string `yaml:"connProfilePath,omitempty"`
 }
 
-//ChainCodeObject --
-type ChainCodeObject struct {
-	ChainCodeID      string `json:"chaincodeID,omitempty"`
-	ChainCodeVersion string `json:"chaincodeVer,omitempty"`
-	Deploy           struct {
-		ChainCodePath string   `json:"chaincodePath,omitempty"`
-		MetadataPath  string   `json:"metadataPath,omitempty"`
-		Language      string   `json:"language,omitempty"`
-		Fcn           string   `json:"fcn,omitempty"`
-		Args          []string `json:"args,omitempty"`
-	} `json:"deploy,omitempty"`
-	*Channel
+//InstallCC --
+type InstallCC struct {
+	ChainCodeName    string `yaml:"chaincodeID,omitempty"`
+	ChainCodeVersion string `yaml:"chaincodeVer,omitempty"`
+	ChainCodePath    string `yaml:"chaincodePath,omitempty"`
+	Organizations    string `yaml:"organizations,omitempty"`
+	Language         string `yaml:"language,omitempty"`
+	MetadataPath     string `yaml:"metadataPath,omitempty"`
 }
 
 //InvokeTranscations --
