@@ -67,6 +67,12 @@ func doAction(action string, config helper.Config){
             if err != nil {
                 logger.CRIT(err, "Failed to join peers to channels")
             }
+        case "install":
+            var install operations.InstallChainCodeObject
+            err := install.InstallChainCode(config)
+            if err != nil {
+                logger.CRIT(err, "Failed to install chaincode")
+            }
         default:
             logger.CRIT(nil, "Incorrect action: (%v). Use create, anchorpeer, join for action", action)
         }
