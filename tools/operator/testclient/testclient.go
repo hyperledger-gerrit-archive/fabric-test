@@ -54,7 +54,7 @@ func doAction(action string, config helper.Config) {
 		tls = "clientauth"
 	}
 	if action == "all" {
-		actions = append(actions, []string{"create", "anchorpeer", "join"}...)
+		actions = append(actions, []string{"create", "anchorpeer", "join", "install"}...)
 	} else {
 		actions = append(actions, action)
 	}
@@ -77,6 +77,12 @@ func doAction(action string, config helper.Config) {
             err := join.JoinChannels(config, tls)
             if err != nil {
                 logger.CRIT(err, "Failed to join peers to channels")
+			}
+		case "install":
+            var install operations.InstallChainCodeObject
+            err := install.InstallChainCode(config, tls)
+            if err != nil {
+                logger.CRIT(err, "Failed to install chaincode")
             }
 		default:
 			logger.CRIT(nil, "Incorrect Unknown (", action, ").Supported actions:", supportedActions)
