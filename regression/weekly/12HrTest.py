@@ -14,6 +14,7 @@ import subprocess
 scenarios_directory = '../../tools/PTE/CITest/scenarios'
 nl_directory = '../../tools/NL'
 logs_directory = '../../tools/PTE/CITest/Logs'
+invokeFailure = "Error: INVOKE failures"
 
 class TimedRun_12Hr(unittest.TestCase):
     #@unittest.skip("skipping")
@@ -48,6 +49,21 @@ class TimedRun_12Hr(unittest.TestCase):
                 "grep \"pte-exec:completed:\" FAB-7204-4i*.log | wc -l",
                 cwd=logs_directory, shell=True)
         self.assertEqual(int(threadsWithProblems.strip()), 0)
+
+        # First check if the test finished and created the report file; then check it for accurate counts
+        logfilelist = subprocess.check_output("ls", cwd=logs_directory, shell=True)
+        self.assertIn("FAB-7204-4i-pteReport.log", logfilelist, msg="Test did not finish; fabric-test/tools/PTE/CITest/Logs/FAB-7204-4i-pteReport.log file not found")
+
+        # ensure there were no failures with the proposals (responses from peers) or the transactions (responses from orderers)
+        count = subprocess.check_output(
+                "grep \"CONSTANT INVOKE Overall failures: proposal 0 transactions 0\" FAB-7204-4i-pteReport.log | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=invokeFailure)
+
+        count = subprocess.check_output(
+                "grep \"CONSTANT INVOKE Overall TEST RESULTS PASSED\" FAB-7204-4i-pteReport.log | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg="TEST RESULTS FAILED; refer to fabric-test/tools/PTE/CITest/Logs/FAB-7204-4i*.log for details")
 
         # Note: grep command returns exit code 1 whenever the grepped count is
         # zero, which would cause a CallProcessError and prevent us from
