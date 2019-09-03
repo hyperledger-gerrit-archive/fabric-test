@@ -52,7 +52,7 @@ Scenario Outline: FAB-3852: Message Payloads Less than 1MB, for <type> orderer u
     When an admin fetches genesis information using peer "peer0.org1.example.com"
     When an admin makes all peers join the channel
     # Following lines are equivalent to "When an admin deploys chaincode at path "github.com/hyperledger/fabric-test/chaincodes/mapkeys/go" with args [""]"
-    When an admin installs chaincode at path "github.com/hyperledger/fabric-test/chaincodes/mapkeys/go" with args [""] on all peers
+    When an admin installs chaincode at path "chaincodes/mapkeys/go" with args [""] on all peers
     When an admin instantiates the chaincode on "peer0.org1.example.com"
 
     # 1K
@@ -90,7 +90,7 @@ Scenario Outline: FAB-3851: Message Payloads of size <comment>, for <type> order
     Given I have a bootstrapped fabric network of type <type> using state-database couchdb
     And I use the NodeJS SDK interface
     When an admin sets up a channel
-    And an admin deploys chaincode at path "github.com/hyperledger/fabric-test/chaincodes/mapkeys/go" with args [""]
+    And an admin deploys chaincode at path "chaincodes/mapkeys/go" with args [""]
 
     When a user invokes on the chaincode named "mycc" with random args ["put","g","{random_value}"] of length <size>
     And I wait "7" seconds
