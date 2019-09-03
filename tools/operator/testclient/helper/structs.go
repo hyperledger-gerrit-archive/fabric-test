@@ -44,3 +44,18 @@ type InstallCC struct {
 	Language         string `yaml:"language,omitempty"`
 	MetadataPath     string `yaml:"metadataPath,omitempty"`
 }
+
+//InstantiateCC --
+type InstantiateCC struct {
+	ChainCodeName     string `yaml:"chaincodeID,omitempty"`
+	ChainCodeVersion  string `yaml:"chaincodeVer,omitempty"`
+	ChainCodePath     string `yaml:"chaincodePath,omitempty"`
+	Organizations     string `yaml:"organizations,omitempty"`
+	EndorsementPolicy string `yaml:"endorsementPolicy,omitempty"`
+	CollectionPath    string `yaml:"collectionPath,omitempty"`
+	Language          string `yaml:"language,omitempty"`
+	TimeOutOpt        struct {
+		PreConfig string `yaml:"preConfig,omitempty"`
+		Request   string `yaml:"request,omitempty"`
+	} `yaml:"timeoutOpt,omitempty"`
+}
