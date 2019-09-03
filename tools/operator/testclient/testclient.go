@@ -53,7 +53,7 @@ func doAction(action string, config helper.Config) {
 		tls = "clientauth"
 	}
 	if action == "all" {
-		actions = append(actions, []string{"create", "anchorpeer", "join", "install"}...)
+		actions = append(actions, []string{"create", "anchorpeer", "join", "install", "instantiate"}...)
 	} else {
 		actions = append(actions, action)
 	}
@@ -66,27 +66,33 @@ func doAction(action string, config helper.Config) {
 				logger.CRIT(err, "Failed to create channels")
 			}
 		case "anchorpeer":
-            var anchorpeer operations.AnchorPeerUpdateObject
-            err := anchorpeer.AnchorPeerUpdate(config, tls)
-            if err != nil {
-                logger.CRIT(err, "Failed to update anchor peer")
-            }
-        case "join":
-            var join operations.JoinChannelObject
-            err := join.JoinChannels(config, tls)
-            if err != nil {
-                logger.CRIT(err, "Failed to join peers to channels")
-            }
-        case "install":
-            var install operations.InstallChainCodeObject
-            err := install.InstallChainCode(config, tls)
-            if err != nil {
-                logger.CRIT(err, "Failed to install chaincode")
-            }
-        default:
-            logger.CRIT(nil, "Incorrect action: (%v). Use create, anchorpeer, join for action", action)
-        }
-    }
+			var anchorpeer operations.AnchorPeerUpdateObject
+			err := anchorpeer.AnchorPeerUpdate(config, tls)
+			if err != nil {
+				logger.CRIT(err, "Failed to update anchor peer")
+			}
+		case "join":
+			var join operations.JoinChannelObject
+			err := join.JoinChannels(config, tls)
+			if err != nil {
+				logger.CRIT(err, "Failed to join peers to channels")
+			}
+		case "install":
+			var install operations.InstallChainCodeObject
+			err := install.InstallChainCode(config, tls)
+			if err != nil {
+				logger.CRIT(err, "Failed to install chaincode on peers")
+			}
+		case "instantiate":
+			var instantiate operations.InstantiateChainCodeObject
+			err := instantiate.InstantiateChainCode(config, tls)
+			if err != nil {
+				logger.CRIT(err, "Failed to instantiate chaincode")
+			}
+		default:
+			logger.CRIT(nil, "Incorrect action: (%v). Use create, anchorpeer, join, install, instantiate for action", action)
+		}
+	}
 }
 
 func main() {
