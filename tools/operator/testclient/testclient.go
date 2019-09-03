@@ -54,7 +54,7 @@ func doAction(action string, config helper.Config) {
 		tls = "clientauth"
 	}
 	if action == "all" {
-		actions = append(actions, []string{"create", "anchorpeer", "join", "install"}...)
+		actions = append(actions, []string{"create", "anchorpeer", "join", "install", "instantiate"}...)
 	} else {
 		actions = append(actions, action)
 	}
@@ -83,7 +83,13 @@ func doAction(action string, config helper.Config) {
             err := install.InstallChainCode(config, tls)
             if err != nil {
                 logger.CRIT(err, "Failed to install chaincode")
-            }
+			}
+		case "instantiate":
+			var instantiate operations.InstantiateChainCodeObject
+			err := instantiate.InstantiateChainCode(config, tls)
+			if err != nil {
+				logger.CRIT(err, "Failed to instantiate chaincode")
+			}
 		default:
 			logger.CRIT(nil, "Incorrect Unknown (", action, ").Supported actions:", supportedActions)
 		}
