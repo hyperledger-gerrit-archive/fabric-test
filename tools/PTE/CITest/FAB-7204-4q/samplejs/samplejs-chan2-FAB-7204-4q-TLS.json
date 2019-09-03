@@ -10,7 +10,7 @@
     "targetPeers": "OrgAnchor",
     "nProcPerOrg": "1",
     "nRequest": "100",
-    "runDur": "43200",
+    "runDur": "10",
     "TLS": "enabled",
     "channelOpt": {
         "name": "testorgschannel2",
