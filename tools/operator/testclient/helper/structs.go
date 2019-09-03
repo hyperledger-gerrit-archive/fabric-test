@@ -48,11 +48,14 @@ type InstallCC struct {
 
 //InstantiateCC --
 type InstantiateCC struct {
+	ChannelName       string `yaml:"channelName,omitempty"`
 	ChainCodeName     string `yaml:"chaincodeName,omitempty"`
 	ChainCodeVersion  string `yaml:"ccVersion,omitempty"`
 	ChainCodePath     string `yaml:"chaincodePath,omitempty"`
 	Organizations     string `yaml:"organizations,omitempty"`
 	EndorsementPolicy string `yaml:"endorsementPolicy,omitempty"`
+	ChannelPrefix     string `yaml:"channelPrefix,omitempty"`
+	NumChannels       string `yaml:"numChannels,omitempty"`
 	CollectionPath    string `yaml:"collectionPath,omitempty"`
 	Language          string `yaml:"language,omitempty"`
 	TimeOutOpt        struct {
