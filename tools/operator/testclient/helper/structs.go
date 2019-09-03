@@ -10,6 +10,7 @@ type Config struct {
 	JoinChannel       []Channel          `yaml:"joinChannel,omitempty"`
 	InstallCC         []InstallCC        `yaml:"installChaincode,omitempty"`
 	InstantiateCC     []InstantiateCC    `yaml:"instantiateChaincode,omitempty"`
+	InvokeQuery       []InvokeQuery      `yaml:"invokes,omitempty"`
 }
 
 //Channel --
@@ -48,15 +49,67 @@ type InstallCC struct {
 
 //InstantiateCC --
 type InstantiateCC struct {
-	ChainCodeName     string `yaml:"chaincodeName,omitempty"`
-	ChainCodeVersion  string `yaml:"ccVersion,omitempty"`
-	ChainCodePath     string `yaml:"chaincodePath,omitempty"`
-	Organizations     string `yaml:"organizations,omitempty"`
-	EndorsementPolicy string `yaml:"endorsementPolicy,omitempty"`
-	CollectionPath    string `yaml:"collectionPath,omitempty"`
-	Language          string `yaml:"language,omitempty"`
-	TimeOutOpt        struct {
-		PreConfig string `yaml:"preConfig,omitempty"`
-		Request   string `yaml:"request,omitempty"`
-	} `yaml:"timeoutOpt,omitempty"`
+	ChannelName       string         `yaml:"channelName,omitempty"`
+	ChainCodeName     string         `yaml:"chaincodeName,omitempty"`
+	ChainCodeVersion  string         `yaml:"ccVersion,omitempty"`
+	Organizations     string         `yaml:"organizations,omitempty"`
+	Arguments         string         `yaml:"args,omitempty"`
+	EndorsementPolicy string         `yaml:"endorsementPolicy,omitempty"`
+	ChannelPrefix     string         `yaml:"channelPrefix,omitempty"`
+	NumChannels       int            `yaml:"numChannels,omitempty"`
+	CollectionPath    string         `yaml:"collectionPath,omitempty"`
+	TimeOutOpt        TimeOutOptions `yaml:"timeoutOpt,omitempty"`
+}
+
+//TimeOutOptions --
+type TimeOutOptions struct {
+	PreConfig string `yaml:"preConfig,omitempty"`
+	Request   string `yaml:"request,omitempty"`
+}
+
+//InvokeQuery --
+type InvokeQuery struct {
+	ChannelName   string               `yaml:"channelName,omitempty"`
+	TargetPeers   string               `yaml:"targetPeers,omitempty"`
+	NProcPerOrg   int                  `yaml:"nProcPerOrg,omitempty"`
+	NRequest      int                  `yaml:"nRequest,omitempty"`
+	RunDuration   int                  `yaml:"runDur,omitempty"`
+	Organizations string               `yaml:"organizations,omitempty"`
+	TxnOptions    []TransactionOptions `yaml:"txnOpts,omitempty"`
+	QueryCheck    int                  `yaml:"queryCheck,omitempty"`
+	EventOptions  EventOptions         `yaml:"eventOpt,omitempty"`
+	CCOptions     CCOptions            `yaml:"ccOpt,omitempty"`
+	MoveArgs      string               `yaml:"moveArgs,omitempty"`
+}
+
+//TransactionOptions --
+type TransactionOptions struct {
+	Mode    string  `yaml:"mode,omitempty"`
+	Options Options `yaml:"options,omitempty"`
+}
+
+//Options  --
+type Options struct {
+	ConstFreq  int `yaml:"constFreq,omitempty"`
+	DevFreq    int `yaml:"devFreq,omitempty"`
+	MixFreq    int `yaml:"mixFreq,omitempty"`
+	BurstFreq0 int `yaml:"burstFreq0,omitempty"`
+	BurstDur0  int `yaml:"burstDur0,omitempty"`
+	BurstFreq1 int `yaml:"burstFreq1,omitempty"`
+	BurstDur1  int `yaml:"burstDur1,omitempty"`
+}
+
+//EventOptions --
+type EventOptions struct {
+	Type     string `yaml:"type,omitempty"`
+	Listener string `yaml:"listener,omitempty"`
+	TimeOut  int    `yaml:"timeout,omitempty"`
+}
+
+//CCOptions --
+type CCOptions struct {
+	CCType     string `yaml:"ccType,omitempty"`
+	KeyStart   int    `yaml:"keyStart,omitempty"`
+	PayLoadMin int    `yaml:"payLoadMin,omitempty"`
+	PayLoadMax int    `yaml:"payLoadMax,omitempty"`
 }
