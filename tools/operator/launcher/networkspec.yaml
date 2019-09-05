@@ -17,9 +17,11 @@ orderer_fabric_logging_spec: error
 tls: true
 #! fabric metrics with prometheus (true/false)
 metrics: false
+#! Enable dynamic org leader
+org_leader: true
 
 #! Location where crypto-config and channel-artifacts are stored
-artifacts_location: /home/testuser/go/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/
+artifacts_location: /Users/thoomu@us.ibm.com/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/
 
 #! Orderer Config Settings
 orderer:
