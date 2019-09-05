@@ -17,6 +17,8 @@ orderer_fabric_logging_spec: info
 tls: false
 #! fabric metrics with prometheus (true/false)
 metrics: true
+#! disable gossip and enable peer as org leader
+gossip_disable: false
 
 #! Location where crypto-config and channel-artifacts are stored
 artifacts_location: /home/jenkins/gopath/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/
