@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"io/ioutil"
+	"strings"
 
 	"github.com/hyperledger/fabric-test/tools/operator/logger"
 	"github.com/hyperledger/fabric-test/tools/operator/testclient/inputStructs"
@@ -75,6 +76,12 @@ func doAction(action string, config inputStructs.Config) {
 		case "instantiate":
 			var instantiateCCUIObject operations.InstantiateCCUIObject
 			err := instantiateCCUIObject.InstantiateCC(config, tls)
+			if err != nil {
+				logger.CRIT(err, "Failed to instantiate chaincode")
+			}
+		case "invoke", "query":
+			var invokeQueryUIObject operations.InvokeQueryUIObject
+			err := invokeQueryUIObject.InvokeQuery(config, tls, strings.Title(action))
 			if err != nil {
 				logger.CRIT(err, "Failed to instantiate chaincode")
 			}
