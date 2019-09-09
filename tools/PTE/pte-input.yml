@@ -93,7 +93,9 @@ invokes:
     organizations: org1,org2
     txnOpts:
       - mode: constant
-        options: "0,0"
+        options: 
+          constFreq: 0
+          devFreq: 0
     queryCheck: 100
     eventOpt:
       type: FilteredBlock
@@ -104,7 +106,7 @@ invokes:
       keyStart: 0
       payLoadMin: 1024
       payLoadMax: 2048
-    moveArgs: "put,a1,1"
+    args: "put,a1,1"
 
 queries:
   - channelName: testorgschannel1
@@ -116,4 +118,4 @@ queries:
     ccOpt:
       ccType: ccchecker
       keyStart: 0
-    queryArgs: "get,a1"
+    args: "get,a1"
