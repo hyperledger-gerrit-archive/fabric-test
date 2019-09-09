@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"io/ioutil"
+	"strings"
 
 	"github.com/hyperledger/fabric-test/tools/operator/logger"
 	"github.com/hyperledger/fabric-test/tools/operator/testclient/inputStructs"
@@ -40,10 +41,10 @@ func GetInputData(inputFilePath string) (inputStructs.Config, error) {
 	return config, nil
 }
 
-func doAction(action string, config inputStructs.Config) {
+func doAction(action string, config inputStructs.Config, testInputFilePath string) {
 
 	var actions []string
-	supportedActions := "create|join|install|instantiate|anchorpeer|upgrade|invoke|query"
+	supportedActions := "create|anchorpeer|join|install|instantiate|upgrade|invoke|query"
 	tls := config.TLS
 	switch tls {
 	case "true":
@@ -64,19 +65,25 @@ func doAction(action string, config inputStructs.Config) {
 			var channelUIObject operations.ChannelUIObject
 			err := channelUIObject.ChannelConfigs(config, tls, action)
 			if err != nil {
-				logger.CRIT(err, "Failed to perform ", action, "action on channels")
+				logger.CRIT(err, "Failed to perform ", action, "action on channels; testInputFilePath = ", testInputFilePath)
 			}
 		case "install":
-            var installCCUIObject operations.InstallCCUIObject
-            err := installCCUIObject.InstallCC(config, tls)
-            if err != nil {
-                logger.CRIT(err, "Failed to install chaincode")
+			var installCCUIObject operations.InstallCCUIObject
+			err := installCCUIObject.InstallCC(config, tls)
+			if err != nil {
+				logger.CRIT(err, "Failed to install chaincode; testInputFilePath = ", testInputFilePath)
 			}
 		case "instantiate":
 			var instantiateCCUIObject operations.InstantiateCCUIObject
 			err := instantiateCCUIObject.InstantiateCC(config, tls)
 			if err != nil {
-				logger.CRIT(err, "Failed to instantiate chaincode")
+				logger.CRIT(err, "Failed to ", action, " chaincode; testInputFilePath = ", testInputFilePath)
+			}
+		case "invoke", "query":
+			var invokeQueryUIObject operations.InvokeQueryUIObject
+			err := invokeQueryUIObject.InvokeQuery(config, tls, strings.Title(action))
+			if err != nil {
+				logger.CRIT(err, "Failed to perform ", action, "; testInputFilePath = ", testInputFilePath)
 			}
 		default:
 			logger.CRIT(nil, "Incorrect Unknown (", action, ").Supported actions:", supportedActions)
@@ -92,5 +99,5 @@ func main() {
 	if err != nil {
 		logger.CRIT(err)
 	}
-	doAction(*action, config)
+	doAction(*action, config, *testInputFilePath)
 }
