@@ -79,7 +79,7 @@ type InvokeQuery struct {
 	QueryCheck    int                  `yaml:"queryCheck,omitempty"`
 	EventOptions  EventOptions         `yaml:"eventOpt,omitempty"`
 	CCOptions     CCOptions            `yaml:"ccOpt,omitempty"`
-	MoveArgs      string               `yaml:"moveArgs,omitempty"`
+	Args          string               `yaml:"args,omitempty"`
 }
 
 //TransactionOptions --
