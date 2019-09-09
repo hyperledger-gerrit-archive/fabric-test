@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"io/ioutil"
+	"strings"
 
 	"github.com/hyperledger/fabric-test/tools/operator/logger"
 	"github.com/hyperledger/fabric-test/tools/operator/testclient/helper"
@@ -87,6 +88,12 @@ func doAction(action string, config helper.Config) {
 		case "instantiate", "upgrade":
 			var instantiate operations.InstantiateChainCodeObject
 			err := instantiate.InstantiateChainCode(config, tls, action)
+			if err != nil {
+				logger.CRIT(err, "Failed to instantiate chaincode")
+			}
+		case "invoke", "query":
+			var invokeQuery operations.InvokeQueryObject
+			err := invokeQuery.InvokeQuery(config, tls, strings.Title(action))
 			if err != nil {
 				logger.CRIT(err, "Failed to instantiate chaincode")
 			}
