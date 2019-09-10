@@ -53,7 +53,7 @@ func doAction(action string, config helper.Config) {
 		tls = "clientauth"
 	}
 	if action == "all" {
-		actions = append(actions, []string{"create", "anchorpeer", "join", "install", "instantiate"}...)
+		actions = append(actions, []string{"create", "anchorpeer", "join", "install", "instantiate", "upgrade"}...)
 	} else {
 		actions = append(actions, action)
 	}
@@ -83,14 +83,14 @@ func doAction(action string, config helper.Config) {
 			if err != nil {
 				logger.CRIT(err, "Failed to install chaincode on peers")
 			}
-		case "instantiate":
+		case "instantiate", "upgrade":
 			var instantiate operations.InstantiateChainCodeObject
-			err := instantiate.InstantiateChainCode(config, tls)
+			err := instantiate.InstantiateChainCode(config, tls, action)
 			if err != nil {
 				logger.CRIT(err, "Failed to instantiate chaincode")
 			}
 		default:
-			logger.CRIT(nil, "Incorrect action: (%v). Use create, anchorpeer, join, install, instantiate for action", action)
+			logger.CRIT(nil, "Incorrect action: (%v). Use create, anchorpeer, join, install, instantiate, upgrade for action", action)
 		}
 	}
 }
