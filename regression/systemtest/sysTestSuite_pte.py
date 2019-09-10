@@ -6,7 +6,7 @@
 import unittest
 import subprocess
 
-logs_directory = '../../tools/PTE/CITest/scripts'
+logs_directory = '../../tools/PTE/logs'
 operator_directory = '../../tools/operator'
 k8s_testsuite = '../../tools/PTE/CITest/k8s_testsuite/scripts'
 
@@ -19,28 +19,28 @@ queryCountFailure =     "Error: incorrect number of QUERY transactions sent or r
 class System_Tests_Kafka_Couchdb_TLS(unittest.TestCase):
 
 
-    def test_1downNetwork(self):
+    def test_01downNetwork(self):
         '''
         Description:
 
         '''
 
         # Teardown the network
-        returncode = subprocess.call("./operator.sh -a down -f ../networkSpecFiles/kafka_couchdb_tls.yaml", cwd=k8s_testsuite, shell=True)
+        returncode = subprocess.call("./operator.sh -a down -f ../networkSpecFiles/raft_couchdb_mutualtls_servdisc.yaml", cwd=k8s_testsuite, shell=True)
         self.assertEqual(returncode, 0, msg=testScriptFailed)
 
 
-    def test_2launchNetwork(self):
+    def test_02launchNetwork(self):
         '''
         Description:
 
         '''
 
         # Launch the network
-        returncode = subprocess.call("./operator.sh -a up -f ../networkSpecFiles/kafka_couchdb_tls.yaml", cwd=k8s_testsuite, shell=True)
+        returncode = subprocess.call("./operator.sh -a up -f ../networkSpecFiles/raft_couchdb_mutualtls_servdisc.yaml", cwd=k8s_testsuite, shell=True)
         self.assertEqual(returncode, 0, msg=testScriptFailed)
 
-    def test_3createJoinChannel(self):
+    def test_03createJoinChannel(self):
         '''
         Description:
 
@@ -49,7 +49,7 @@ class System_Tests_Kafka_Couchdb_TLS(unittest.TestCase):
         returncode = subprocess.call("./operator.sh -c", cwd=k8s_testsuite, shell=True)
         self.assertEqual(returncode, 0, msg=testScriptFailed)
 
-    def test_4installInstantiation(self):
+    def test_04installInstantiation(self):
         '''
         Description:
 
@@ -58,7 +58,7 @@ class System_Tests_Kafka_Couchdb_TLS(unittest.TestCase):
         returncode = subprocess.call("./operator.sh -i", cwd=k8s_testsuite, shell=True)
         self.assertEqual(returncode, 0, msg=testScriptFailed)
 
-    def test_5samplecc_orgAnchor_2chan(self):
+    def test_05samplecc_orgAnchor_2chan(self):
         '''
         Description:
 
@@ -79,7 +79,7 @@ class System_Tests_Kafka_Couchdb_TLS(unittest.TestCase):
                 cwd=logs_directory, shell=True)
         self.assertEqual(int(count.strip()), 1, msg=queryCountFailure)
 
-    def test_6samplejs_orgAnchor_2chan(self):
+    def test_06samplejs_orgAnchor_2chan(self):
         '''
         Description:
 
@@ -101,7 +101,7 @@ class System_Tests_Kafka_Couchdb_TLS(unittest.TestCase):
         self.assertEqual(int(count.strip()), 1, msg=queryCountFailure)
 
 
-    def test_7sbe_go_2chan_endorse(self):
+    def test_07sbe_go_2chan_endorse(self):
         '''
         Description:
 
@@ -117,13 +117,34 @@ class System_Tests_Kafka_Couchdb_TLS(unittest.TestCase):
                 cwd=logs_directory, shell=True)
         self.assertEqual(int(count.strip()), 1, msg=invokeFailure)
 
-
-    def test_8tearDownNetwork(self):
+    def test_08samplecc_go_10K_payload(self):
         '''
         Description:
 
         '''
 
-        # Teardown the network
-        returncode = subprocess.call("./operator.sh -a down -f ../networkSpecFiles/kafka_couchdb_tls.yaml", cwd=k8s_testsuite, shell=True)
+        # Run the test scenario: Execute invokes and query tests.
+        returncode = subprocess.call("./operator.sh -t samplecc_go_10K_payload", cwd=k8s_testsuite, shell=True)
         self.assertEqual(returncode, 0, msg=testScriptFailed)
+
+        # check the counts
+        count = subprocess.check_output(
+                "grep \"CONSTANT INVOKE Overall transactions: sent 800 received 800\" samplecc_go_10K_i_pteReport.txt | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=invokeFailure)
+
+    def test_09samplecc_go_4M_payload(self):
+        '''
+        Description:
+
+        '''
+
+        # Run the test scenario: Execute invokes and query tests.
+        returncode = subprocess.call("./operator.sh -t samplecc_go_4M_payload", cwd=k8s_testsuite, shell=True)
+        self.assertEqual(returncode, 0, msg=testScriptFailed)
+
+        # check the counts
+        count = subprocess.check_output(
+                "grep \"CONSTANT INVOKE Overall transactions: sent 40 received 40\" samplecc_go_4M_i_pteReport.txt | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=invokeFailure)
