@@ -64,11 +64,11 @@ type GetMSPID struct {
 }
 
 //InstantiateChainCode --
-func (i InstantiateChainCodeObject) InstantiateChainCode(config helper.Config, tls string) error {
+func (i InstantiateChainCodeObject) InstantiateChainCode(config helper.Config, tls, action string) error {
 
 	var instantiateCCObjects []InstantiateChainCodeObject
 	for index := 0; index < len(config.InstantiateCC); index++ {
-		ccObjects, err := i.generateInstantiateCCObjects(config.InstantiateCC[index], config.Organizations, tls)
+		ccObjects, err := i.generateInstantiateCCObjects(config.InstantiateCC[index], config.Organizations, tls, action)
 		if err != nil {
 			return err
 		}
@@ -81,31 +81,31 @@ func (i InstantiateChainCodeObject) InstantiateChainCode(config helper.Config, t
 	return nil
 }
 
-func (i InstantiateChainCodeObject) generateInstantiateCCObjects(ccObject helper.InstantiateCC, organizations []helper.Organization, tls string) ([]InstantiateChainCodeObject, error) {
+func (i InstantiateChainCodeObject) generateInstantiateCCObjects(ccObject helper.InstantiateCC, organizations []helper.Organization, tls, action string) ([]InstantiateChainCodeObject, error) {
 
 	var instantiateCCObjects []InstantiateChainCodeObject
 	var err error
 	if ccObject.ChannelPrefix != "" && ccObject.NumChannels > 0 {
-		instantiateCCObjects, err = i.createInstantiateCCObjectIfChanPrefix(ccObject, organizations, tls)
+		instantiateCCObjects, err = i.createInstantiateCCObjectIfChanPrefix(ccObject, organizations, tls, action)
 		if err != nil {
 			return instantiateCCObjects, err
 		}
 		return instantiateCCObjects, nil
 	}
 	orgNames := strings.Split(ccObject.Organizations, ",")
-	instantiateCCObjects, err = i.createInstantiateCCObjects(orgNames, ccObject.ChannelName, tls, organizations, ccObject)
+	instantiateCCObjects, err = i.createInstantiateCCObjects(orgNames, ccObject.ChannelName, tls, action, organizations, ccObject)
 	if err != nil {
 		return instantiateCCObjects, err
 	}
 	return instantiateCCObjects, nil
 }
 
-func (i InstantiateChainCodeObject) createInstantiateCCObjects(orgNames []string, channelName, tls string, organizations []helper.Organization, ccObject helper.InstantiateCC) ([]InstantiateChainCodeObject, error) {
+func (i InstantiateChainCodeObject) createInstantiateCCObjects(orgNames []string, channelName, tls, action string, organizations []helper.Organization, ccObject helper.InstantiateCC) ([]InstantiateChainCodeObject, error) {
 
 	var instantiateCCObjects []InstantiateChainCodeObject
 	for _, orgName := range orgNames {
 		orgName = strings.TrimSpace(orgName)
-		i = InstantiateChainCodeObject{TransType: "instantiate", TLS: tls, ConnProfilePath: helper.GetConnProfilePathForOrg(orgName, organizations), ChainCodeID: ccObject.ChainCodeName, ChainCodeVer: ccObject.ChainCodeVersion}
+		i = InstantiateChainCodeObject{TransType: action, TLS: tls, ConnProfilePath: helper.GetConnProfilePathForOrg(orgName, organizations), ChainCodeID: ccObject.ChainCodeName, ChainCodeVer: ccObject.ChainCodeVersion}
 		i.ChannelOpt = ChannelOptions{Name: channelName, Action: "create", OrgName: []string{orgName}}
 		i.DeployOpt = InstantiateDeployOptions{Function: "init", Arguments: strings.Split(ccObject.Arguments, ",")}
 		i.TimeOutOpt = TimeOutOptions{PreConfig: ccObject.TimeOutOpt.PreConfig, Request: ccObject.TimeOutOpt.Request}
@@ -128,14 +128,14 @@ func (i InstantiateChainCodeObject) createInstantiateCCObjects(orgNames []string
 	return instantiateCCObjects, nil
 }
 
-func (i InstantiateChainCodeObject) createInstantiateCCObjectIfChanPrefix(ccObject helper.InstantiateCC, organizations []helper.Organization, tls string) ([]InstantiateChainCodeObject, error) {
+func (i InstantiateChainCodeObject) createInstantiateCCObjectIfChanPrefix(ccObject helper.InstantiateCC, organizations []helper.Organization, tls, action string) ([]InstantiateChainCodeObject, error) {
 
 	var instantiateCCObjects []InstantiateChainCodeObject
 	var channelName string
 	for j := 0; j < ccObject.NumChannels; j++ {
 		channelName = fmt.Sprintf("%s%s", ccObject.ChannelPrefix, strconv.Itoa(j))
 		orgNames := strings.Split(ccObject.Organizations, ",")
-		ccObjects, err := i.createInstantiateCCObjects(orgNames, channelName, tls, organizations, ccObject)
+		ccObjects, err := i.createInstantiateCCObjects(orgNames, channelName, tls, action, organizations, ccObject)
 		if err != nil {
 			return instantiateCCObjects, err
 		}

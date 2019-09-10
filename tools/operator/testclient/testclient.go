@@ -83,9 +83,9 @@ func doAction(action string, config helper.Config) {
 			if err != nil {
 				logger.CRIT(err, "Failed to install chaincode on peers")
 			}
-		case "instantiate":
+		case "instantiate", "upgrade":
 			var instantiate operations.InstantiateChainCodeObject
-			err := instantiate.InstantiateChainCode(config, tls)
+			err := instantiate.InstantiateChainCode(config, tls, action)
 			if err != nil {
 				logger.CRIT(err, "Failed to instantiate chaincode")
 			}
