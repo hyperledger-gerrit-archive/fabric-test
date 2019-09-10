@@ -6,7 +6,7 @@
 import unittest
 import subprocess
 
-logs_directory = '../../tools/PTE/CITest/scripts'
+logs_directory = '../../tools/PTE/logs'
 operator_directory = '../../tools/operator'
 k8s_testsuite = '../../tools/PTE/CITest/k8s_testsuite/scripts'
 
@@ -117,8 +117,55 @@ class System_Tests_Kafka_Couchdb_TLS(unittest.TestCase):
                 cwd=logs_directory, shell=True)
         self.assertEqual(int(count.strip()), 1, msg=invokeFailure)
 
+    def test_8samplecc_go_10K_payload(self):
+        '''
+        Description:
 
-    def test_8tearDownNetwork(self):
+        '''
+
+        # Run the test scenario: Execute invokes and query tests.
+        returncode = subprocess.call("./operator.sh -t samplecc_go_10K_payload", cwd=k8s_testsuite, shell=True)
+        self.assertEqual(returncode, 0, msg=testScriptFailed)
+
+        # check the counts
+        count = subprocess.check_output(
+                "grep \"CONSTANT INVOKE Overall transactions: sent 400 received 400\" samplecc_go_10K_i_pteReport.txt | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=invokeFailure)
+
+    def test_9samplecc_go_4M_payload(self):
+        '''
+        Description:
+
+        '''
+
+        # Run the test scenario: Execute invokes and query tests.
+        returncode = subprocess.call("./operator.sh -t samplecc_go_4M_payload", cwd=k8s_testsuite, shell=True)
+        self.assertEqual(returncode, 0, msg=testScriptFailed)
+
+        # check the counts
+        count = subprocess.check_output(
+                "grep \"CONSTANT INVOKE Overall transactions: sent 400 received 400\" samplecc_go_4M_i_pteReport.txt | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=invokeFailure)
+
+    def test_10samplecc_go_49M_payload(self):
+        '''
+        Description:
+
+        '''
+
+        # Run the test scenario: Execute invokes and query tests.
+        returncode = subprocess.call("./operator.sh -t samplecc_go_49M_payload", cwd=k8s_testsuite, shell=True)
+        self.assertEqual(returncode, 0, msg=testScriptFailed)
+
+        # check the counts
+        count = subprocess.check_output(
+                "grep \"CONSTANT INVOKE Overall transactions: sent 1 received 1\" samplecc_go_49M_i_pteReport.txt | wc -l",
+                cwd=logs_directory, shell=True)
+        self.assertEqual(int(count.strip()), 1, msg=invokeFailure)
+
+    def test_11tearDownNetwork(self):
         '''
         Description:
 
