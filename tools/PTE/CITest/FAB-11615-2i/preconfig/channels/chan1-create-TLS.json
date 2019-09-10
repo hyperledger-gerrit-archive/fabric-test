@@ -2,7 +2,7 @@
     "channelID": "_ch3",
     "transType": "Channel",
     "nProcPerOrg": "1",
-    "TLS": "enabled",
+    "TLS": "clientauth",
     "channelOpt": {
         "name": "testorgschannel3",
         "channelTX": "github.com/hyperledger/fabric-test/fabric/internal/cryptogen/channel-artifacts/testorgschannel3.tx",

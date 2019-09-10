@@ -13,7 +13,7 @@
     "nProcPerOrg": "1",
     "nRequest": "4000",
     "runDur": "0",
-    "TLS": "enabled",
+    "TLS": "clientauth",
     "channelOpt": {
         "name": "testorgschannel3",
         "orgName": [

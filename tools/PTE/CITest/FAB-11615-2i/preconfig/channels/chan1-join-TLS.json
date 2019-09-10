@@ -2,7 +2,7 @@
     "channelID": "_ch3",
     "transType": "Channel",
     "nProcPerOrg": "1",
-    "TLS": "enabled",
+    "TLS": "clientauth",
     "channelOpt": {
         "name": "testorgschannel3",
         "action":  "join",
