@@ -67,8 +67,12 @@ type GetMSPID struct {
 func (i InstantiateCCUIObject) InstantiateCC(config inputStructs.Config, tls string) error {
 
 	var instantiateCCObjects []InstantiateCCUIObject
-	for index := 0; index < len(config.InstantiateCC); index++ {
-		ccObjects, err := i.generateInstantiateCCObjects(config.InstantiateCC[index], config.Organizations, tls)
+	configObject := config.InstantiateCC
+	if action == "upgrade"{
+		configObject = config.UpgradeCC
+	}
+	for index := 0; index < len(configObject); index++ {
+		ccObjects, err := i.generateInstantiateCCObjects(configObject[index], config.Organizations, tls)
 		if err != nil {
 			return err
 		}
@@ -105,8 +109,8 @@ func (i InstantiateCCUIObject) createInstantiateCCObjects(orgNames []string, cha
 	var instantiateCCObjects []InstantiateCCUIObject
 	for _, orgName := range orgNames {
 		orgName = strings.TrimSpace(orgName)
-		i = InstantiateCCUIObject{TransType: "instantiate", TLS: tls, ConnProfilePath: paths.GetConnProfilePathForOrg(orgName, organizations), ChainCodeID: ccObject.ChainCodeName, ChainCodeVer: ccObject.ChainCodeVersion}
-		i.ChannelOpt = ChannelOptions{Name: channelName, Action: "create", OrgName: []string{orgName}}
+		i = InstantiateCCUIObject{TransType: action, TLS: tls, ConnProfilePath: paths.GetConnProfilePathForOrg(orgName, organizations), ChainCodeID: ccObject.ChainCodeName, ChainCodeVer: ccObject.ChainCodeVersion}
+		i.ChannelOpt = ChannelOptions{Name: channelName, OrgName: []string{orgName}}
 		i.DeployOpt = InstantiateDeployOptions{Function: "init", Arguments: strings.Split(ccObject.CCFcnArgs, ",")}
 		i.TimeOutOpt = TimeOutOptions{PreConfig: ccObject.TimeOutOpt.PreConfig, Request: ccObject.TimeOutOpt.Request}
 		if ccObject.TimeOutOpt.PreConfig == "" {
