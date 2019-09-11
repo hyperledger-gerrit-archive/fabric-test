@@ -84,6 +84,15 @@ instantiateChaincode:
     endorsementPolicy: 2of(org1,org2)
     collectionPath: $PWD/txt.json
 
+upgradeChaincode:
+  - channelName: testorgschannel1
+    chaincodeName: samplecc
+    ccVersion: v1
+    args: "1,2,3,4"
+    organizations: org1
+    endorsementPolicy: 2of(org1,org2)
+    collectionPath: $PWD/txt.json
+
 invokes:
   - channelName: testorgschannel1
     chaincodeName: samplecc

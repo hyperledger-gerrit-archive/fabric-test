@@ -9,6 +9,7 @@ type Config struct {
 	JoinChannel      []Channel          `yaml:"joinChannel,omitempty"`
 	InstallCC        []InstallCC        `yaml:"installChaincode,omitempty"`
 	InstantiateCC    []InstantiateCC    `yaml:"instantiateChaincode,omitempty"`
+	UpgradeCC        []InstantiateCC    `yaml:"upgradeChaincode,omitempty"`
 	Invoke           []InvokeQuery      `yaml:"invokes,omitempty"`
 	Query            []InvokeQuery      `yaml:"queries,omitempty"`
 }

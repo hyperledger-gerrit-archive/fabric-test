@@ -89,7 +89,7 @@ func doAction(action string, config helper.Config) {
 			var instantiate operations.InstantiateChainCodeObject
 			err := instantiate.InstantiateChainCode(config, tls, action)
 			if err != nil {
-				logger.CRIT(err, "Failed to instantiate chaincode")
+				logger.CRIT(err, "Failed to ", action, "chaincode")
 			}
 		case "invoke", "query":
 			var invokeQuery operations.InvokeQueryObject
