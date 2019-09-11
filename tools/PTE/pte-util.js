@@ -118,14 +118,18 @@ function isEmpty(obj) {
 function getConnProfileList(cpPath) {
 
     var cpList = [];
-    fs.readdirSync(cpPath).forEach(file => {
-        logger.info('[getConnProfileList] file', file);
-        var file_ext = path.extname(file);
-        if ((/(yml|yaml|json)$/i).test(file_ext)) {
-            var cpf=path.join(cpPath, file);
-            cpList.push(cpf);
-        }
-    });
+    if ((/(yml|yaml|json)$/i).test(cpPath)) {
+         cpList.push(cpPath)
+    } else {
+        fs.readdirSync(cpPath).forEach(file => {
+            logger.info('[getConnProfileList] file', file);
+            var file_ext = path.extname(file);
+            if ((/(yml|yaml|json)$/i).test(file_ext)) {
+                var cpf = path.join(cpPath, file);
+                cpList.push(cpf);
+            }
+        });
+    }
     logger.info('[getConnProfileList] file:', cpList);
 
     return cpList;
