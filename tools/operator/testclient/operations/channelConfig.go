@@ -7,6 +7,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
+	"github.com/hyperledger/fabric-test/tools/operator/logger"
 	"github.com/hyperledger/fabric-test/tools/operator/networkclient"
 	"github.com/hyperledger/fabric-test/tools/operator/paths"
 	"github.com/hyperledger/fabric-test/tools/operator/testclient/inputStructs"
@@ -52,6 +54,10 @@ func (c ChannelUIObject) ChannelConfigs(config inputStructs.Config, tls, action 
 	if err != nil {
 		return err
 	}
+	err = c.updateConnectionProfiles(configObjects, config.Organizations, action)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
@@ -71,6 +77,9 @@ func (c ChannelUIObject) createChannelConfigObjects(orgNames []string, channelNa
 
 	var channelObjects []ChannelUIObject
 	var channelOpt ChannelOptions
+	if action != "join" && len(orgNames) > 1 {
+		orgNames = []string{orgNames[0]}
+	}
 	for _, orgName := range orgNames {
 		orgName = strings.TrimSpace(orgName)
 		if action == "anchorpeer" {
@@ -126,4 +135,68 @@ func (c ChannelUIObject) doChannelAction(channelUIObjects []ChannelUIObject) err
 		}
 	}
 	return nil
+}
+
+func (c ChannelUIObject) updateConnectionProfiles(channelObjects []inputStructs.Channel, organizations []inputStructs.Organization, action string) error {
+
+	var err error
+	for key := range channelObjects {
+		err = c.updateConnectionProfilePerChannel(channelObjects[key], organizations, action)
+		if err != nil {
+			return err
+		}
+	}
+	return err
+}
+
+func (c ChannelUIObject) updateConnectionProfilePerChannel(channelObject inputStructs.Channel, organizations []inputStructs.Organization, action string) error {
+
+	var err error
+	orgNames := strings.Split(channelObject.Organizations, ",")
+	for _, orgName := range orgNames {
+		orgName = strings.TrimSpace(orgName)
+		if channelObject.ChannelPrefix != "" {
+			err = c.updateConnectionProfilesIfChanPrefix(channelObject, organizations, action, orgName)
+			if err != nil {
+				return err
+			}
+		} else {
+			err = c.updateConnectionProfilePerOrg(organizations, action, orgName, channelObject.ChannelName)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return err
+}
+
+func (c ChannelUIObject) updateConnectionProfilePerOrg(organizations []inputStructs.Organization, action, orgName, channelName string) error {
+
+	var err error
+	var connProfileObject connectionprofile.ConnProfile
+	connProfilePath := paths.GetConnProfilePathForOrg(orgName, organizations)
+	if action == "create" {
+		err = connProfileObject.UpdateConnectionProfile(connProfilePath, channelName, "orderer")
+	} else if action == "join" {
+		err = connProfileObject.UpdateConnectionProfile(connProfilePath, channelName, "peer")
+	}
+	if err != nil {
+		logger.ERROR("Failed to update connection profile after channel ", action)
+		return err
+	}
+	return err
+}
+
+func (c ChannelUIObject) updateConnectionProfilesIfChanPrefix(channelObject inputStructs.Channel, organizations []inputStructs.Organization, action, orgName string) error {
+
+	var err error
+	var channelName string
+	for i := 0; i < channelObject.NumChannels; i++ {
+		channelName = fmt.Sprintf("%s%d", channelObject.ChannelPrefix, i)
+		err = c.updateConnectionProfilePerOrg(organizations, action, orgName, channelName)
+		if err != nil {
+			return err
+		}
+	}
+	return err
 }
