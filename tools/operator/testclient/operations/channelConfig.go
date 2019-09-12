@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
 	"github.com/hyperledger/fabric-test/tools/operator/networkclient"
 	"github.com/hyperledger/fabric-test/tools/operator/paths"
 	"github.com/hyperledger/fabric-test/tools/operator/testclient/inputStructs"
@@ -34,6 +35,7 @@ func (c ChannelUIObject) ChannelConfigs(config inputStructs.Config, tls, action 
 	var err error
 	var channelUIObjects, channelObjects []ChannelUIObject
 	var configObjects []inputStructs.Channel
+	var channelConfigObjects []interface{}
 	switch action {
 	case "create":
 		configObjects = config.CreateChannel
@@ -47,8 +49,14 @@ func (c ChannelUIObject) ChannelConfigs(config inputStructs.Config, tls, action 
 		if len(channelObjects) > 0 {
 			channelUIObjects = append(channelUIObjects, channelObjects...)
 		}
+		channelConfigObjects = append(channelConfigObjects, &configObjects[i])
 	}
 	err = c.doChannelAction(channelUIObjects)
+	if err != nil {
+		return err
+	}
+	var connProfileObject connectionprofile.ConnProfile
+	err = connProfileObject.UpdateConnectionProfiles(channelConfigObjects, config.Organizations, action)
 	if err != nil {
 		return err
 	}
@@ -71,7 +79,7 @@ func (c ChannelUIObject) createChannelConfigObjects(orgNames []string, channelNa
 
 	var channelObjects []ChannelUIObject
 	var channelOpt ChannelOptions
-	if action != "join" && len(orgNames) > 1{
+	if action != "join" && len(orgNames) > 1 {
 		orgNames = []string{orgNames[0]}
 	}
 	for _, orgName := range orgNames {
