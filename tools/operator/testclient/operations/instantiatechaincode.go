@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hyperledger/fabric-test/tools/operator/connectionprofile"
 	"github.com/hyperledger/fabric-test/tools/operator/logger"
 	"github.com/hyperledger/fabric-test/tools/operator/networkclient"
 	"github.com/hyperledger/fabric-test/tools/operator/paths"
@@ -67,18 +68,25 @@ type GetMSPID struct {
 func (i InstantiateCCUIObject) InstantiateCC(config inputStructs.Config, tls, action string) error {
 
 	var instantiateCCObjects []InstantiateCCUIObject
-	configObject := config.InstantiateCC
-	if action == "upgrade"{
-		configObject = config.UpgradeCC
+	configObjects := config.InstantiateCC
+	var ccConfigObjects []interface{}
+	if action == "upgrade" {
+		configObjects = config.UpgradeCC
 	}
-	for index := 0; index < len(configObject); index++ {
-		ccObjects, err := i.generateInstantiateCCObjects(configObject[index], config.Organizations, tls, action)
+	for index := 0; index < len(configObjects); index++ {
+		ccObjects, err := i.generateInstantiateCCObjects(configObjects[index], config.Organizations, tls, action)
 		if err != nil {
 			return err
 		}
+		ccConfigObjects = append(ccConfigObjects, &configObjects[index])
 		instantiateCCObjects = append(instantiateCCObjects, ccObjects...)
 	}
 	err := i.instantiateCC(instantiateCCObjects)
+	if err != nil {
+		return err
+	}
+	var connProfileObject connectionprofile.ConnProfile
+	err = connProfileObject.UpdateConnectionProfiles(ccConfigObjects, config.Organizations, action)
 	if err != nil {
 		return err
 	}
@@ -124,7 +132,7 @@ func (i InstantiateCCUIObject) createInstantiateCCObjects(orgNames []string, cha
 			}
 			i.DeployOpt.Endorsement = endorsementPolicy
 		}
-		if ccObject.CollectionPath != ""{
+		if ccObject.CollectionPath != "" {
 			i.DeployOpt.CollectionsConfigPath = ccObject.CollectionPath
 		}
 		instantiateCCObjects = append(instantiateCCObjects, i)
