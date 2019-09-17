@@ -6,7 +6,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-FabricTestDir=$GOPATH/src/github.com/hyperledger/fabric-test
+DIRECTORY=$(cd `dirname $0` && pwd)
+FabricTestDir=$DIRECTORY/../../../../
 NLDir=$FabricTestDir/tools/NL
 
 CWD=$PWD
