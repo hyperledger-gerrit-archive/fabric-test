@@ -10,7 +10,7 @@ set -euo pipefail
 
 # common test directories
 CurrentDirectory=$(cd `dirname $0` && pwd)
-FabricTestDir="$(echo $CurrentDirectory | awk -F'fabric-test' '{print $1}')fabric-test"
+FabricTestDir="$(echo $CurrentDirectory | awk -F'/fabric-test/' '{print $1}')/fabric-test"
 NLDir=$FabricTestDir"/tools/NL"
 PTEDir=$FabricTestDir"/tools/PTE"
 CMDDir=$PTEDir"/CITest/scripts"

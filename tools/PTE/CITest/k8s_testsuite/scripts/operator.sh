@@ -39,7 +39,7 @@ done
 
 # common test directories
 CurrentDirectory=$(cd `dirname $0` && pwd)
-FabricTestDir="$(echo $CurrentDirectory | awk -F'fabric-test' '{print $1}')fabric-test"
+FabricTestDir="$(echo $CurrentDirectory | awk -F'/fabric-test/' '{print $1}')/fabric-test"
 OperatorDir="$FabricTestDir"/tools/operator
 PTEDir="$FabricTestDir"/tools/PTE
 LogsDir="$FabricTestDir"/tools/PTE/CITest/Logs

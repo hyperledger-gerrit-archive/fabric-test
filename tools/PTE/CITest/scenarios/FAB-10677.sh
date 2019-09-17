@@ -15,7 +15,7 @@ NREQ=10000
 
 CWD=$PWD
 CurrentDirectory=$(cd `dirname $0` && pwd)
-FabricTestDir="$(echo $CurrentDirectory | awk -F'fabric-test' '{print $1}')fabric-test"
+FabricTestDir="$(echo $CurrentDirectory | awk -F'/fabric-test/' '{print $1}')/fabric-test"
 NLDir=$FabricTestDir"/tools/NL"
 PTEDir=$FabricTestDir"/tools/PTE"
 LCPDir=$TESTCASE"-CP"

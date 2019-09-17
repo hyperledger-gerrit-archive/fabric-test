@@ -38,9 +38,9 @@ NTHREAD=1
 # directory
 CWD=$PWD
 CurrentDirectory=$(cd `dirname $0` && pwd)
-fabricTestDir="$(echo $CurrentDirectory | awk -F'fabric-test' '{print $1}')fabric-test"
-NLDir=$fabricTestDir"/tools/NL"
-PTEDir=$fabricTestDir"/tools/PTE"
+FabricTestDir="$(echo $CurrentDirectory | awk -F'/fabric-test/' '{print $1}')/fabric-test"
+NLDir=$FabricTestDir"/tools/NL"
+PTEDir=$FabricTestDir"/tools/PTE"
 LCPDir=$TESTCASE"-CP"
 CPDir=$PTEDir"/"$LCPDir
 logDir=$PTEDir"/CITest/Logs"
