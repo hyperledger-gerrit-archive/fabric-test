@@ -1,7 +1,9 @@
 #!/bin/bash
 
 : ${TESTCASE:=gencrl}
-FABRIC_CA="$GOPATH/src/github.com/hyperledger/fabric-ca"
+CurrentDirectory=$(cd `dirname $0` && pwd)
+FabricTestDir=$CurrentDirectory/../../
+FABRIC_CA=$FabricTestDir"../fabric-ca"
 SCRIPTDIR="$FABRIC_CA/scripts/fvt"
 CA_CFG_PATH="/tmp/$TESTCASE"
 CONFIGFILE="$CA_CFG_PATH/runFabricCaFvt.yaml"
