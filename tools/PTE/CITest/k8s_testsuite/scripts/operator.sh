@@ -38,7 +38,8 @@ while getopts ":f:a:t:pci" opt;
 done
 
 # common test directories
-FabricTestDir="$GOPATH"/src/github.com/hyperledger/fabric-test
+CurrentDirectory=$(cd `dirname $0` && pwd)
+FabricTestDir="$(echo $CurrentDirectory | awk -F'fabric-test' '{print $1}')fabric-test"
 OperatorDir="$FabricTestDir"/tools/operator
 PTEDir="$FabricTestDir"/tools/PTE
 ConnProfile=CITest/CIConnProfiles/test-network
@@ -49,20 +50,16 @@ startNw() {
   cd "$OperatorDir"/launcher || exit 1
   # export kubeconfig file to KUBECONFIG
   go run launcher.go -i "$PTEDir"/CITest/k8s_testsuite/networkSpecFiles/$1 -k "$KUBECONFIG"
-  cd "$GOPATH"/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen || exit 1
+  cd "$FabricTestDir"/fabric/internal/cryptogen || exit 1
   ls
   mkdir -p ordererOrganizations
   # Delete default connection profile to avoid reading this file for k8s tests
   rm -rf ../../../tools/PTE/CITest/CIConnProfiles/test-network/config.yaml
   # Copy connection profile to sub directories under PTE (PTE script appends connection profile to PTE directory)
   cp -r connection-profile/*.* ../../../tools/PTE/CITest/CIConnProfiles/test-network/
-  # Workaround to avoid GOPATH adding in connection profile
-  for conn in ../../../tools/PTE/CITest/CIConnProfiles/test-network/*.yaml; do
-    { echo 'gopath: GOPATH'; cat "$conn"; } >"$conn.tmp" && mv "$conn.tmp" "$conn"
-  done
   # Copy channel-artifacts to satisfy the default path of genconfig
   cp -r channel-artifacts/*.* ordererOrganizations/
-  ls "$GOPATH"/src/github.com/hyperledger/fabric-test/fabric/internal/cryptogen/ordererOrganizations
+  ls "$FabricTestDir"/fabric/internal/cryptogen/ordererOrganizations
   cd -
 }
 
