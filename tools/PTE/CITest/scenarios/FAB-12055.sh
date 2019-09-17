@@ -32,7 +32,8 @@ NREQ=10000
 PREFIX="result"   # result log prefix
 
 CWD=$PWD
-FabricTestDir=$GOPATH"/src/github.com/hyperledger/fabric-test"
+DIRECTORY=$(cd `dirname $0` && pwd)
+FabricTestDir=$DIRECTORY/../../../../
 NLDir=$FabricTestDir"/tools/NL"
 PTEDir=$FabricTestDir"/tools/PTE"
 LCPDir=$TESTCASE"-CP"
