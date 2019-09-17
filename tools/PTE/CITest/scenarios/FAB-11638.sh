@@ -35,9 +35,10 @@ NREQ=10000
 NORG=2
 NTHREAD=1
 
-# directory
+# CurrentDirectory
 CWD=$PWD
-fabricTestDir=$GOPATH"/src/github.com/hyperledger/fabric-test"
+CurrentDirectory=$(cd `dirname $0` && pwd)
+fabricTestDir=$CurrentDirectory/../../../../
 NLDir=$fabricTestDir"/tools/NL"
 PTEDir=$fabricTestDir"/tools/PTE"
 LCPDir=$TESTCASE"-CP"

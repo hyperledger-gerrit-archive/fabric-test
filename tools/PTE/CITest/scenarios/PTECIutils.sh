@@ -9,7 +9,8 @@ set -euo pipefail
 ########## CI test utilits ##########
 
 # common test directories
-FabricTestDir=$GOPATH"/src/github.com/hyperledger/fabric-test"
+CurrentDirectory=$(cd `dirname $0` && pwd)
+FabricTestDir=$CurrentDirectory/../../../../
 NLDir=$FabricTestDir"/tools/NL"
 PTEDir=$FabricTestDir"/tools/PTE"
 CMDDir=$PTEDir"/CITest/scripts"
@@ -26,7 +27,7 @@ PTEReport () {
        exit 1;
     fi
 
-    # save current working directory
+    # save current working CurrentDirectory
     CurrWD=$PWD
 
     cd $CMDDir
@@ -35,7 +36,7 @@ PTEReport () {
     node get_pteReport.js $1
     cat $1 >> $2
 
-    # restore working directory
+    # restore working CurrentDirectory
     cd $CurrWD
 }
 
@@ -88,10 +89,10 @@ PTEExecLoop () {
 
 
 # AddOrderer
-# $1: RAFT base directory. When run on personal vLaunch,
-#     this is the directory (e.g. raft-quality) relative to .../PTE/CITest/scenarios/,
+# $1: RAFT base CurrentDirectory. When run on personal vLaunch,
+#     this is the CurrentDirectory (e.g. raft-quality) relative to .../PTE/CITest/scenarios/,
 #     or optionally the absolute path. When run on k8s from cello-launcher, this is the
-#     directory name (e.g. raft-quality) relative to ~/cello/src/agent/ansible/vars/.
+#     CurrentDirectory name (e.g. raft-quality) relative to ~/cello/src/agent/ansible/vars/.
 # $2: chanel name, e.g., orderersystemchannel or testorgchannel1
 # $3: one orderer IP to retrieve orderer block, e.g., 169.60.99.43
 # $4: one orderer name to retrieve orderer block, e.g., orderer1st-ordererorg
@@ -179,10 +180,10 @@ AddOrderer() {
 }
 
 # RemoveOrderer
-# $1: RAFT base directory. When run on personal vLaunch,
-#     this is the directory (e.g. raft-quality) relative to .../PTE/CITest/scenarios/,
+# $1: RAFT base CurrentDirectory. When run on personal vLaunch,
+#     this is the CurrentDirectory (e.g. raft-quality) relative to .../PTE/CITest/scenarios/,
 #     or optionally the absolute path. When run on k8s from cello-launcher, this is the
-#     directory name (e.g. raft-quality) relative to ~/cello/src/agent/ansible/vars/.
+#     CurrentDirectory name (e.g. raft-quality) relative to ~/cello/src/agent/ansible/vars/.
 # $2: chanel name, e.g., orderersystemchannel or testorgchannel1
 # $3: one orderer IP to retrieve orderer block, e.g., 169.60.99.43
 # $4: one orderer name to retrieve orderer block, e.g., orderer1st-ordererorg
