@@ -37,7 +37,8 @@ NTHREAD=1
 
 # directory
 CWD=$PWD
-fabricTestDir=$GOPATH"/src/github.com/hyperledger/fabric-test"
+DIRECTORY=$(cd `dirname $0` && pwd)
+fabricTestDir=$DIRECTORY/../../../../
 NLDir=$fabricTestDir"/tools/NL"
 PTEDir=$fabricTestDir"/tools/PTE"
 LCPDir=$TESTCASE"-CP"
