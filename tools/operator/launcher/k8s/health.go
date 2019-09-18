@@ -41,7 +41,7 @@ func (k K8s) VerifyContainersAreRunning() error {
 				}
 				count++
 				logger.INFO("Waiting up to 10 minutes for pods to be up and running; minute = ", strconv.Itoa(count))
-				if count >= 10 {
+				if count >= 15 {
 					containers := strings.Split(output, "\n")
 					err = k.getReasonsPodsNotRunning(containers)
 					logger.ERROR("Waiting time exceeded")
