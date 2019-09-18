@@ -4,7 +4,9 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-SMOKEDIR="$GOPATH/src/github.com/hyperledger/fabric-test/regression/smoke"
+CurrentDirectory=$(cd `dirname $0` && pwd)
+FabricTestDir=$CurrentDirectory/../..
+SMOKEDIR="$FabricTestDir/regression/smoke"
 cd $SMOKEDIR
 
 echo "======== Behave feature and system tests ========"
@@ -19,7 +21,7 @@ echo "======== Orderer component test using OTE and NL tools ========"
 py.test -v --junitxml results_orderer_ote.xml orderer_ote.py
 
 echo "======== Performance Test using PTE and NL tools ========"
-cd $GOPATH/src/github.com/hyperledger/fabric-test/tools/PTE
+cd $FabricTestDir/tools/PTE
 npm config set prefix ~/npm
 npm install
 if [ $? != 0 ]; then

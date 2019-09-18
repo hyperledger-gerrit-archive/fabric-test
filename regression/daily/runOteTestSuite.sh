@@ -4,7 +4,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-DAILYDIR="$GOPATH/src/github.com/hyperledger/fabric-test/regression/daily"
+
+CurrentDirectory=$(cd `dirname $0` && pwd)
+FabricTestDir=$CurrentDirectory/../..
+DAILYDIR="$FabricTestDir/regression/daily"
 cd $DAILYDIR
 
 archiveOTE() {
@@ -13,9 +16,9 @@ if [ ! -z $GERRIT_BRANCH ] && [ ! -z $WORKSPACE ]; then
     echo "------> Archiving generated logs"
     rm -rf $WORKSPACE/archives
     mkdir -p $WORKSPACE/archives/OTE_Test_Logs
-    cp -r $GOPATH/src/github.com/hyperledger/fabric-test/regression/daily/ote_logs/*.log $WORKSPACE/archives/OTE_Test_Logs/
+    cp -r $FabricTestDir/regression/daily/ote_logs/*.log $WORKSPACE/archives/OTE_Test_Logs/
     mkdir -p $WORKSPACE/archives/OTE_Test_XML
-    cp -r $GOPATH/src/github.com/hyperledger/fabric-test/regression/daily/*.xml $WORKSPACE/archives/OTE_Test_XML/
+    cp -r $FabricTestDir/regression/daily/*.xml $WORKSPACE/archives/OTE_Test_XML/
 fi
 }
 echo "======== Orderer Performance tests...========"
