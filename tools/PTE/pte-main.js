@@ -1112,7 +1112,7 @@ async function createOrUpdateOneChannel(client, channelOrgName) {
                 txId  : tx_id,
                 nonce : nonce
             };
-            //logger.info('request: ',request);
+            logger.info('request: ',request);
             if (channelOpt.action.toUpperCase() == 'CREATE') {
                 return client.createChannel(request);
             } else if (channelOpt.action.toUpperCase() == 'UPDATE') {
