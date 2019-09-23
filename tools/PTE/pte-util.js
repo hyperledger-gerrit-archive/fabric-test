@@ -532,15 +532,19 @@ function readFile(path) {
 }
 
 function readAllFiles(dir) {
+
+    console.log("here to find the directory path")
+    console.log(dir)
+    var currentDirectory = __dirname
+    console.log(currentDirectory)
+    var homeDirectory = currentDirectory.split("src/github.com")[0]
+    dir = dir.split("PTE/")[1]
+    dir = path.join(homeDirectory, dir)
+    console.log(dir)
     var files = fs.readdirSync(dir);
     var certs = [];
-    var file_path
     files.forEach((file_name) => {
-        if (!fs.existsSync(file_name)){
-            let currentPath = __dirname
-            let homeDirecotry = currentPath.split("src/github.com/")[0]
-            file_path = path.join(homeDirecotry, file_name)
-        }
+        let file_path = path.resolve(dir,file_name);
         logger.debug('[readAllFiles] looking at file ::'+file_path);
         let data = fs.readFileSync(file_path);
         certs.push(data);
@@ -636,7 +640,8 @@ function getTLSCert(key, subkey, cpf, cpPath) {
     }
     var cpOrgs = cpf['organizations'];
     var cpPeers = cpf['peers'];
-
+    var currentDirectory = __dirname
+    var homeDirectory = currentDirectory.split("src/github.com")[0]
     var cpPtr;
     if ( cpPeers.hasOwnProperty(subkey) ) {
         cpPtr = cpPeers;
@@ -656,7 +661,8 @@ function getTLSCert(key, subkey, cpf, cpPath) {
             data = cpPtr[subkey].tlsCACerts['pem'];
         } else if ( typeof(cpPtr[subkey].tlsCACerts.path) != 'undefined' ) {
             //tlscerts is a path
-            var caRootsPath = path.resolve(cpPtr[subkey].tlsCACerts['path']);
+            var caRootsPath = path.join(homeDirectory, cpPtr[subkey].tlsCACerts['path']);
+            console.log("caRootsPath", caRootsPath)
             if (fs.existsSync(caRootsPath)) {
                 //caRootsPath is a cert path
                 data = fs.readFileSync(caRootsPath);
