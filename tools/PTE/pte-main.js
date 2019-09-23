@@ -272,6 +272,7 @@ function clientNewOrderer(client, org) {
     } else {
         orderer = client.newOrderer(orderersCPFList[ordererID].url);
     }
+    logger.info('[clientNewOrderer] orderer: %s', orderer);
     logger.info('[clientNewOrderer] orderer: %s', orderersCPFList[ordererID].url);
 }
 
@@ -1101,6 +1102,7 @@ async function createOrUpdateOneChannel(client, channelOrgName) {
             logger.info('[createOrUpdateOneChannel] done signing: %s', channelName);
             // add new orderer
             clientNewOrderer(client, channelOrgName[0]);
+            console.log("the value of orderer is ", orderer)
             // build up the create request
             let tx_id = client.newTransactionID();
             let nonce = tx_id.getNonce();
@@ -1112,7 +1114,8 @@ async function createOrUpdateOneChannel(client, channelOrgName) {
                 txId  : tx_id,
                 nonce : nonce
             };
-            //logger.info('request: ',request);
+            logger.info('request: ',request);
+            logger.info('orderer: ',orderer);
             if (channelOpt.action.toUpperCase() == 'CREATE') {
                 return client.createChannel(request);
             } else if (channelOpt.action.toUpperCase() == 'UPDATE') {
