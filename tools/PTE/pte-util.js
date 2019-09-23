@@ -532,15 +532,17 @@ function readFile(path) {
 }
 
 function readAllFiles(dir) {
-    var files = fs.readdirSync(dir);
+
+    var files
+    if (!fs.existsSync(dir)){
+        let currentPath = __dirname
+        let homeDirecotry = currentPath.split("src/github.com/")[0]
+        dir = path.join(homeDirecotry, dir)
+    }
+    files = fs.readdirSync(dir);
     var certs = [];
-    var file_path
     files.forEach((file_name) => {
-        if (!fs.existsSync(file_name)){
-            let currentPath = __dirname
-            let homeDirecotry = currentPath.split("src/github.com/")[0]
-            file_path = path.join(homeDirecotry, file_name)
-        }
+        let file_path = path.resolve(dir,file_name);
         logger.debug('[readAllFiles] looking at file ::'+file_path);
         let data = fs.readFileSync(file_path);
         certs.push(data);
