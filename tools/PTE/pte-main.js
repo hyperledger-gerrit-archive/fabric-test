@@ -675,7 +675,7 @@ function buildChaincodeProposal(client, the_user, type, upgrade, transientMap) {
         'collections-config': collectionsConfigPath,
         txId: tx_id
     };
-
+    console.log("chaincodeType ", request)
     if(upgrade) {
         // use this call to test the transient map support during chaincode instantiation
         request.transientMap = transientMap;
@@ -723,6 +723,7 @@ async function chaincodeInstantiate(channel, client, org) {
 
             var badTransientMap = { 'test1': 'transientValue' }; // have a different key than what the chaincode example_cc1.go expects in Init()
             var transientMap = { 'test': 'transientValue' };
+            console.log("language is ", language)
             var request = buildChaincodeProposal(client, the_user, language, upgrade, badTransientMap);
             tx_id = request.txId;
 
