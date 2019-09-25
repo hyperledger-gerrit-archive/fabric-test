@@ -161,24 +161,34 @@ function initDeploy(org, transType) {
             testDeployArgs.push(ccDfnPtr.deploy.args[i]);
         }
     }
-
     var cpf=testUtil.findOrgConnProfileSubmitter(cpList, org);
     if ( cpf === null ) {
          logger.error('[initDeploy] no connection profile is found for org (%s)', org);
          process.exit(1);
     }
 
-    chaincodePath = ccDfnPtr.deploy.chaincodePath;
-    logger.info('chaincode language: %s, path: %s', language, chaincodePath);
+    if ((typeof(ccDfnPtr.deploy.chaincodePath) !== 'undefined')){
+        chaincodePath = verifyIfPathExists(ccDfnPtr.deploy.chaincodePath);
+        logger.info('chaincode language: %s, path: %s', language, chaincodePath);
+    }
 
     if ((typeof( ccDfnPtr.deploy.metadataPath ) !== 'undefined')) {
-        metadataPath=ccDfnPtr.deploy.metadataPath;
+        metadataPath=verifyIfPathExists(ccDfnPtr.deploy.metadataPath);
         logger.info('metadataPath: %s', metadataPath);
     }
     if ((typeof( ccDfnPtr.deploy.collectionsConfigPath ) !== 'undefined')) {
-        collectionsConfigPath=ccDfnPtr.deploy.collectionsConfigPath;
+        collectionsConfigPath=verifyIfPathExists(ccDfnPtr.deploy.collectionsConfigPath);
         logger.info('collectionsConfigPath: %s', collectionsConfigPath);
     }
+}
+
+function verifyIfPathExists(inputPath){
+    if (!fs.existsSync(inputPath)){
+        let currentDirectory = __dirname
+        let homeDirectory = currentDirectory.split("/github.com")[0]
+        inputPath = path.join(homeDirectory, inputPath)
+    }
+    return inputPath
 }
 
 var tx_id = null;
