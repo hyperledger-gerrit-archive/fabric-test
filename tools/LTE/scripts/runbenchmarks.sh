@@ -7,6 +7,8 @@
 
 CurrentDirectory=$(cd `dirname $0` && pwd)
 FabricDir="$(echo $CurrentDirectory | awk -F'/fabric-test/' '{print $1}')/fabric"
+FabricTestDir="$(echo $CurrentDirectory | awk -F'/fabric-test/' '{print $1}')/fabric-test"
+
 ## check if fabric directory is available
 if [ ! -d $FabricDir ]; then
     printf "Error: \$FabricDir directory not available.\nPlease clone fabric repository before running LTE.\n"
@@ -17,7 +19,7 @@ echo "found fabric repo...."
 ## Copy this folder under fabric/test/tools
 rm -r $FabricDir/test/tools/LTE
 mkdir -p $FabricDir/test/tools
-cp -R ../../LTE $FabricDir/test/tools
+cp -R $FabricTestDir/tools/LTE $FabricDir/test/tools
 cd $FabricDir/test/tools/LTE/scripts
 
 source ./benchmarks.sh
