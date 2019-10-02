@@ -177,7 +177,7 @@ function initDeploy(org, transType) {
     }
 
     if ((typeof( ccDfnPtr.deploy.metadataPath ) !== 'undefined')) {
-        metadataPath = getRelativePath(ccDfnPtr.deploy.metadataPath);
+        metadataPath = verifyIfPathExists(ccDfnPtr.deploy.metadataPath);
         logger.info('metadataPath: %s', metadataPath);
     }
 
