@@ -177,12 +177,13 @@ function initDeploy(org, transType) {
     }
 
     if ((typeof( ccDfnPtr.deploy.metadataPath ) !== 'undefined')) {
-        metadataPath = getRelativePath(ccDfnPtr.deploy.metadataPath);
+        metadataPath = verifyIfPathExists(ccDfnPtr.deploy.metadataPath);
         logger.info('metadataPath: %s', metadataPath);
     }
 
+    //This part is untested, it might need to call the getRelativePath() function
     if ((typeof( ccDfnPtr.deploy.collectionsConfigPath ) !== 'undefined')) {
-        collectionsConfigPath = getRelativePath(ccDfnPtr.deploy.collectionsConfigPath);
+        collectionsConfigPath = verifyIfPathExists(ccDfnPtr.deploy.collectionsConfigPath);
         logger.info('collectionsConfigPath: %s', collectionsConfigPath);
     }
 }
