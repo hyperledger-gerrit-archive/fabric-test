@@ -43,32 +43,31 @@ package main
 // + return a pass/fail result and a result summary string
 
 import (
-    "encoding/json"
-    "fmt"
-    "github.com/hyperledger/fabric/common/crypto"
-    "io/ioutil"
-    "log"
-    "math"
-    "math/rand"
-    "os"
-    "os/exec"
-    "path/filepath"
-    "strconv"
-    "strings"
-    "sync"
-    "time"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"math"
+	"math/rand"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"sync"
+	"time"
 
-    "github.com/hyperledger/fabric/common/localmsp"
-    genesisconfig "github.com/hyperledger/fabric/common/tools/configtxgen/localconfig" // config for genesis.yaml
-    "github.com/hyperledger/fabric/common/tools/protolator"
-    mspmgmt "github.com/hyperledger/fabric/msp/mgmt"
-    ordererConf "github.com/hyperledger/fabric/orderer/common/localconfig" // config, for the orderer.yaml
-    cb "github.com/hyperledger/fabric/protos/common"
-    ab "github.com/hyperledger/fabric/protos/orderer"
-    "github.com/hyperledger/fabric/protos/utils"
-    "golang.org/x/net/context"
-    "google.golang.org/grpc"
-    "google.golang.org/grpc/credentials"
+	"github.com/hyperledger/fabric/internal/pkg/identity"
+	"github.com/hyperledger/fabric/common/tools/protolator"
+	genesisconfig "github.com/hyperledger/fabric/internal/configtxgen/localconfig"
+	mspmgmt "github.com/hyperledger/fabric/msp/mgmt"
+	ordererConf "github.com/hyperledger/fabric/orderer/common/localconfig"
+	cb "github.com/hyperledger/fabric/protos/common"
+	ab "github.com/hyperledger/fabric/protos/orderer"
+	utils "github.com/hyperledger/fabric/protoutil"
+	"golang.org/x/net/context"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials"
 )
 
 var ordConf *ordererConf.TopLevel
@@ -229,24 +228,24 @@ type config struct {
 }
 
 type ordererdriveClient struct {
-    client ab.AtomicBroadcast_DeliverClient
-    chanID string
-    signer crypto.LocalSigner
-    quiet  bool
+	client ab.AtomicBroadcast_DeliverClient
+	chanID string
+	signer identity.SignerSerializer
+	quiet  bool
 }
 
 type broadcastClient struct {
-    client ab.AtomicBroadcast_BroadcastClient
-    chanID string
-    signer crypto.LocalSigner
+	client ab.AtomicBroadcast_BroadcastClient
+	chanID string
+	signer identity.SignerSerializer
 }
 
-func newOrdererdriveClient(client ab.AtomicBroadcast_DeliverClient, chanID string, signer crypto.LocalSigner, quiet bool) *ordererdriveClient {
-    return &ordererdriveClient{client: client, chanID: chanID, signer: signer, quiet: quiet}
+func newOrdererdriveClient(client ab.AtomicBroadcast_DeliverClient, chanID string, signer identity.SignerSerializer, quiet bool) *ordererdriveClient {
+	return &ordererdriveClient{client: client, chanID: chanID, signer: signer, quiet: quiet}
 }
 
-func newBroadcastClient(client ab.AtomicBroadcast_BroadcastClient, chanID string, signer crypto.LocalSigner) *broadcastClient {
-    return &broadcastClient{client: client, chanID: chanID, signer: signer}
+func newBroadcastClient(client ab.AtomicBroadcast_BroadcastClient, chanID string, signer identity.SignerSerializer) *broadcastClient {
+	return &broadcastClient{client: client, chanID: chanID, signer: signer}
 }
 
 func (r *ordererdriveClient) seekHelper(chanID string, start *ab.SeekPosition, stop *ab.SeekPosition) *cb.Envelope {
@@ -339,102 +338,100 @@ func (b *broadcastClient) getAck() error {
 }
 
 func startConsumer(serverAddr string, chanID string, ordererIndex int, channelIndex int, txRecvCntrP *int64, blockRecvCntrP *int64, consumerConnP **grpc.ClientConn, seek int, quiet bool, tlsEnabled bool, orgMSPID string) {
-    myName := clientName("Consumer", ordererIndex, channelIndex)
-    signer := localmsp.NewSigner()
-    ordererName := strings.Trim(serverAddr, fmt.Sprintf(":%d", ordStartPort+uint16(ordererIndex)))
-    fpath := fmt.Sprintf("/etc/hyperledger/fabric/artifacts/ordererOrganizations/example.com/orderers/%s"+"*", ordererName)
-    matches, err := filepath.Glob(fpath)
-    if debugflagLaunch {
-        fmt.Printf("[startConsumer myName=%s] ordererName=%s, fpath=%s, len(matches)=%d\n", myName, ordererName, fpath, len(matches))
-    }
-    if err != nil {
-        panic(fmt.Sprintf("startConsumer: cannot find filepath %s ; err: %v", fpath, err))
-    }
-    if seek < -2 {
-        fmt.Println("Wrong seek value.")
-    }
-    var maxGrpcMsgSize int = 1000 * 1024 * 1024
-    var dialOpts []grpc.DialOption
-    var conntimeout time.Duration = 30 * time.Second
-    dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxGrpcMsgSize),
-        grpc.MaxCallRecvMsgSize(maxGrpcMsgSize)))
-    if tlsEnabled {
-        if len(matches) > 0 {
-            ordConf.General.BCCSP.SwOpts.FileKeystore.KeyStorePath = fmt.Sprintf("%s/msp/keystore", matches[0])
-            if ordererIndex == 0 { // Loading the msp's of orderer0 for every channel is enough to create the deliver client
-                err = mspmgmt.LoadLocalMsp(fmt.Sprintf("%s/msp", matches[0]), ordConf.General.BCCSP, orgMSPID)
-                if err != nil { // Handle errors reading the config file
-                    fmt.Printf("\nFailed to initialize local MSP for %s on chan %s: %s\n", myName, chanID, err)
-                    os.Exit(0)
-                }
-            }
-            creds, err := credentials.NewClientTLSFromFile(fmt.Sprintf("%s/tls/ca.crt", matches[0]), fmt.Sprintf("%s", ordererName))
-            if err != nil {
-                panic(fmt.Sprintf("Error on client %s creating grpc tls client creds, serverAddr %s, err: %v", myName, serverAddr, err))
-            }
-            dialOpts = append(dialOpts, grpc.WithTransportCredentials(creds))
-        } else {
-            panic(fmt.Sprintf("[startConsumer myName=%s] ERROR: no msp directory filepath name matches: %s\n", myName, fpath))
-        }
-    } else {
-        dialOpts = append(dialOpts, grpc.WithInsecure())
-    }
-    //(*consumerConnP), err = grpc.Dial(serverAddr, dialOpts...)
-    ctx, cancel := context.WithTimeout(context.Background(), conntimeout)
-    defer cancel()
-    (*consumerConnP), err = grpc.DialContext(ctx, serverAddr, dialOpts...)
-    if err != nil {
-        panic(fmt.Sprintf("Error on client %s connecting (grpc) to %s, err: %v", myName, serverAddr, err))
-    }
-    client, err := ab.NewAtomicBroadcastClient(*consumerConnP).Deliver(context.TODO())
-    if err != nil {
-        panic(fmt.Sprintf("Error on client %s invoking Deliver() on grpc connection to %s, err: %v", myName, serverAddr, err))
-    }
-    s := newOrdererdriveClient(client, chanID, signer, quiet)
-    if err = s.seekOldest(); err != nil {
-        panic(fmt.Sprintf("ERROR starting client %s srvr=%s chID=%s; err: %v", myName, serverAddr, chanID, err))
-    }
-    if debugflag1 {
-        logger(fmt.Sprintf("Started client %s to recv delivered batches srvr=%s chID=%s", myName, serverAddr, chanID))
-    }
-    s.readUntilClose(ordererIndex, channelIndex, txRecvCntrP, blockRecvCntrP)
+	myName := clientName("Consumer", ordererIndex, channelIndex)
+	ordererName := strings.Trim(serverAddr, fmt.Sprintf(":%d", ordStartPort+uint16(ordererIndex)))
+	fpath := fmt.Sprintf("/etc/hyperledger/fabric/artifacts/ordererOrganizations/example.com/orderers/%s"+"*", ordererName)
+	matches, err := filepath.Glob(fpath)
+	if err != nil {
+		panic(fmt.Sprintf("[startConsumer myName=%s] Cannot find filepath %s ; err: %v\n", myName, fpath, err))
+	}
+	if debugflagLaunch {
+		fmt.Printf("[startConsumer myName=%s] ordererName=%s, fpath=%s, len(matches)=%d, matches[0]=%s\n", myName, ordererName, fpath, len(matches), matches[0])
+	}
+	signer, loaderr := mspmgmt.GetLocalMSP().GetDefaultSigningIdentity()
+	if loaderr != nil {
+		panic(fmt.Sprintf("[startConsumer myName=%s] Failed to load local signing identity; loaderr: %v\n", myName, loaderr))
+	}
+	if seek < -2 {
+		fmt.Println("Wrong seek value.")
+	}
+	var maxGrpcMsgSize int = 1000 * 1024 * 1024
+	var dialOpts []grpc.DialOption
+	var conntimeout time.Duration = 30 * time.Second
+	dialOpts = append(dialOpts, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxGrpcMsgSize),
+		grpc.MaxCallRecvMsgSize(maxGrpcMsgSize)))
+	if tlsEnabled {
+		if len(matches) > 0 {
+			creds, err := credentials.NewClientTLSFromFile(fmt.Sprintf("%s/tls/ca.crt", matches[0]), fmt.Sprintf("%s", ordererName))
+			if err != nil {
+				panic(fmt.Sprintf("[startConsumer myName=%s] Error tls client creating grpc tls client creds, serverAddr %s, err: %v\n", myName, serverAddr, err))
+			}
+			dialOpts = append(dialOpts, grpc.WithTransportCredentials(creds))
+		} else {
+			panic(fmt.Sprintf("[startConsumer myName=%s] ERROR: no msp directory filepath name matches: %s\n", myName, fpath))
+		}
+	} else {
+		dialOpts = append(dialOpts, grpc.WithInsecure())
+	}
+	//(*consumerConnP), err = grpc.Dial(serverAddr, dialOpts...)
+	ctx, cancel := context.WithTimeout(context.Background(), conntimeout)
+	defer cancel()
+	(*consumerConnP), err = grpc.DialContext(ctx, serverAddr, dialOpts...)
+	if err != nil {
+		panic(fmt.Sprintf("[startConsumer myName=%s] Error on client connecting (grpc) to %s, err: %v\n", myName, serverAddr, err))
+	}
+	client, err := ab.NewAtomicBroadcastClient(*consumerConnP).Deliver(context.TODO())
+	if err != nil {
+		panic(fmt.Sprintf("[startConsumer myName=%s] Error on client invoking Deliver() on grpc connection to %s, err: %v\n", myName, serverAddr, err))
+	}
+	s := newOrdererdriveClient(client, chanID, signer, quiet)
+	if err = s.seekOldest(); err != nil {
+		panic(fmt.Sprintf("[startConsumer myName=%s] ERROR on clientseeking srvr=%s chID=%s; err: %v\n", myName, serverAddr, chanID, err))
+	}
+	if debugflag1 {
+		logger(fmt.Sprintf("Started client %s to recv delivered batches from srvr=%s chID=%s", myName, serverAddr, chanID))
+	}
+	s.readUntilClose(ordererIndex, channelIndex, txRecvCntrP, blockRecvCntrP)
 }
 
 func startConsumerMaster(serverAddr string, chanIdsP *[]string, ordererIndex int, txRecvCntrsP *[]int64, blockRecvCntrsP *[]int64, consumerConnP **grpc.ClientConn) {
-    myName := clientName("MasterConsumer", ordererIndex, numChannels)
-    // create one conn to the orderer and share it for communications to all channels
-    conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
-    if err != nil {
-        panic(fmt.Sprintf("Error on client %s connecting (grpc) to %s, err: %v", myName, serverAddr, err))
-    }
-    (*consumerConnP) = conn
+	myName := clientName("MasterConsumer", ordererIndex, numChannels)
+	// create one conn to the orderer and share it for communications to all channels
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	if err != nil {
+		panic(fmt.Sprintf("Error on client %s connecting (grpc) to %s, err: %v", myName, serverAddr, err))
+	}
+	(*consumerConnP) = conn
 
-    // create an orderer driver client for every channel on this orderer
-    dc := make([]*ordererdriveClient, numChannels)
-    for c := 0; c < numChannels; c++ {
-        client, err := ab.NewAtomicBroadcastClient(*consumerConnP).Deliver(context.TODO())
-        if err != nil {
-            panic(fmt.Sprintf("Error on client %s invoking Deliver() on grpc connection to %s, err: %v", myName, serverAddr, err))
-        }
-        quiet := true
-        signer := localmsp.NewSigner()
-        dc[c] = newOrdererdriveClient(client, (*chanIdsP)[c], signer, quiet)
-        if err = dc[c].seekOldest(); err != nil {
-            panic(fmt.Sprintf("ERROR starting client %s srvr=%s chID=%s; err: %v", myName, serverAddr, (*chanIdsP)[c], err))
-        }
-        if debugflag1 {
-            logger(fmt.Sprintf("Started client %s to recv delivered batches from ord[%d] ch[%d] srvr=%s chID=%s", myName, ordererIndex, c, serverAddr, (*chanIdsP)[c]))
-        }
+	// create an orderer driver client for every channel on this orderer
+	dc := make([]*ordererdriveClient, numChannels)
+	for c := 0; c < numChannels; c++ {
+		client, err := ab.NewAtomicBroadcastClient(*consumerConnP).Deliver(context.TODO())
+		if err != nil {
+			panic(fmt.Sprintf("Error on client %s invoking Deliver() on grpc connection to %s, err: %v", myName, serverAddr, err))
+		}
+		quiet := true
+		signer, loaderr := mspmgmt.GetLocalMSP().GetDefaultSigningIdentity()
+		if loaderr != nil {
+			panic(fmt.Sprintf("[startConsumerMaster myName=%s] Failed to load local signing identity; loaderr: %s\n", myName, loaderr))
+		}
+		dc[c] = newOrdererdriveClient(client, (*chanIdsP)[c], signer, quiet)
+		if err = dc[c].seekOldest(); err != nil {
+			panic(fmt.Sprintf("ERROR starting client %s srvr=%s chID=%s; err: %v", myName, serverAddr, (*chanIdsP)[c], err))
+		}
+		if debugflag1 {
+			logger(fmt.Sprintf("Started client %s to recv delivered batches from ord[%d] ch[%d] srvr=%s chID=%s", myName, ordererIndex, c, serverAddr, (*chanIdsP)[c]))
+		}
 
-        // Create a client thread to receive deliveries on this and
-        // every channel on this orderer.
-        // (It would be more efficient if we could skip all these "go"
-        // threads, and create only one call to "readUntilClose" and
-        // have it look for deliveries on all channels. But, of course,
-        // fabric rejects that.)
+		// Create a client thread to receive deliveries on this and
+		// every channel on this orderer.
+		// (It would be more efficient if we could skip all these "go"
+		// threads, and create only one call to "readUntilClose" and
+		// have it look for deliveries on all channels. But, of course,
+		// fabric rejects that.)
 
-        go dc[c].readUntilClose(ordererIndex, c, &((*txRecvCntrsP)[c]), &((*blockRecvCntrsP)[c]))
-    }
+		go dc[c].readUntilClose(ordererIndex, c, &((*txRecvCntrsP)[c]), &((*blockRecvCntrsP)[c]))
+	}
 }
 
 func startSpyDefer(listenAddr string, ordStartPort uint16, chanIdsP *[]string, ordererIndex int, txRecvCntrsP *[]int64, blockRecvCntrsP *[]int64, consumerConnP **grpc.ClientConn) {
@@ -576,196 +573,200 @@ func moreDeliveries(txSentP *[][]int64, totalNumTxSentP *int64, txSentFailuresP 
     return moreReceived
 }
 
-func startProducer(serverAddr string, chanID string, ordererIndex int, channelIndex int, txReq int64, txSentCntrP *int64, txSentFailureCntrP *int64, tlsEnabled bool, payload int) {
-    myName := clientName("Producer", ordererIndex, channelIndex)
-    signer := localmsp.NewSigner()
-    ordererName := strings.Trim(serverAddr, fmt.Sprintf(":%d", ordStartPort+uint16(ordererIndex)))
-    fpath := fmt.Sprintf("/etc/hyperledger/fabric/artifacts/ordererOrganizations/example.com/orderers/%s"+"*", ordererName)
-    matches, err := filepath.Glob(fpath)
-    if debugflagLaunch {
-        fmt.Printf("[startProducer myName=%s] ordererName=%s, fpath=%s, len(matches)=%d\n", myName, ordererName, fpath, len(matches))
-    }
-    if err != nil {
-        panic(fmt.Sprintf("startProducer: cannot find filepath %s ; err: %v", fpath, err))
-    }
+func startProducer(serverAddr string, chanID string, ordererIndex int, channelIndex int, txReq int64, txSentCntrP *int64, txSentFailureCntrP *int64, tlsEnabled bool, payload int, orgMSPID string) {
+	myName := clientName("Producer", ordererIndex, channelIndex)
+	ordererName := strings.Trim(serverAddr, fmt.Sprintf(":%d", ordStartPort+uint16(ordererIndex)))
+	fpath := fmt.Sprintf("/etc/hyperledger/fabric/artifacts/ordererOrganizations/example.com/orderers/%s"+"*", ordererName)
+	matches, err := filepath.Glob(fpath)
+	if err != nil {
+		panic(fmt.Sprintf("[startProducer myName=%s] Cannot find filepath %s ; err: %v\n", myName, fpath, err))
+	}
+	if debugflagLaunch {
+		fmt.Printf("[startProducer myName=%s] ordererName=%s, fpath=%s, len(matches)=%d, matches[0]=%s\n", myName, ordererName, fpath, len(matches), matches[0])
+	}
+	signer, loaderr := mspmgmt.GetLocalMSP().GetDefaultSigningIdentity()
+	if loaderr != nil {
+		panic(fmt.Sprintf("[startProducer myName=%s] Failed to load local signing identity; loaderr: %v\n", myName, loaderr))
+	}
+	var conn *grpc.ClientConn
+	if tlsEnabled {
+		if len(matches) > 0 {
+			creds, err1 := credentials.NewClientTLSFromFile(fmt.Sprintf("%s/tls/ca.crt", matches[0]), fmt.Sprintf("%s", ordererName))
+			conn, err1 = grpc.Dial(serverAddr, grpc.WithTransportCredentials(creds))
+			if err1 != nil {
+				panic(fmt.Sprintf("[startProducer myName=%s] Error while tls client connecting (grpc) to %s, err: %v\n", myName, serverAddr, err))
+			}
+		} else {
+			panic(fmt.Sprintf("[startProducer myName=%s] ERROR: no msp directory filepath name matches: %v\n", myName, fpath))
+		}
+	} else {
+		conn, err = grpc.Dial(serverAddr, grpc.WithInsecure())
+		if err != nil {
+			panic(fmt.Sprintf("[startProducer myName=%s] Error while non-tls client connecting (grpc) to %s, err: %v\n", myName, serverAddr, err))
+		}
+	}
+	defer func() {
+		_ = conn.Close()
+	}()
+	if err != nil {
+		panic(fmt.Sprintf("[startProducer myName=%s] Error creating connection for Producer for ord[%d] ch[%d], err: %v\n", myName, ordererIndex, channelIndex, err))
+	}
+	client, err := ab.NewAtomicBroadcastClient(conn).Broadcast(context.TODO())
+	if err != nil {
+		panic(fmt.Sprintf("[startProducer myName=%s] Error creating Producer for ord[%d] ch[%d], err: %v\n", myName, ordererIndex, channelIndex, err))
+	}
 
-    var conn *grpc.ClientConn
-    if tlsEnabled {
-        if len(matches) > 0 {
-            ordConf.General.BCCSP.SwOpts.FileKeystore.KeyStorePath = fmt.Sprintf("%s/msp/keystore", matches[0])
-            creds, err1 := credentials.NewClientTLSFromFile(fmt.Sprintf("%s/tls/ca.crt", matches[0]), fmt.Sprintf("%s", ordererName))
-            conn, err1 = grpc.Dial(serverAddr, grpc.WithTransportCredentials(creds))
-            if err1 != nil {
-                panic(fmt.Sprintf("Error on client %s connecting (grpc) to %s, err: %v", myName, serverAddr, err))
-            }
-        } else {
-            panic(fmt.Sprintf("[startProducer myName=%s] ERROR: no msp directory filepath name matches: %s\n", myName, fpath))
-        }
-    } else {
-        conn, err = grpc.Dial(serverAddr, grpc.WithInsecure())
-        if err != nil {
-            panic(fmt.Sprintf("Error on client %s connecting (grpc) to %s, err: %v", myName, serverAddr, err))
-        }
-    }
-    defer func() {
-        _ = conn.Close()
-    }()
-    if err != nil {
-        panic(fmt.Sprintf("Error creating connection for Producer for ord[%d] ch[%d], err: %v", ordererIndex, channelIndex, err))
-    }
-    client, err := ab.NewAtomicBroadcastClient(conn).Broadcast(context.TODO())
-    if err != nil {
-        panic(fmt.Sprintf("Error creating Producer for ord[%d] ch[%d], err: %v", ordererIndex, channelIndex, err))
-    }
+	time.Sleep(3 * time.Second)
+	if debugflag1 {
+		logger(fmt.Sprintf("[startProducer myName=%s] Starting Producer to send %d TXs to ord[%d] ch[%d] srvr=%s chID=%s, %v", myName, txReq, ordererIndex, channelIndex, serverAddr, chanID, time.Now()))
+	}
+	b := newBroadcastClient(client, chanID, signer)
+	time.Sleep(2 * time.Second)
+	// print a log after sending mulitples of this percentage of requested TX: 25,50,75%...
+	// only on one producer, and assume all producers are generating at same rate.
+	// e.g. when txReq = 50, to print log every 10. set progressPercentage = 20
+	printProgressLogs := false
+	var progressPercentage int64 = 25 // set this between 1 and 99
+	printLogCnt := txReq * progressPercentage / 100
+	if printLogCnt > 0 {
+		if debugflag1 {
+			printProgressLogs = true // to test logs for all producers
+		} else {
+			if txReq > 10000 && printLogCnt > 0 && ordererIndex == 0 && channelIndex == 0 {
+				printProgressLogs = true
+			}
+		}
+	}
+	var mult int64
 
-    time.Sleep(3 * time.Second)
-    if debugflag1 {
-        logger(fmt.Sprintf("Starting Producer to send %d TXs to ord[%d] ch[%d] srvr=%s chID=%s, %v", txReq, ordererIndex, channelIndex, serverAddr, chanID, time.Now()))
-    }
-    b := newBroadcastClient(client, chanID, signer)
-    time.Sleep(2 * time.Second)
-    // print a log after sending mulitples of this percentage of requested TX: 25,50,75%...
-    // only on one producer, and assume all producers are generating at same rate.
-    // e.g. when txReq = 50, to print log every 10. set progressPercentage = 20
-    printProgressLogs := false
-    var progressPercentage int64 = 25 // set this between 1 and 99
-    printLogCnt := txReq * progressPercentage / 100
-    if printLogCnt > 0 {
-        if debugflag1 {
-            printProgressLogs = true // to test logs for all producers
-        } else {
-            if txReq > 10000 && printLogCnt > 0 && ordererIndex == 0 && channelIndex == 0 {
-                printProgressLogs = true
-            }
-        }
-    }
-    var mult int64
+	// For tests that stop all kafka-brokers, and any others that temporarily interrupt traffic,
+	// let's slow doWN THE TRansaction broadcasts to one-per-second for awhile, before letting
+	// it spin quickly to get NACKs for all remaining transactions to be sent.
+	// Define the number of seconds for allowin continual failures, to wait around for recovery.
+	delayLimit := 120
+	errDelay := 0
 
-    // For tests that stop all kafka-brokers, and any others that temporarily interrupt traffic,
-    // let's slow doWN THE TRansaction broadcasts to one-per-second for awhile, before letting
-    // it spin quickly to get NACKs for all remaining transactions to be sent.
-    // Define the number of seconds for allowin continual failures, to wait around for recovery.
-    delayLimit := 120
-    errDelay := 0
-
-    prevMsgAck := false
-    txData := extraDataSend(payload) //create the extra payload
-    for i := int64(0); i < txReq; i++ {
-        b.broadcast([]byte(fmt.Sprintf("Testing %s TX=%d %v %s", myName, i, time.Now(), txData)))
-        err = b.getAck()
-        if err == nil {
-            (*txSentCntrP)++
-            if !prevMsgAck {
-                logger(fmt.Sprintf("%s successfully broadcast TX %d (ACK=%d NACK=%d), %v", myName, i, *txSentCntrP, *txSentFailureCntrP, time.Now()))
-            }
-            prevMsgAck = true
-            if printProgressLogs && ((*txSentCntrP)%printLogCnt == 0) {
-                mult++
-                if debugflag1 {
-                    logger(fmt.Sprintf("%s sent %4d /%4d = ~ %3d%%, %v", myName, (*txSentCntrP), txReq, progressPercentage*mult, time.Now()))
-                } else {
-                    logger(fmt.Sprintf("Sent ~ %3d%%, %v", progressPercentage*mult, time.Now()))
-                }
-            }
-        } else {
-            (*txSentFailureCntrP)++
-            if prevMsgAck || (*txSentFailureCntrP) == 1 {
-                logger(fmt.Sprintf("%s failed to broadcast TX %d (ACK=%d NACK=%d), %v, err: %v", myName, i, *txSentCntrP, *txSentFailureCntrP, time.Now(), err))
-            }
-            prevMsgAck = false
-            if errDelay < delayLimit {
-                errDelay++
-                time.Sleep(1 * time.Second)
-                if errDelay == delayLimit {
-                    logger(fmt.Sprintf("%s broadcast error delay period (%d) ended (ACK=%d NACK=%d), %v", myName, errDelay, *txSentCntrP, *txSentFailureCntrP, time.Now()))
-                }
-            }
-        }
-    }
-    if err != nil {
-        logger(fmt.Sprintf("Broadcast error on last TX %d of %s: %v", txReq, myName, err))
-    }
-    if txReq == *txSentCntrP {
-        if debugflag1 {
-            logger(fmt.Sprintf("%s finished sending broadcast msgs: ACKs  %9d  (100%%) , %v", myName, *txSentCntrP, time.Now()))
-        }
-    } else {
-        logger(fmt.Sprintf("%s finished sending broadcast msgs: ACKs  %9d  NACK %d (errDelayCntr %d)  Other %d , %v", myName, *txSentCntrP, *txSentFailureCntrP, errDelay, txReq-*txSentFailureCntrP-*txSentCntrP, time.Now()))
-    }
-    producersWG.Done()
+	prevMsgAck := false
+	txData := extraDataSend(payload) //create the extra payload
+	for i := int64(0); i < txReq; i++ {
+		b.broadcast([]byte(fmt.Sprintf("Testing %s TX=%d %v %s", myName, i, time.Now(), txData)))
+		err = b.getAck()
+		if err == nil {
+			(*txSentCntrP)++
+			if !prevMsgAck {
+				logger(fmt.Sprintf("%s successfully broadcast TX %d (ACK=%d NACK=%d), %v", myName, i, *txSentCntrP, *txSentFailureCntrP, time.Now()))
+			}
+			prevMsgAck = true
+			if printProgressLogs && ((*txSentCntrP)%printLogCnt == 0) {
+				mult++
+				if debugflag1 {
+					logger(fmt.Sprintf("%s sent %4d /%4d = ~ %3d%%, %v", myName, (*txSentCntrP), txReq, progressPercentage*mult, time.Now()))
+				} else {
+					logger(fmt.Sprintf("Sent ~ %3d%%, %v", progressPercentage*mult, time.Now()))
+				}
+			}
+		} else {
+			(*txSentFailureCntrP)++
+			if prevMsgAck || (*txSentFailureCntrP) == 1 {
+				logger(fmt.Sprintf("%s failed to broadcast TX %d (ACK=%d NACK=%d), %v, err: %v", myName, i, *txSentCntrP, *txSentFailureCntrP, time.Now(), err))
+			}
+			prevMsgAck = false
+			if errDelay < delayLimit {
+				errDelay++
+				time.Sleep(1 * time.Second)
+				if errDelay == delayLimit {
+					logger(fmt.Sprintf("%s broadcast error delay period (%d) ended (ACK=%d NACK=%d), %v", myName, errDelay, *txSentCntrP, *txSentFailureCntrP, time.Now()))
+				}
+			}
+		}
+	}
+	if err != nil {
+		logger(fmt.Sprintf("Broadcast error on last TX %d of %s: %v", txReq, myName, err))
+	}
+	if txReq == *txSentCntrP {
+		if debugflag1 {
+			logger(fmt.Sprintf("%s finished sending broadcast msgs: ACKs  %9d  (100%%) , %v", myName, *txSentCntrP, time.Now()))
+		}
+	} else {
+		logger(fmt.Sprintf("%s finished sending broadcast msgs: ACKs  %9d  NACK %d (errDelayCntr %d)  Other %d , %v", myName, *txSentCntrP, *txSentFailureCntrP, errDelay, txReq-*txSentFailureCntrP-*txSentCntrP, time.Now()))
+	}
+	producersWG.Done()
 }
 
 func startProducerMaster(serverAddr string, chanIdsP *[]string, ordererIndex int, txReqP *[]int64, txSentCntrP *[]int64, txSentFailureCntrP *[]int64, payload int) {
-    // This function creates a grpc connection to one orderer,
-    // creates multiple clients (one per numChannels) for that one orderer,
-    // and sends a TX to all channels repeatedly until no more to send.
+	// This function creates a grpc connection to one orderer,
+	// creates multiple clients (one per numChannels) for that one orderer,
+	// and sends a TX to all channels repeatedly until no more to send.
 
-    myName := clientName("MasterProducer", ordererIndex, numChannels)
+	myName := clientName("MasterProducer", ordererIndex, numChannels)
 
-    var txReqTotal int64
-    var txMax int64
-    for c := 0; c < numChannels; c++ {
-        txReqTotal += (*txReqP)[c]
-        if txMax < (*txReqP)[c] {
-            txMax = (*txReqP)[c]
-        }
-    }
-    conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
-    defer func() {
-        _ = conn.Close()
-    }()
-    if err != nil {
-        panic(fmt.Sprintf("Error creating connection for %s, err: %v", myName, err))
-    }
-    client, err := ab.NewAtomicBroadcastClient(conn).Broadcast(context.TODO())
-    if err != nil {
-        panic(fmt.Sprintf("Error creating %s, err: %v", myName, err))
-    }
+	var txReqTotal int64
+	var txMax int64
+	for c := 0; c < numChannels; c++ {
+		txReqTotal += (*txReqP)[c]
+		if txMax < (*txReqP)[c] {
+			txMax = (*txReqP)[c]
+		}
+	}
+	conn, err := grpc.Dial(serverAddr, grpc.WithInsecure())
+	defer func() {
+		_ = conn.Close()
+	}()
+	if err != nil {
+		panic(fmt.Sprintf("Error creating connection for %s, err: %v", myName, err))
+	}
+	client, err := ab.NewAtomicBroadcastClient(conn).Broadcast(context.TODO())
+	if err != nil {
+		panic(fmt.Sprintf("Error creating %s, err: %v", myName, err))
+	}
 
-    logger(fmt.Sprintf("Starting %s to send %d TXs to ord[%d] srvr=%s distributed across all channels", myName, txReqTotal, ordererIndex, serverAddr))
-    // create the broadcast clients for every channel on this orderer
-    bc := make([]*broadcastClient, numChannels)
-    for c := 0; c < numChannels; c++ {
-        signer := localmsp.NewSigner()
-        bc[c] = newBroadcastClient(client, (*chanIdsP)[c], signer)
-    }
+	logger(fmt.Sprintf("Starting %s to send %d TXs to ord[%d] srvr=%s distributed across all channels", myName, txReqTotal, ordererIndex, serverAddr))
+	// create the broadcast clients for every channel on this orderer
+	bc := make([]*broadcastClient, numChannels)
+	for c := 0; c < numChannels; c++ {
+		signer, loaderr := mspmgmt.GetLocalMSP().GetDefaultSigningIdentity()
+		if loaderr != nil {
+			panic(fmt.Sprintf("[startProducerMaster myName=%s] Failed to load local signing identity; loaderr: %s\n", myName, loaderr))
+		}
+		bc[c] = newBroadcastClient(client, (*chanIdsP)[c], signer)
+	}
 
-    firstErr := false
-    txData := extraDataSend(payload)
-    for i := int64(0); i < txMax; i++ {
-        // send one TX to every broadcast client (one TX on each chnl)
-        for c := 0; c < numChannels; c++ {
-            if i < (*txReqP)[c] {
-                // more TXs to send on this channel
-                bc[c].broadcast([]byte(fmt.Sprintf("Testing %s %v %s", myName, time.Now(), txData)))
-                err = bc[c].getAck()
-                if err == nil {
-                    (*txSentCntrP)[c]++
-                } else {
-                    (*txSentFailureCntrP)[c]++
-                    if !firstErr {
-                        firstErr = true
-                        logger(fmt.Sprintf("Broadcast error on TX %d (the first error for %s on ch[%d] channelID=%s); err: %v", i+1, myName, c, (*chanIdsP)[c], err))
-                    }
-                }
-            }
-        }
-    }
-    if err != nil {
-        logger(fmt.Sprintf("Broadcast error on last TX %d on %s on ch[%d]: %v", txReqTotal, myName, numChannels-1, err))
-    }
-    var txSentTotal int64
-    var txSentFailTotal int64
-    for c := 0; c < numChannels; c++ {
-        txSentTotal += (*txSentCntrP)[c]
-        txSentFailTotal += (*txSentFailureCntrP)[c]
-    }
-    if txReqTotal == txSentTotal {
-        logger(fmt.Sprintf("%s finished sending broadcast msgs to all channels on ord[%d]: ACKs  %9d  (100%%)", myName, ordererIndex, txSentTotal))
-    } else {
-        logger(fmt.Sprintf("%s finished sending broadcast msgs to all channels on ord[%d]: ACKs  %9d  NACK %d  Other %d", myName, ordererIndex, txSentTotal, txSentFailTotal, txReqTotal-txSentTotal-txSentFailTotal))
-    }
-    producersWG.Done()
+	firstErr := false
+	txData := extraDataSend(payload)
+	for i := int64(0); i < txMax; i++ {
+		// send one TX to every broadcast client (one TX on each chnl)
+		for c := 0; c < numChannels; c++ {
+			if i < (*txReqP)[c] {
+				// more TXs to send on this channel
+				bc[c].broadcast([]byte(fmt.Sprintf("Testing %s %v %s", myName, time.Now(), txData)))
+				err = bc[c].getAck()
+				if err == nil {
+					(*txSentCntrP)[c]++
+				} else {
+					(*txSentFailureCntrP)[c]++
+					if !firstErr {
+						firstErr = true
+						logger(fmt.Sprintf("Broadcast error on TX %d (the first error for %s on ch[%d] channelID=%s); err: %v", i+1, myName, c, (*chanIdsP)[c], err))
+					}
+				}
+			}
+		}
+	}
+	if err != nil {
+		logger(fmt.Sprintf("Broadcast error on last TX %d on %s on ch[%d]: %v", txReqTotal, myName, numChannels-1, err))
+	}
+	var txSentTotal int64
+	var txSentFailTotal int64
+	for c := 0; c < numChannels; c++ {
+		txSentTotal += (*txSentCntrP)[c]
+		txSentFailTotal += (*txSentFailureCntrP)[c]
+	}
+	if txReqTotal == txSentTotal {
+		logger(fmt.Sprintf("%s finished sending broadcast msgs to all channels on ord[%d]: ACKs  %9d  (100%%)", myName, ordererIndex, txSentTotal))
+	} else {
+		logger(fmt.Sprintf("%s finished sending broadcast msgs to all channels on ord[%d]: ACKs  %9d  NACK %d  Other %d", myName, ordererIndex, txSentTotal, txSentFailTotal, txReqTotal-txSentTotal-txSentFailTotal))
+	}
+	producersWG.Done()
 }
 
 func computeTotals(txSent *[][]int64, totalNumTxSent *int64, txSentFailures *[][]int64, totalNumTxSentFailures *int64, txRecv *[][]int64, totalTxRecv *[]int64, totalTxRecvMismatch *bool, blockRecv *[][]int64, totalBlockRecv *[]int64, totalBlockRecvMismatch *bool) {
@@ -985,446 +986,453 @@ func reportTotals(testname string, numTxToSendTotal int64, countToSend [][]int64
 // Returns:     passed bool, resultSummary string
 func ote(testname string, txs int64, chans int, orderers int, ordType string, kbs int, oteSpy int, pPerCh int, payload int) (passed bool, resultSummary string) {
 
-    initialize() // multiple go tests could be run; we must call initialize() each time
+	initialize() // multiple go tests could be run; we must call initialize() each time
 
-    passed = false
-    resultSummary = testname + " test not completed: INPUT ERROR: "
-    defer closeLogger()
+	passed = false
+	resultSummary = testname + " test not completed: INPUT ERROR: "
+	defer closeLogger()
 
-    logger(fmt.Sprintf("==========\n========== OTE testname=%s TX=%d Channels=%d Orderers=%d ordererType=%s kafka-brokers=%d oteSpy=%s producersPerCh=%d payloadSizeKB=%d", testname, txs, chans, orderers, ordType, kbs, spyStatus(oteSpy), pPerCh, payload))
+	logger(fmt.Sprintf("==========\n========== OTE testname=%s TX=%d Channels=%d Orderers=%d ordererType=%s kafka-brokers=%d oteSpy=%s producersPerCh=%d payloadSizeKB=%d", testname, txs, chans, orderers, ordType, kbs, spyStatus(oteSpy), pPerCh, payload))
 
-    raw, err := ioutil.ReadFile("./config.json")
-    if err != nil {
-        fmt.Println(err.Error())
-        os.Exit(1)
-    }
+	raw, err := ioutil.ReadFile("./config.json")
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
 
-    var p config
-    json.Unmarshal(raw, &p)
-    seek := p.Seek
-    quiet := p.Quiet
-    tlsEnabled := p.TLS
-    orgMSPID := p.MSPID
+	var p config
+	json.Unmarshal(raw, &p)
+	seek := p.Seek
+	quiet := p.Quiet
+	tlsEnabled := p.TLS
+	orgMSPID := p.MSPID
 
-    // Establish the default configuration from yaml files - and this also
-    // picks up any variables overridden on command line or in environment
-    ordConf, err = ordererConf.Load()
-    if err != nil {
-        resultSummary += " Cannot Load orderer config data: " + err.Error()
-        return passed, resultSummary
-    }
-    genConf = genesisconfig.Load(fmt.Sprintf("%s", p.Profile))
-    var launchAppendFlags string
+	// Establish the default configuration from yaml files - and this also
+	// picks up any variables overridden on command line or in environment
+	ordConf, err = ordererConf.Load()
+	if err != nil {
+		resultSummary += " Cannot Load orderer config data: " + err.Error()
+		return passed, resultSummary
+	}
+	genConf = genesisconfig.Load(fmt.Sprintf("%s", p.Profile))
+	var launchAppendFlags string
 
-    ////////////////////////////////////////////////////////////////////////
-    // Check parameters and/or env vars to see if user wishes to override
-    // default config parms.
-    ////////////////////////////////////////////////////////////////////////
+	// Initializing ordererorg admin's msp
+	err = mspmgmt.LoadLocalMsp(fmt.Sprintf("/etc/hyperledger/fabric/artifacts/ordererOrganizations/example.com/users/Admin@example.com/msp"), ordConf.General.BCCSP, orgMSPID)
+	if err != nil { // Handle errors reading the config file
+		panic(fmt.Sprintf("Failed to initialize local MSP; err: %v\n", err))
+	}
 
-    //////////////////////////////////////////////////////////////////////
-    // Arguments for OTE settings for test variations:
-    //////////////////////////////////////////////////////////////////////
 
-    if txs > 0 {
-        numTxToSend = txs
-    } else {
-        return passed, resultSummary + "number of transactions must be > 0"
-    }
-    if chans > 0 {
-        numChannels = chans
-    } else {
-        return passed, resultSummary + "number of channels must be > 0"
-    }
-    if orderers > 0 {
-        numOrdsInNtwk = orderers
-        launchAppendFlags += fmt.Sprintf(" -o %d", orderers)
-    } else {
-        return passed, resultSummary + "number of orderers in network must be > 0"
-    }
+	////////////////////////////////////////////////////////////////////////
+	// Check parameters and/or env vars to see if user wishes to override
+	// default config parms.
+	////////////////////////////////////////////////////////////////////////
 
-    if pPerCh > 1 {
-        producersPerCh = pPerCh
-        return passed, resultSummary + "Multiple producersPerChannel NOT SUPPORTED yet."
-    }
+	//////////////////////////////////////////////////////////////////////
+	// Arguments for OTE settings for test variations:
+	//////////////////////////////////////////////////////////////////////
 
-    // this is not an argument, but user may set this tuning parameter before running test
-    envvar = os.Getenv("OTE_CLIENTS_SHARE_CONNS")
-    if envvar != "" {
-        if strings.ToLower(envvar) == "true" || strings.ToLower(envvar) == "t" {
-            optimizeClientsMode = true
-        }
-        if debugflagAPI {
-            logger(fmt.Sprintf("%-50s %s=%t", "OTE_CLIENTS_SHARE_CONNS="+envvar, "optimizeClientsMode", optimizeClientsMode))
-            logger("Setting OTE_CLIENTS_SHARE_CONNS option to true does the following:\n1. All Consumers on an orderer (one GO thread per each channel) will share grpc connection.\n2. All Producers on an orderer will share a grpc conn AND share one GO-thread.\nAlthough this reduces concurrency and lengthens the test duration, it satisfies\nthe objective of reducing swap space requirements and should be selected when\nrunning tests with numerous channels or producers per channel.")
-        }
-    }
-    if optimizeClientsMode {
-        // use only one MasterProducer and one MasterConsumer on each orderer
-        numProducers = numOrdsInNtwk
-        numConsumers = numOrdsInNtwk
-    } else {
-        // one Producer and one Consumer for EVERY channel on each orderer
-        numProducers = numOrdsInNtwk * numChannels
-        numConsumers = numOrdsInNtwk * numChannels
-    }
+	if txs > 0 {
+		numTxToSend = txs
+	} else {
+		return passed, resultSummary + "number of transactions must be > 0"
+	}
+	if chans > 0 {
+		numChannels = chans
+	} else {
+		return passed, resultSummary + "number of channels must be > 0"
+	}
+	if orderers > 0 {
+		numOrdsInNtwk = orderers
+		launchAppendFlags += fmt.Sprintf(" -o %d", orderers)
+	} else {
+		return passed, resultSummary + "number of orderers in network must be > 0"
+	}
 
-    envvar = "<ignored>"
-    if oteSpy < 0 {
-        // this ote() was called from the command line
-        if debugflagAPI {
-            logger("Using environment variable settings for OTE_MASTERSPY and OTE_SPY_ORDERER...")
-        }
-        envvar = strings.ToLower(os.Getenv("OTE_MASTERSPY"))
-        if envvar != "" {
-            if strings.Contains(envvar, "on") {
-                masterSpy = spyOn
-            } else if strings.Contains(envvar, "defer") {
-                masterSpy = spyDefer
-            } else {
-                panic("Input error: invalid input for OTE_MASTERSPY: " + envvar)
-            }
-        }
+	if pPerCh > 1 {
+		producersPerCh = pPerCh
+		return passed, resultSummary + "Multiple producersPerChannel NOT SUPPORTED yet."
+	}
 
-    } else if oteSpy == spyOff {
-        masterSpy = spyOff
-    } else if oteSpy == spyOn {
-        masterSpy = spyOn
-    } else if oteSpy == spyDefer {
-        masterSpy = spyDefer
-    } else {
-        panic("Input error: invalid input for oteSpy (OTE_MASTERSPY)")
-    }
-    if debugflagAPI {
-        logger(fmt.Sprintf("%-50s %s=%s", "OTE_MASTERSPY="+envvar, "masterSpy", spyStatus(masterSpy)))
-    }
+	// this is not an argument, but user may set this tuning parameter before running test
+	envvar = os.Getenv("OTE_CLIENTS_SHARE_CONNS")
+	if envvar != "" {
+		if strings.ToLower(envvar) == "true" || strings.ToLower(envvar) == "t" {
+			optimizeClientsMode = true
+		}
+		if debugflagAPI {
+			logger(fmt.Sprintf("%-50s %s=%t", "OTE_CLIENTS_SHARE_CONNS="+envvar, "optimizeClientsMode", optimizeClientsMode))
+			logger("Setting OTE_CLIENTS_SHARE_CONNS option to true does the following:\n1. All Consumers on an orderer (one GO thread per each channel) will share grpc connection.\n2. All Producers on an orderer will share a grpc conn AND share one GO-thread.\nAlthough this reduces concurrency and lengthens the test duration, it satisfies\nthe objective of reducing swap space requirements and should be selected when\nrunning tests with numerous channels or producers per channel.")
+		}
+	}
+	if optimizeClientsMode {
+		// use only one MasterProducer and one MasterConsumer on each orderer
+		numProducers = numOrdsInNtwk
+		numConsumers = numOrdsInNtwk
+	} else {
+		// one Producer and one Consumer for EVERY channel on each orderer
+		numProducers = numOrdsInNtwk * numChannels
+		numConsumers = numOrdsInNtwk * numChannels
+	}
 
-    envvar = "<ignored>"
-    if oteSpy != spyOff {
-        // Invoked from a go test or from command line.
-        // Env var indicates which orderer to spy on.
-        // Note: when using spyDefer, this might be overridden by the go test
-        // that calls startMasterSpy() with a valid orderer index number.
-        envvar = os.Getenv("OTE_SPY_ORDERER")
-        if envvar != "" {
-            if spyOrd, spyOrdErr := strconv.Atoi(envvar); spyOrdErr != nil {
-                panic("Input error: cannot translate OTE_SPY_ORDERER to integer; bad input: " + envvar)
-            } else {
-                if spyOrd >= 0 && spyOrd < numOrdsInNtwk {
-                    masterSpyOrdIndx = spyOrd
-                } else {
-                    panic("Input error: invalid OTE_SPY_ORDERER number; bad input: " + envvar)
-                }
-            }
-        }
-    }
-    if debugflagAPI {
-        logger(fmt.Sprintf("%-50s %s=%d", "OTE_SPY_ORDERER="+envvar, "spyOrd", masterSpyOrdIndx))
-    }
+	envvar = "<ignored>"
+	if oteSpy < 0 {
+		// this ote() was called from the command line
+		if debugflagAPI {
+			logger("Using environment variable settings for OTE_MASTERSPY and OTE_SPY_ORDERER...")
+		}
+		envvar = strings.ToLower(os.Getenv("OTE_MASTERSPY"))
+		if envvar != "" {
+			if strings.Contains(envvar, "on") {
+				masterSpy = spyOn
+			} else if strings.Contains(envvar, "defer") {
+				masterSpy = spyDefer
+			} else {
+				panic("Input error: invalid input for OTE_MASTERSPY: " + envvar)
+			}
+		}
 
-    // Watch every orderer to verify they are all delivering the same.
-    numOrdsToWatch = numOrdsInNtwk
+	} else if oteSpy == spyOff {
+		masterSpy = spyOff
+	} else if oteSpy == spyOn {
+		masterSpy = spyOn
+	} else if oteSpy == spyDefer {
+		masterSpy = spyDefer
+	} else {
+		panic("Input error: invalid input for oteSpy (OTE_MASTERSPY)")
+	}
+	if debugflagAPI {
+		logger(fmt.Sprintf("%-50s %s=%s", "OTE_MASTERSPY="+envvar, "masterSpy", spyStatus(masterSpy)))
+	}
 
-    if masterSpy != spyOff {
-        // Create another set of counters (the masterSpy) for
-        // this test to watch every channel on an orderer - so that means
-        // every channel on one orderer will be watched by two processes
-        numOrdsToWatch++
-    }
+	envvar = "<ignored>"
+	if oteSpy != spyOff {
+		// Invoked from a go test or from command line.
+		// Env var indicates which orderer to spy on.
+		// Note: when using spyDefer, this might be overridden by the go test
+		// that calls startMasterSpy() with a valid orderer index number.
+		envvar = os.Getenv("OTE_SPY_ORDERER")
+		if envvar != "" {
+			if spyOrd, spyOrdErr := strconv.Atoi(envvar); spyOrdErr != nil {
+				panic("Input error: cannot translate OTE_SPY_ORDERER to integer; bad input: " + envvar)
+			} else {
+				if spyOrd >= 0 && spyOrd < numOrdsInNtwk {
+					masterSpyOrdIndx = spyOrd
+				} else {
+					panic("Input error: invalid OTE_SPY_ORDERER number; bad input: " + envvar)
+				}
+			}
+		}
+	}
+	if debugflagAPI {
+		logger(fmt.Sprintf("%-50s %s=%d", "OTE_SPY_ORDERER="+envvar, "spyOrd", masterSpyOrdIndx))
+	}
 
-    //////////////////////////////////////////////////////////////////////
-    // Arguments to override configuration parameter values in yaml file:
-    //////////////////////////////////////////////////////////////////////
+	// Watch every orderer to verify they are all delivering the same.
+	numOrdsToWatch = numOrdsInNtwk
 
-    // ordererType is an argument of ote(), and is also in the genesisconfig
-    if genConf.Orderer == nil {
-        fmt.Println("unable to load configtx.yaml")
-        os.Exit(0)
-    }
-    ordererType = genConf.Orderer.OrdererType
-    if ordType != "" {
-        ordererType = ordType
-    } else {
-        logger(fmt.Sprintf("Null value provided for ordererType; using value from config file: %s", ordererType))
-    }
-    launchAppendFlags += fmt.Sprintf(" -t %s", ordererType)
-    if "kafka" == strings.ToLower(ordererType) {
-        if kbs > 0 {
-            numKBrokers = kbs
-            launchAppendFlags += fmt.Sprintf(" -k %d", numKBrokers)
-        } else {
-            return passed, resultSummary + "When using kafka ordererType, number of kafka-brokers must be > 0"
-        }
-    } else {
-        numKBrokers = 0
-    }
+	if masterSpy != spyOff {
+		// Create another set of counters (the masterSpy) for
+		// this test to watch every channel on an orderer - so that means
+		// every channel on one orderer will be watched by two processes
+		numOrdsToWatch++
+	}
 
-    // batchSize and batchTimeout are not arguments of ote(), but are in the genesisconfig
-    // (genConf) which contains the environment variable values that were set on the
-    // command line, or exported in environment, or default values from yaml file.
+	//////////////////////////////////////////////////////////////////////
+	// Arguments to override configuration parameter values in yaml file:
+	//////////////////////////////////////////////////////////////////////
 
-    batchSize = int64(genConf.Orderer.BatchSize.MaxMessageCount) // retype the uint32 config param we read
-    envvar = os.Getenv(batchSizeParamStr)
-    if batchSize != 10 {
-        launchAppendFlags += fmt.Sprintf(" -b %d", batchSize)
-    }
-    if debugflagAPI {
-        logger(fmt.Sprintf("%-50s %s=%d", batchSizeParamStr+"="+envvar, "batchSize", batchSize))
-    }
+	// ordererType is an argument of ote(), and is also in the genesisconfig
+	if genConf.Orderer == nil {
+		fmt.Println("unable to load configtx.yaml")
+		os.Exit(0)
+	}
+	ordererType = genConf.Orderer.OrdererType
+	if ordType != "" {
+		ordererType = ordType
+	} else {
+		logger(fmt.Sprintf("Null value provided for ordererType; using value from config file: %s", ordererType))
+	}
+	launchAppendFlags += fmt.Sprintf(" -t %s", ordererType)
+	if "kafka" == strings.ToLower(ordererType) {
+		if kbs > 0 {
+			numKBrokers = kbs
+			launchAppendFlags += fmt.Sprintf(" -k %d", numKBrokers)
+		} else {
+			return passed, resultSummary + "When using kafka ordererType, number of kafka-brokers must be > 0"
+		}
+	} else {
+		numKBrokers = 0
+	}
 
-    //logger(fmt.Sprintf("DEBUG=====BatchTimeout conf:%v Seconds-float():%v Seconds-int:%v", genConf.Orderer.BatchTimeout, (genConf.Orderer.BatchTimeout).Seconds(), int((genConf.Orderer.BatchTimeout).Seconds())))
+	// batchSize and batchTimeout are not arguments of ote(), but are in the genesisconfig
+	// (genConf) which contains the environment variable values that were set on the
+	// command line, or exported in environment, or default values from yaml file.
 
-    batchTimeout := int((genConf.Orderer.BatchTimeout).Seconds()) // Seconds() converts time.Duration to float64, and then retypecast to int
-    envvar = os.Getenv(batchTimeoutParamStr)
-    //if batchTimeout != 10 { launchAppendFlags += fmt.Sprintf(" -c %d", batchTimeout) }
-    if debugflagAPI {
-        logger(fmt.Sprintf("%-50s %s=%d", batchTimeoutParamStr+"="+envvar, "batchTimeout", batchTimeout))
-    }
+	batchSize = int64(genConf.Orderer.BatchSize.MaxMessageCount) // retype the uint32 config param we read
+	envvar = os.Getenv(batchSizeParamStr)
+	if batchSize != 10 {
+		launchAppendFlags += fmt.Sprintf(" -b %d", batchSize)
+	}
+	if debugflagAPI {
+		logger(fmt.Sprintf("%-50s %s=%d", batchSizeParamStr+"="+envvar, "batchSize", batchSize))
+	}
 
-    // CoreLoggingLevel
-    envvar = strings.ToUpper(os.Getenv("FABRIC_LOGGING_SPEC")) // (default = not set)|CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
-    if envvar != "" {
-        launchAppendFlags += fmt.Sprintf(" -l %s", envvar)
-    }
-    if debugflagAPI {
-        logger(fmt.Sprintf("FABRIC_LOGGING_SPEC=%s", envvar))
-    }
+	//logger(fmt.Sprintf("DEBUG=====BatchTimeout conf:%v Seconds-float():%v Seconds-int:%v", genConf.Orderer.BatchTimeout, (genConf.Orderer.BatchTimeout).Seconds(), int((genConf.Orderer.BatchTimeout).Seconds())))
 
-    // CoreLedgerStateDB
-    envvar = os.Getenv("CORE_LEDGER_STATE_STATEDATABASE") // goleveldb | CouchDB
-    if envvar != "" {
-        launchAppendFlags += fmt.Sprintf(" -d %s", envvar)
-    }
-    if debugflagAPI {
-        logger(fmt.Sprintf("CORE_LEDGER_STATE_STATEDATABASE=%s", envvar))
-    }
+	batchTimeout := int((genConf.Orderer.BatchTimeout).Seconds()) // Seconds() converts time.Duration to float64, and then retypecast to int
+	envvar = os.Getenv(batchTimeoutParamStr)
+	//if batchTimeout != 10 { launchAppendFlags += fmt.Sprintf(" -c %d", batchTimeout) }
+	if debugflagAPI {
+		logger(fmt.Sprintf("%-50s %s=%d", batchTimeoutParamStr+"="+envvar, "batchTimeout", batchTimeout))
+	}
 
-    //////////////////////////////////////////////////////////////////////////
-    // Each producer sends TXs to one channel on one orderer, and increments
-    // its own counters for the successfully sent Tx, and the send-failures
-    // (rejected/timeout). These arrays are indexed by dimensions:
-    // numOrdsInNtwk and numChannels
+	// CoreLoggingLevel
+	envvar = strings.ToUpper(os.Getenv("FABRIC_LOGGING_SPEC")) // (default = not set)|CRITICAL|ERROR|WARNING|NOTICE|INFO|DEBUG
+	if envvar != "" {
+		launchAppendFlags += fmt.Sprintf(" -l %s", envvar)
+	}
+	if debugflagAPI {
+		logger(fmt.Sprintf("FABRIC_LOGGING_SPEC=%s", envvar))
+	}
 
-    var countToSend [][]int64
-    var txSent [][]int64
-    var txSentFailures [][]int64
-    var totalNumTxSent int64
-    var totalNumTxSentFailures int64
+	// CoreLedgerStateDB
+	envvar = os.Getenv("CORE_LEDGER_STATE_STATEDATABASE") // goleveldb | CouchDB
+	if envvar != "" {
+		launchAppendFlags += fmt.Sprintf(" -d %s", envvar)
+	}
+	if debugflagAPI {
+		logger(fmt.Sprintf("CORE_LEDGER_STATE_STATEDATABASE=%s", envvar))
+	}
 
-    // Each consumer receives blocks delivered on one channel from one
-    // orderer, and must track its own counters for the received number of
-    // blocks and received number of Tx.
-    // We will create consumers for every channel on an orderer, and total
-    // up the TXs received. And do that for all the orderers (indexed by
-    // numOrdsToWatch). We will check to ensure all the orderers receive
-    // all the same deliveries. These arrays are indexed by dimensions:
-    // numOrdsToWatch and numChannels
+	//////////////////////////////////////////////////////////////////////////
+	// Each producer sends TXs to one channel on one orderer, and increments
+	// its own counters for the successfully sent Tx, and the send-failures
+	// (rejected/timeout). These arrays are indexed by dimensions:
+	// numOrdsInNtwk and numChannels
 
-    var txRecv [][]int64
-    var blockRecv [][]int64
-    var totalTxRecv []int64    // total TXs rcvd by all consumers on an orderer, indexed by numOrdsToWatch
-    var totalBlockRecv []int64 // total Blks recvd by all consumers on an orderer, indexed by numOrdsToWatch
-    var totalTxRecvMismatch = false
-    var totalBlockRecvMismatch = false
-    var consumerConns [][]*grpc.ClientConn
+	var countToSend [][]int64
+	var txSent [][]int64
+	var txSentFailures [][]int64
+	var totalNumTxSent int64
+	var totalNumTxSentFailures int64
 
-    ////////////////////////////////////////////////////////////////////////
-    // Create the 1D and 2D slices of counters for the producers and
-    // consumers. All are initialized to zero.
+	// Each consumer receives blocks delivered on one channel from one
+	// orderer, and must track its own counters for the received number of
+	// blocks and received number of Tx.
+	// We will create consumers for every channel on an orderer, and total
+	// up the TXs received. And do that for all the orderers (indexed by
+	// numOrdsToWatch). We will check to ensure all the orderers receive
+	// all the same deliveries. These arrays are indexed by dimensions:
+	// numOrdsToWatch and numChannels
 
-    for i := 0; i < numOrdsInNtwk; i++ { // for all orderers
+	var txRecv [][]int64
+	var blockRecv [][]int64
+	var totalTxRecv []int64    // total TXs rcvd by all consumers on an orderer, indexed by numOrdsToWatch
+	var totalBlockRecv []int64 // total Blks recvd by all consumers on an orderer, indexed by numOrdsToWatch
+	var totalTxRecvMismatch = false
+	var totalBlockRecvMismatch = false
+	var consumerConns [][]*grpc.ClientConn
 
-        countToSendForOrd := make([]int64, numChannels)      // create a counter for all the channels on one orderer
-        countToSend = append(countToSend, countToSendForOrd) // orderer-i gets a set
+	////////////////////////////////////////////////////////////////////////
+	// Create the 1D and 2D slices of counters for the producers and
+	// consumers. All are initialized to zero.
 
-        sendPassCntrs := make([]int64, numChannels) // create a counter for all the channels on one orderer
-        txSent = append(txSent, sendPassCntrs)      // orderer-i gets a set
+	for i := 0; i < numOrdsInNtwk; i++ { // for all orderers
 
-        sendFailCntrs := make([]int64, numChannels)            // create a counter for all the channels on one orderer
-        txSentFailures = append(txSentFailures, sendFailCntrs) // orderer-i gets a set
-    }
+		countToSendForOrd := make([]int64, numChannels)      // create a counter for all the channels on one orderer
+		countToSend = append(countToSend, countToSendForOrd) // orderer-i gets a set
 
-    for i := 0; i < numOrdsToWatch; i++ { // for all orderers which we will watch/monitor for deliveries
+		sendPassCntrs := make([]int64, numChannels) // create a counter for all the channels on one orderer
+		txSent = append(txSent, sendPassCntrs)      // orderer-i gets a set
 
-        blockRecvCntrs := make([]int64, numChannels)  // create a set of block counters for each channel
-        blockRecv = append(blockRecv, blockRecvCntrs) // orderer-i gets a set
+		sendFailCntrs := make([]int64, numChannels)            // create a counter for all the channels on one orderer
+		txSentFailures = append(txSentFailures, sendFailCntrs) // orderer-i gets a set
+	}
 
-        txRecvCntrs := make([]int64, numChannels) // create a set of tx counters for each channel
-        txRecv = append(txRecv, txRecvCntrs)      // orderer-i gets a set
+	for i := 0; i < numOrdsToWatch; i++ { // for all orderers which we will watch/monitor for deliveries
 
-        consumerRow := make([]*grpc.ClientConn, numChannels)
-        consumerConns = append(consumerConns, consumerRow)
-    }
+		blockRecvCntrs := make([]int64, numChannels)  // create a set of block counters for each channel
+		blockRecv = append(blockRecv, blockRecvCntrs) // orderer-i gets a set
 
-    totalTxRecv = make([]int64, numOrdsToWatch)    // create counter for each orderer, for total tx received (for all channels)
-    totalBlockRecv = make([]int64, numOrdsToWatch) // create counter for each orderer, for total blk received (for all channels)
+		txRecvCntrs := make([]int64, numChannels) // create a set of tx counters for each channel
+		txRecv = append(txRecv, txRecvCntrs)      // orderer-i gets a set
 
-    ////////////////////////////////////////////////////////////////////////
+		consumerRow := make([]*grpc.ClientConn, numChannels)
+		consumerConns = append(consumerConns, consumerRow)
+	}
 
-    //launchNetwork(launchAppendFlags)
-    //time.Sleep(12 * time.Second)
+	totalTxRecv = make([]int64, numOrdsToWatch)    // create counter for each orderer, for total tx received (for all channels)
+	totalBlockRecv = make([]int64, numOrdsToWatch) // create counter for each orderer, for total blk received (for all channels)
 
-    ////////////////////////////////////////////////////////////////////////
-    // Create the 1D slice of channel IDs, and create names for them
-    // which we will use when producing/broadcasting/sending msgs and
-    // consuming/delivering/receiving msgs.
+	////////////////////////////////////////////////////////////////////////
 
-    var channelIDs []string
-    channelIDs = make([]string, numChannels)
+	//launchNetwork(launchAppendFlags)
+	//time.Sleep(12 * time.Second)
 
-    // TODO (after FAB-2001 and FAB-2083 are fixed) - Remove the if-then clause.
-    // Due to those bugs, we cannot pass many tests using multiple orderers and multiple channels.
-    // TEMPORARY PARTIAL SOLUTION: To test multiple orderers with a single channel,
-    // use hardcoded TestChainID and skip creating any channels.
-    if numChannels == 0 {
-        //channelIDs[0] = genesisconfigProvisional.TestChainID
-        logger(fmt.Sprintf("Using DEFAULT channelID = %s", channelIDs[0]))
-    } else {
-        logger(fmt.Sprintf("Using %d new channelIDs, e.g. testchan321", numChannels))
-        // create all the channels using orderer0
-        // CONFIGTX_ORDERER_ADDRESSES is the list of orderers. use the first one. Default is [127.0.0.1:7050]
-        for c := 0; c < numChannels; c++ {
-            channelIDs[c] = fmt.Sprintf("%s%d", p.Channel, c+1)
-        }
-    }
+	////////////////////////////////////////////////////////////////////////
+	// Create the 1D slice of channel IDs, and create names for them
+	// which we will use when producing/broadcasting/sending msgs and
+	// consuming/delivering/receiving msgs.
 
-    time.Sleep(5 * time.Second)
+	var channelIDs []string
+	channelIDs = make([]string, numChannels)
 
-    ////////////////////////////////////////////////////////////////////////
-    // Start threads for each consumer to watch each channel on all (the
-    // specified number of) orderers. This code assumes orderers in the
-    // network will use increasing port numbers, which is the same logic
-    // used by the driver.sh tool that starts the network for us: the first
-    // orderer uses ordStartPort, the second uses ordStartPort+1, etc.
+	// TODO (after FAB-2001 and FAB-2083 are fixed) - Remove the if-then clause.
+	// Due to those bugs, we cannot pass many tests using multiple orderers and multiple channels.
+	// TEMPORARY PARTIAL SOLUTION: To test multiple orderers with a single channel,
+	// use hardcoded TestChainID and skip creating any channels.
+	if numChannels == 0 {
+		//channelIDs[0] = genesisconfigProvisional.TestChainID
+		logger(fmt.Sprintf("Using DEFAULT channelID = %s", channelIDs[0]))
+	} else {
+		logger(fmt.Sprintf("Using %d channelIDs", numChannels))
+		// create all the channels using orderer0
+		// CONFIGTX_ORDERER_ADDRESSES is the list of orderers. use the first one. Default is [127.0.0.1:7050]
+		for c := 0; c < numChannels; c++ {
+			channelIDs[c] = fmt.Sprintf("%s%d", p.Channel, c+1)
+		}
+	}
 
-    for ord := 0; ord < numOrdsToWatch; ord++ {
-        serverAddr := fmt.Sprintf("%s", genConf.Orderer.Addresses[ord])
-        if masterSpy != spyOff && ord == numOrdsToWatch-1 {
-            // Special case: this is the last row of counters,
-            // added (and incremented numOrdsToWatch) for the
-            // masterSpy to use to watch the first orderer for
-            // deliveries, on all channels. This will be a duplicate
-            // Consumer (it is the second one monitoring one of the
-            // orderers, masterSpyOrdIndx, selected by the user).
+	time.Sleep(5 * time.Second)
 
-            if masterSpy == spyOn {
-                serverAddr = fmt.Sprintf("%s", genConf.Orderer.Addresses[ord])
-                go startConsumerMaster(serverAddr, &channelIDs, ord, &(txRecv[ord]), &(blockRecv[ord]), &(consumerConns[ord][0]))
-            } else if masterSpy == spyDefer {
-                // startSpyDefer will start the MasterConsumer, but first
-                // waits until the user is ready and requests it by calling
-                // startMasterSpy with the index of the orderer to monitor.
-                go startSpyDefer(ordConf.General.ListenAddress, ordStartPort, &channelIDs, ord, &(txRecv[ord]), &(blockRecv[ord]), &(consumerConns[ord][0]))
-            }
-        } else if optimizeClientsMode {
-            // Create just one Consumer to receive all deliveries
-            // (on all channels) on an orderer.
-            go startConsumerMaster(serverAddr, &channelIDs, ord, &(txRecv[ord]), &(blockRecv[ord]), &(consumerConns[ord][0]))
-        } else {
-            // Normal mode: create a unique consumer client
-            // go-thread for each channel on each orderer.
-            for c := 0; c < numChannels; c++ {
-                //consumerIdx := ord*numOrdsToWatch + c
-                go startConsumer(serverAddr, channelIDs[c], ord, c, &(txRecv[ord][c]), &(blockRecv[ord][c]), &(consumerConns[ord][c]), seek, quiet, tlsEnabled, orgMSPID)
-                time.Sleep(1 * time.Second)
-            }
-        }
+	////////////////////////////////////////////////////////////////////////
+	// Start threads for each consumer to watch each channel on all (the
+	// specified number of) orderers. This code assumes orderers in the
+	// network will use increasing port numbers, which is the same logic
+	// used by the driver.sh tool that starts the network for us: the first
+	// orderer uses ordStartPort, the second uses ordStartPort+1, etc.
 
-    }
+	for ord := 0; ord < numOrdsToWatch; ord++ {
+		serverAddr := fmt.Sprintf("%s", genConf.Orderer.Addresses[ord])
+		if masterSpy != spyOff && ord == numOrdsToWatch-1 {
+			// Special case: this is the last row of counters,
+			// added (and incremented numOrdsToWatch) for the
+			// masterSpy to use to watch the first orderer for
+			// deliveries, on all channels. This will be a duplicate
+			// Consumer (it is the second one monitoring one of the
+			// orderers, masterSpyOrdIndx, selected by the user).
 
-    logger("Finished creating all CONSUMERS clients")
-    time.Sleep(2 * time.Second)
-    defer cleanNetwork(&consumerConns)
+			if masterSpy == spyOn {
+				serverAddr = fmt.Sprintf("%s", genConf.Orderer.Addresses[ord])
+				go startConsumerMaster(serverAddr, &channelIDs, ord, &(txRecv[ord]), &(blockRecv[ord]), &(consumerConns[ord][0]))
+			} else if masterSpy == spyDefer {
+				// startSpyDefer will start the MasterConsumer, but first
+				// waits until the user is ready and requests it by calling
+				// startMasterSpy with the index of the orderer to monitor.
+				go startSpyDefer(ordConf.General.ListenAddress, ordStartPort, &channelIDs, ord, &(txRecv[ord]), &(blockRecv[ord]), &(consumerConns[ord][0]))
+			}
+		} else if optimizeClientsMode {
+			// Create just one Consumer to receive all deliveries
+			// (on all channels) on an orderer.
+			go startConsumerMaster(serverAddr, &channelIDs, ord, &(txRecv[ord]), &(blockRecv[ord]), &(consumerConns[ord][0]))
+		} else {
+			// Normal mode: create a unique consumer client
+			// go-thread for each channel on each orderer.
+			for c := 0; c < numChannels; c++ {
+				//consumerIdx := ord*numOrdsToWatch + c
+				go startConsumer(serverAddr, channelIDs[c], ord, c, &(txRecv[ord][c]), &(blockRecv[ord][c]), &(consumerConns[ord][c]), seek, quiet, tlsEnabled, orgMSPID)
+				time.Sleep(1 * time.Second)
+			}
+		}
 
-    ////////////////////////////////////////////////////////////////////////
-    // Now that the orderer service network is running, and the consumers
-    // are watching for deliveries, we can start clients which will
-    // broadcast the specified number of TXs to their associated orderers.
+	}
 
-    if optimizeClientsMode {
-        producersWG.Add(numOrdsInNtwk)
-    } else {
-        producersWG.Add(numProducers)
-    }
-    sendStart := time.Now().Unix()
-    for ord := 0; ord < numOrdsInNtwk; ord++ {
-        serverAddr := fmt.Sprintf("%s", genConf.Orderer.Addresses[ord])
-        for c := 0; c < numChannels; c++ {
-            countToSend[ord][c] = numTxToSend / int64(numOrdsInNtwk*numChannels)
-            if c == 0 && ord == 0 {
-                countToSend[ord][c] += numTxToSend % int64(numOrdsInNtwk*numChannels)
-            }
-        }
-        if optimizeClientsMode {
-            // create one Producer for all channels on this orderer
-            go startProducerMaster(serverAddr, &channelIDs, ord, &(countToSend[ord]), &(txSent[ord]), &(txSentFailures[ord]), payload)
-        } else {
-            // Normal mode: create a unique consumer client
-            // go thread for each channel
-            for c := 0; c < numChannels; c++ {
-                go startProducer(serverAddr, channelIDs[c], ord, c, countToSend[ord][c], &(txSent[ord][c]), &(txSentFailures[ord][c]), tlsEnabled, payload)
-            }
-        }
-    }
+	logger("Finished creating all CONSUMERS clients")
+	time.Sleep(2 * time.Second)
+	defer cleanNetwork(&consumerConns)
 
-    if optimizeClientsMode {
-        logger(fmt.Sprintf("Finished creating all %d MASTER-PRODUCERs at %v", numOrdsInNtwk, time.Now()))
-    } else {
-        logger(fmt.Sprintf("Finished creating all %d PRODUCERs at %v", numOrdsInNtwk*numChannels, time.Now()))
-    }
-    producersWG.Wait()
-    sendDuration := (time.Now().Unix() - sendStart - 5) //5 is for time waited after creating the producer client to send the first transaction
-    logger(fmt.Sprintf("Send Duration (seconds): %4d", sendDuration))
-    recoverStart := time.Now().Unix()
+	////////////////////////////////////////////////////////////////////////
+	// Now that the orderer service network is running, and the consumers
+	// are watching for deliveries, we can start clients which will
+	// broadcast the specified number of TXs to their associated orderers.
 
-    ////////////////////////////////////////////////////////////////////////
-    // All producer threads are finished sending broadcast transactions.
-    // Let's determine if the deliveries have all been received by the
-    // consumer threads. We will check if the receive counts match the send
-    // counts on all consumers, or if all consumers are no longer receiving
-    // blocks. Wait and continue rechecking as necessary, as long as the
-    // delivery (recv) counters are climbing closer to the broadcast (send)
-    // counter. If the counts do not match, wait for up to batchTimeout
-    // seconds, to ensure that we received the last (non-full) batch.
+	if optimizeClientsMode {
+		producersWG.Add(numOrdsInNtwk)
+	} else {
+		producersWG.Add(numProducers)
+	}
+	sendStart := time.Now().Unix()
+	for ord := 0; ord < numOrdsInNtwk; ord++ {
+		serverAddr := fmt.Sprintf("%s", genConf.Orderer.Addresses[ord])
+		for c := 0; c < numChannels; c++ {
+			countToSend[ord][c] = numTxToSend / int64(numOrdsInNtwk*numChannels)
+			if c == 0 && ord == 0 {
+				countToSend[ord][c] += numTxToSend % int64(numOrdsInNtwk*numChannels)
+			}
+		}
+		if optimizeClientsMode {
+			// create one Producer for all channels on this orderer
+			go startProducerMaster(serverAddr, &channelIDs, ord, &(countToSend[ord]), &(txSent[ord]), &(txSentFailures[ord]), payload)
+		} else {
+			// Normal mode: create a unique consumer client
+			// go thread for each channel
+			for c := 0; c < numChannels; c++ {
+				go startProducer(serverAddr, channelIDs[c], ord, c, countToSend[ord][c], &(txSent[ord][c]), &(txSentFailures[ord][c]), tlsEnabled, payload, orgMSPID)
+			}
+		}
+	}
 
-    computeTotals(&txSent, &totalNumTxSent, &txSentFailures, &totalNumTxSentFailures, &txRecv, &totalTxRecv, &totalTxRecvMismatch, &blockRecv, &totalBlockRecv, &totalBlockRecvMismatch)
+	if optimizeClientsMode {
+		logger(fmt.Sprintf("Finished creating all %d MASTER-PRODUCERs at %v", numOrdsInNtwk, time.Now()))
+	} else {
+		logger(fmt.Sprintf("Finished creating all %d PRODUCERs at %v", numOrdsInNtwk*numChannels, time.Now()))
+	}
+	producersWG.Wait()
+	sendDuration := (time.Now().Unix() - sendStart - 5) //5 is for time waited after creating the producer client to send the first transaction
+	logger(fmt.Sprintf("Send Duration (seconds): %4d", sendDuration))
+	recoverStart := time.Now().Unix()
 
-    slowRecoveryTime := 300
-    idleCount := 0
-    waitSecs := 0
-    for !sendEqualRecv(numTxToSend, &totalTxRecv, totalTxRecvMismatch, totalBlockRecvMismatch) {
-        waitSecs += 1
-        time.Sleep(1 * time.Second)
-        // recheck every second for more messages
-        if !(moreDeliveries(&txSent, &totalNumTxSent, &txSentFailures, &totalNumTxSentFailures, &txRecv, &totalTxRecv, &totalTxRecvMismatch, &blockRecv, &totalBlockRecv, &totalBlockRecvMismatch)) {
-            // idleCount keeps track of how long it has been since we last received a message.
-            // This is a stopgap, in case of code error miscount, or lost messages, or possibly
-            // severely delayed deliveries due to CPU contention by all the producers, consumers,
-            // orderers, kafkas running on 1 or same few hosts.
-            idleCount++
-            if idleCount >= (batchTimeout + slowRecoveryTime) {
-                waitSecs -= (batchTimeout + slowRecoveryTime)
-                break
-            }
-        } else {
-            if debugflag1 && (idleCount > 0) {
-                logger(fmt.Sprintf("Blocks received after a delay exceeding %d secs, %v", idleCount, time.Now()))
-            }
-            idleCount = 0
-        }
-    }
+	////////////////////////////////////////////////////////////////////////
+	// All producer threads are finished sending broadcast transactions.
+	// Let's determine if the deliveries have all been received by the
+	// consumer threads. We will check if the receive counts match the send
+	// counts on all consumers, or if all consumers are no longer receiving
+	// blocks. Wait and continue rechecking as necessary, as long as the
+	// delivery (recv) counters are climbing closer to the broadcast (send)
+	// counter. If the counts do not match, wait for up to batchTimeout
+	// seconds, to ensure that we received the last (non-full) batch.
 
-    // Recovery Duration = time spent waiting for orderer service to finish delivering transactions,
-    // after all producers finished sending them. AND if transactions were still missing, then
-    // this includes the extra time (batchTimeout+slowRecoveryTime) we wasted waiting at the end,
-    // hoping they would arrive. If there were delays in message deliveries due to CPU contention
-    // or other reasons, then the TPS measurments will include and reflect that.
-    recoveryDuration := (time.Now().Unix() - recoverStart)
-    logger(fmt.Sprintf("Recovery Duration (secs):%4d", recoveryDuration))
-    logger(fmt.Sprintf("waitSecs for last batch: %4d", waitSecs))
-    testDuration := sendDuration + recoveryDuration - int64(idleCount)
-    passed, resultSummary = reportTotals(testname, numTxToSend, countToSend, txSent, totalNumTxSent, txSentFailures, totalNumTxSentFailures, batchSize, txRecv, totalTxRecv, totalTxRecvMismatch, blockRecv, totalBlockRecv, totalBlockRecvMismatch, &channelIDs, testDuration)
+	computeTotals(&txSent, &totalNumTxSent, &txSentFailures, &totalNumTxSentFailures, &txRecv, &totalTxRecv, &totalTxRecvMismatch, &blockRecv, &totalBlockRecv, &totalBlockRecvMismatch)
 
-    return passed, resultSummary
+	slowRecoveryTime := 300
+	idleCount := 0
+	waitSecs := 0
+	for !sendEqualRecv(numTxToSend, &totalTxRecv, totalTxRecvMismatch, totalBlockRecvMismatch) {
+		waitSecs += 1
+		time.Sleep(1 * time.Second)
+		// recheck every second for more messages
+		if !(moreDeliveries(&txSent, &totalNumTxSent, &txSentFailures, &totalNumTxSentFailures, &txRecv, &totalTxRecv, &totalTxRecvMismatch, &blockRecv, &totalBlockRecv, &totalBlockRecvMismatch)) {
+			// idleCount keeps track of how long it has been since we last received a message.
+			// This is a stopgap, in case of code error miscount, or lost messages, or possibly
+			// severely delayed deliveries due to CPU contention by all the producers, consumers,
+			// orderers, kafkas running on 1 or same few hosts.
+			idleCount++
+			if idleCount >= (batchTimeout + slowRecoveryTime) {
+				waitSecs -= (batchTimeout + slowRecoveryTime)
+				break
+			}
+		} else {
+			if debugflag1 && (idleCount > 0) {
+				logger(fmt.Sprintf("Blocks received after a delay exceeding %d secs, %v", idleCount, time.Now()))
+			}
+			idleCount = 0
+		}
+	}
+
+	// Recovery Duration = time spent waiting for orderer service to finish delivering transactions,
+	// after all producers finished sending them. AND if transactions were still missing, then
+	// this includes the extra time (batchTimeout+slowRecoveryTime) we wasted waiting at the end,
+	// hoping they would arrive. If there were delays in message deliveries due to CPU contention
+	// or other reasons, then the TPS measurments will include and reflect that.
+	recoveryDuration := (time.Now().Unix() - recoverStart)
+	logger(fmt.Sprintf("Recovery Duration (secs):%4d", recoveryDuration))
+	logger(fmt.Sprintf("waitSecs for last batch: %4d", waitSecs))
+	testDuration := sendDuration + recoveryDuration - int64(idleCount)
+	passed, resultSummary = reportTotals(testname, numTxToSend, countToSend, txSent, totalNumTxSent, txSentFailures, totalNumTxSentFailures, batchSize, txRecv, totalTxRecv, totalTxRecvMismatch, blockRecv, totalBlockRecv, totalBlockRecvMismatch, &channelIDs, testDuration)
+
+	return passed, resultSummary
 }
 
 func main() {
