@@ -107,7 +107,13 @@ The command is located in `PTE/CITest/scripts`
         FAB-11614-2iSBE: SBEcc chaincode, 2 processes X 50000 invokes with value and Endorsement policiesi for half the keys, TLS, CouchDB, 2 Channel
         FAB-11615-2i: SBEcc chaincode, 2 processes X 50000 invokes with valuee only, TLS, CouchDB, 2 Channel
         FAB-11615-2iSBE: SBEcc chaincode, 2 processes X 50000 invokes with value and Endorsement policies, TLS, CouchDB, 2 Channel
-
+        FAB-14227-36i: 2 peers in 2 orgs, 6 orderers roundrobin, 3 channels each with 12 processes X 10K invokes scripts to run on IKS k8s (Note: NL script uses kafka)
+        FAB-14225-12i: 2 peers in 2 orgs, 7 orderers in 3 channels with partially overlapping consenter sets (requires 3 channel profile consenter sets and 3 unique SCfiles), each with 4 processes X 10K invokes scripts to run on IKS k8s, user needs to store the connection profile of the network in directory PTE/CITest/FAB-14225-12i/CIConnProfiles
+        FAB-14230: scaling teraffic runs on networks with more orderers (3, 9, 27, 54, 108) in a channel
+        FAB-14269: stability of RAFT networj with 27 orderers
+        FAB-14350: RAFT test with large number of channels
+        FAB-14922: RAFT scaling: increasingly large transaction
+        FAB-15528: 2 orderer org, 2 orderer per orderer org, 2 org, 1 peer per org, 1 channel, 8 threads X 100 transactions with service discovery
     **Note that a query testcase requires execution of corresponding invoke testcase first to avoid errors due to the absence of transactions.**
 
 * ### Examples
