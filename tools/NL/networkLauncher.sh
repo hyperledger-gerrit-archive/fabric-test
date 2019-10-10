@@ -336,11 +336,23 @@ echo "        ####################################################### "
 echo "        #     create channel configuration transaction        # "
 echo "        ####################################################### "
 echo " "
+count=0
 for (( i=1; i<=$nChannel; i++ ))
 do
     channelTx=$ordererDir"/"$ORG_PROFILE$i".tx"
+    echo "channelName: $channelTx"
     echo "$CFGEXE -profile $ORG_PROFILE -channelID $ORG_PROFILE"$i" -outputCreateChannelTx $channelTx"
     $CFGEXE -profile $ORG_PROFILE -channelID $ORG_PROFILE"$i" -outputCreateChannelTx $channelTx
+    testChannelTx=$ordererDir"/testorgschannel1.tx"
+    file1size=$(ls -l $testChannelTx | cut -d " " -f5)
+    file2size=$(ls -l $channelTx | cut -d " " -f5)
+    if [ $(($file1size - $file2size)) != 0 ]; then
+        count=$(($count+1))
+        i=$(($i-1))
+        if [ $count == 4 ]; then
+           i=0
+        fi
+    fi
 done
 
 #create anchor peer update for org
