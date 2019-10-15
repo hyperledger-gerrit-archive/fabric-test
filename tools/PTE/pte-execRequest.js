@@ -149,7 +149,7 @@ logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] input ccDfnPtr[%s]: %
 
 var ccType = ccDfnPtr.ccType;
 if ( !fs.existsSync(ARGS_DIR + '/' + ccType + '/ccFunctions.js') ) {
-    console.log('No chaincode payload generation files found: ', ARGS_DIR + '/' + ccType + '/ccFunctions.js');
+    logger.error('No chaincode payload generation files found: ', ARGS_DIR + '/' + ccType + '/ccFunctions.js');
     process.exit(1);
 }
 var ccFunctions = require(ARGS_DIR + '/' + ccType + '/ccFunctions.js');
@@ -244,11 +244,11 @@ orderersCPFList = testUtil.getNodetypeFromConnProfilesSubmitter(cpList, 'orderer
 // set org connection profile
 var cpf=testUtil.findOrgConnProfileSubmitter(cpList, org);
 if ( 0 === testUtil.getConnProfilePropCntSubmitter(cpf, 'orderers') ) {
-    logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] no orderer found in the connection profile', Nid, channel.getName(), org, pid);
+    logger.error('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] no orderer found in the connection profile', Nid, channel.getName(), org, pid);
     process.exit(1);
 }
 if ( 0 === testUtil.getConnProfilePropCntSubmitter(cpf, 'peers') ) {
-    logger.info('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] no peer found in the connection profile', Nid, channel.getName(), org, pid);
+    logger.error('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] no peer found in the connection profile', Nid, channel.getName(), org, pid);
     process.exit(1);
 }
 var cpOrgs = cpf['organizations'];
@@ -2668,7 +2668,6 @@ function invoke_move_proposal() {
 
 
 }
-
 
 function execModeProposal() {
 
