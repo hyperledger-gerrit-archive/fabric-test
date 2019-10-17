@@ -18,7 +18,6 @@ apt-get update -qq
 #
 # install python-dev and libyaml-dev to get compiled speedups
 apt-get install --yes python
-apt-get install --yes python-pytest
 apt-get install --yes python-dev
 apt-get install --yes libyaml-dev
 
@@ -29,6 +28,7 @@ apt-get install --yes build-essential
 # https://cryptography.io/en/stable/installation/#building-cryptography-on-linux
 apt-get install --yes libssl-dev libffi-dev
 pip2 install --upgrade pip2
+pip2 install pytest
 pip2 install behave
 pip2 install nose
 
