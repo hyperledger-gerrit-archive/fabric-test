@@ -373,7 +373,7 @@ do
                 orgMSP=$tmpVal
             fi
         fi
-        OrgMSP=$ordererDir"/"$testChannel"$j"$orgMSP"anchors.tx"
+        OrgMSP=$ordererDir"/"$ORG_PROFILE"$j"$orgMSP"anchors.tx"
         echo "$CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $OrgMSP -channelID $ORG_PROFILE"$j" -asOrg $orgMSP"
         $CFGEXE -profile $ORG_PROFILE -outputAnchorPeersUpdate $OrgMSP -channelID $ORG_PROFILE"$j" -asOrg $orgMSP
     done
