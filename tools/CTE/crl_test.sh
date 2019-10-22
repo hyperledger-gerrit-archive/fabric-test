@@ -53,7 +53,7 @@ signing:
     expiry: 40s
     backdate: 5s
 EOF
-
+   cat $CONFIGFILE
    $SCRIPTDIR/fabric-ca_setup.sh -S -X -D -d $db
 
    # A. Expiry windows
