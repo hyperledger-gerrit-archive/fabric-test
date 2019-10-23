@@ -10,6 +10,7 @@ from subprocess import check_output
 
 class FabricCaTests(unittest.TestCase):
 
+    @unittest.skip("skipping")
     def test_FAB6863_BasicCAClustering(self):
         createLog = 'mkdir -p /tmp/logs/FAB6863; chmod 777 /tmp/logs/FAB6863'
         startContainer = 'docker run -v /tmp/logs/FAB6863:/tmp -v $PWD/../../fabric-ca:/opt/gopath/src/github.com/hyperledger/fabric-ca hyperledger/fabric-ca-fvt ./scripts/fvt/cluster_test.sh 4 4 8 128'
