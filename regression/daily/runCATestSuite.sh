@@ -25,5 +25,11 @@ fi
 # "Scenario Outline: FAB-6489: Interoperability Test".
 
 echo "======== Fabric-CA tests...========"
+
+echo In runCATestSuite.sh:
+echo BASEIMAGE_RELEASE=$BASEIMAGE_RELEASE
+echo In runCATestSuite.sh, openssl version:
+openssl version
+
 py.test -v --junitxml results_fabric-ca_tests.xml ca_tests.py && echo "------> Fabric-CA tests completed."
 archiveCA
