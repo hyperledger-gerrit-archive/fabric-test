@@ -16,7 +16,8 @@ echo "======== PULL DOCKER IMAGES ========"
 echo "Fetching images from Nexus"
 NEXUS_URL=nexus3.hyperledger.org:10001
 ORG_NAME="hyperledger/fabric"
-ARCH=$(go env GOARCH)
+#ARCH=$(go env GOARCH)
+ARCH=amd64
 LATEST_TAG=${LATEST_TAG:=$ARCH-latest}
 echo "---------> REPO:" $REPO
 echo "---------> LATEST_TAG:" $LATEST_TAG
@@ -63,7 +64,8 @@ fabric)
   ;;
 fabric-ca)
   echo "Pull all images except fabric-ca"
-  dockerTag peer orderer baseos ccenv nodeenv tools javaenv
+  #dockerTag peer orderer baseos ccenv nodeenv tools javaenv
+   dockerTag peer orderer baseos ccenv nodeenv tools
   ;;
 fabric-sdk-node)
   echo "Pull all images except fabric-sdk-node"
@@ -87,7 +89,8 @@ third-party)
   ;;
 *)
   echo "Pull all images"
-  dockerTag peer orderer baseos ccenv nodeenv tools ca javaenv
+  #dockerTag peer orderer baseos ccenv nodeenv tools ca javaenv
+   dockerTag peer orderer baseos ccenv nodeenv tools ca
   ;;
 esac
 
