@@ -101,7 +101,8 @@ build-fabric: fabric
 	@make native -C $(FABRIC_DIR)
 
 .PHONY: build-fabric-ca
-build-fabric-ca: ca
+#build-fabric-ca: ca
+build-fabric-ca:
 	@make docker -C $(CA_DIR)
 	@make fabric-ca-client -C $(CA_DIR)
 	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./buildFabricCaImages.sh $(BRANCH) $(CA_DIR)
