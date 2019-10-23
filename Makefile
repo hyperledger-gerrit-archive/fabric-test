@@ -59,7 +59,9 @@ TARGET = pte
 STABLE_TAG ?= $(ARCH)-$(BRANCH)-stable
 
 .PHONY: ci-smoke
-ci-smoke: fabric ca pre-req pull-images pull-binaries-fabric pull-thirdparty-images build-fabric-ca smoke-tests
+# ci-smoke: fabric ca pre-req pull-images pull-binaries-fabric pull-thirdparty-images build-fabric-ca smoke-tests
+# Temporarily change this, to use the verify job to test this job in CI:
+ci-smoke: svt-daily-ca-tests
 
 .PHONY: git-latest
 git-latest:
@@ -101,7 +103,8 @@ build-fabric: fabric
 	@make native -C $(FABRIC_DIR)
 
 .PHONY: build-fabric-ca
-build-fabric-ca: ca
+#build-fabric-ca: ca
+build-fabric-ca:
 	@make docker -C $(CA_DIR)
 	@make fabric-ca-client -C $(CA_DIR)
 	cd $(HYPERLEDGER_DIR)/fabric-test/scripts && ./buildFabricCaImages.sh $(BRANCH) $(CA_DIR)

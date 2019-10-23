@@ -20,6 +20,8 @@ function checkCrl() {
                                                  --revokedafter  $3 \
                                                  --revokedbefore $4
    shift 4
+   r0="$(openssl crl -noout -text -in $CA_CFG_PATH/$ADMINUSER/msp/crls/crl.pem)"
+   echo "openssl response for $CA_CFG_PATH/$ADMINUSER/msp/crls/crl.pem ... r0: $r0"
    r="$(openssl crl -noout -text -in $CA_CFG_PATH/$ADMINUSER/msp/crls/crl.pem |
              awk '/Serial Number:/ {printf $NF" "}')"
    echo "Looking for certificates ($r)"
@@ -35,6 +37,12 @@ function checkCrl() {
 function formatDate() {
    date --rfc-3339=seconds -d "$1" | sed 's/ /T/'
 }
+
+echo "=====openssl version:$(openssl version)"
+echo "=====TESTCASE:${TESTCASE}"
+echo "=====SCRIPTDIR:$SCRIPTDIR"
+echo "=====CONFIGFILE:$CONFIGFILE"
+exit
 
 for db in sqlite3 mysql postgres; do
    $SCRIPTDIR/fabric-ca_setup.sh -R
@@ -53,6 +61,11 @@ signing:
     expiry: 40s
     backdate: 5s
 EOF
+
+  echo =====db:$db
+  echo =====CONFIGFILE contents:
+  cat $CONFIGFILE
+  echo =====end CONFIGFILE contents.
 
    $SCRIPTDIR/fabric-ca_setup.sh -S -X -D -d $db
 
