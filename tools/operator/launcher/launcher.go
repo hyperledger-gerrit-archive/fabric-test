@@ -7,6 +7,7 @@ package launcher
 import (
 	//"flag"
 	"io/ioutil"
+	"strings"
 
 	"github.com/hyperledger/fabric-test/tools/operator/launcher/dockercompose"
 	"github.com/hyperledger/fabric-test/tools/operator/launcher/k8s"
@@ -70,12 +71,26 @@ func Launcher(action, env, kubeConfigPath, networkSpecPath string) error {
 	}
 	validateArguments(networkSpecPath, kubeConfigPath)
 	contents, _ := ioutil.ReadFile(networkSpecPath)
+	stringContents := strings.Split(string(contents), "artifacts_location")
+	finalContents := stringContents[0] + "orderer: \n"+ strings.Split(stringContents[1], "orderer:")[1]
+	var network nl.Network
+	config, err := network.GetConfigData(*networkSpecPath)
+	if err != nil {
+		logger.CRIT(err)
+	}
+	currentDir, err := paths.GetCurrentDir()
+	baseDir := strings.Split(currentDir, "github.com/hyperledger")[0]
+	if strings.HasPrefix(config.ArtifactsLocation, "github.com/hyperledger") {
+		config.ArtifactsLocation = paths.JoinPath(baseDir, config.ArtifactsLocation)
+	} else if strings.Contains(config.ArtifactsLocation, "../"){
+		config.ArtifactsLocation = paths.JoinPath(currentDir, config.ArtifactsLocation)
+	}
+	finalContents = finalContents + fmt.Sprintf("artifacts_location: %s\n", config.ArtifactsLocation)
+	contents = []byte(finalContents)
 	contents = append([]byte("#@data/values \n"), contents...)
 	inputPath := paths.JoinPath(paths.TemplatesDir(), "input.yaml")
 	ioutil.WriteFile(inputPath, contents, 0644)
-
-	var network nl.Network
-	config, err := network.GetConfigData(inputPath)
+	config, err = network.GetConfigData(inputPath)
 
 	if err != nil {
 		logger.CRIT(err)
