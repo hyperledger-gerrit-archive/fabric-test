@@ -230,6 +230,11 @@ logger.debug('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] chaincode_id: %s', N
 // find all connection profiles
 var cpList = [];
 var cpPath = uiContent.ConnProfilePath;
+if (!fs.existsSync(cpPath)){
+        let currentDirectory = __dirname
+        let homeDirectory = currentDirectory.split("/github.com")[0]
+        cpPath = path.join(homeDirectory, cpPath)
+    }
 logger.debug('[Nid:chan:org:id=%d:%s:%s:%d pte-execRequest] connection profile path: ', Nid, channel.getName(), org, pid, cpPath);
 cpList = testUtil.getConnProfileListSubmitter(cpPath);
 if (cpList.length === 0) {
