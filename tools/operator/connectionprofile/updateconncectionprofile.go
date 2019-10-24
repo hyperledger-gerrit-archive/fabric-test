@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"strings"
+	"errors"
 
 	"github.com/hyperledger/fabric-test/tools/operator/logger"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
@@ -100,6 +101,15 @@ func (c ConnProfile) updateConnectionProfilesIfChanPrefix(organizations []inputS
 func (c ConnProfile) updateConnectionProfile(inputArgs ...string) error {
 
 	connProfileFilePath, channelName, componentType := inputArgs[0], inputArgs[1], inputArgs[2]
+	currentDir, _ := paths.GetCurrentDir()
+	baseDir := strings.Split(currentDir, "github.com/hyperledger")[0]
+	if strings.HasPrefix(connProfileFilePath, "github.com/hyperledger") {
+		connProfileFilePath = paths.JoinPath(baseDir, connProfileFilePath)
+	} else if strings.Contains(connProfileFilePath, "../"){
+		connProfileFilePath = paths.JoinPath(currentDir, connProfileFilePath)
+	} else{
+		return errors.New("Connection Profile path doesn't exists")
+	}
 	componentsList, connProfileObject, err := c.getComponentsListFromConnProfile(connProfileFilePath, componentType)
 	if err != nil {
 		logger.ERROR("Failed to get the components list from the connection profile file")
