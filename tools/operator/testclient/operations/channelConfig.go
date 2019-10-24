@@ -19,7 +19,7 @@ type ChannelUIObject struct {
 	TLS             string         `json:"TLS,omitempty"`
 	ChannelOpt      ChannelOptions `json:"channelOpt,omitempty"`
 	ConnProfilePath string         `json:"ConnProfilePath,omitempty"`
-}
+	OrdererChannel  string 		   `json:"ordererSystemChannel,omitempty"`
 
 //ChannelOptions --
 type ChannelOptions struct {
@@ -45,7 +45,7 @@ func (c ChannelUIObject) ChannelConfigs(config inputStructs.Config, tls, action 
 		configObjects = config.AnchorPeerUpdate
 	}
 	for i := 0; i < len(configObjects); i++ {
-		channelObjects = c.generateChannelUIObjects(configObjects[i], config.Organizations, tls, action)
+		channelObjects = c.generateChannelUIObjects(configObjects[i], config.Organizations, tls, action, config.OrdererChannel)
 		if len(channelObjects) > 0 {
 			channelUIObjects = append(channelUIObjects, channelObjects...)
 		}
@@ -64,20 +64,20 @@ func (c ChannelUIObject) ChannelConfigs(config inputStructs.Config, tls, action 
 }
 
 //generateChannelUIObjects -- To generate channel user input objects for all the channels
-func (c ChannelUIObject) generateChannelUIObjects(channel inputStructs.Channel, organizations []inputStructs.Organization, tls, action string) []ChannelUIObject {
+func (c ChannelUIObject) generateChannelUIObjects(channel inputStructs.Channel, organizations []inputStructs.Organization, tls, action, ordererChannel string) []ChannelUIObject {
 
 	var channelObjects []ChannelUIObject
 	if channel.ChannelPrefix != "" && channel.NumChannels > 0 {
-		channelObjects = c.createChannelObjectIfChanPrefix(channel, organizations, tls, action)
+		channelObjects = c.createChannelObjectIfChanPrefix(channel, organizations, tls, action, ordererChannel)
 		return channelObjects
 	}
 	orgNames := strings.Split(channel.Organizations, ",")
-	channelObjects = c.createChannelConfigObjects(orgNames, channel.ChannelName, channel.ChannelTxPath, channel.AnchorPeerTxPath, tls, action, organizations)
+	channelObjects = c.createChannelConfigObjects(orgNames, channel.ChannelName, channel.ChannelTxPath, channel.AnchorPeerTxPath, tls, action, ordererChannel, organizations)
 	return channelObjects
 }
 
 //createChannelConfigObjects -- To create channel object per channel
-func (c ChannelUIObject) createChannelConfigObjects(orgNames []string, channelName, channelTxPath, anchorPeerTxPath, tls, action string, organizations []inputStructs.Organization) []ChannelUIObject {
+func (c ChannelUIObject) createChannelConfigObjects(orgNames []string, channelName, channelTxPath, anchorPeerTxPath, tls, action, ordererChannel string, organizations []inputStructs.Organization) []ChannelUIObject {
 
 	var channelObjects []ChannelUIObject
 	var channelOpt ChannelOptions
@@ -91,14 +91,14 @@ func (c ChannelUIObject) createChannelConfigObjects(orgNames []string, channelNa
 			channelTxPath = anchorPeerTxPath
 		}
 		channelOpt = ChannelOptions{Name: channelName, Action: action, OrgName: []string{orgName}, ChannelTX: channelTxPath}
-		c = ChannelUIObject{TransType: "Channel", TLS: tls, ConnProfilePath: paths.GetConnProfilePathForOrg(orgName, organizations), ChannelOpt: channelOpt}
+		c = ChannelUIObject{TransType: "Channel", TLS: tls, ConnProfilePath: paths.GetConnProfilePathForOrg(orgName, organizations), ChannelOpt: channelOpt, OrdererChannel: ordererChannel}
 		channelObjects = append(channelObjects, c)
 	}
 	return channelObjects
 }
 
 //createChannelObjectIfChanPrefix -- To create channel objects of channel prefix and number of channels is given
-func (c ChannelUIObject) createChannelObjectIfChanPrefix(channel inputStructs.Channel, organizations []inputStructs.Organization, tls, action string) []ChannelUIObject {
+func (c ChannelUIObject) createChannelObjectIfChanPrefix(channel inputStructs.Channel, organizations []inputStructs.Organization, tls, action, ordererChannel string) []ChannelUIObject {
 
 	var channelUIObjects []ChannelUIObject
 	var channelTxPath, anchopPeerTxPath, channelName string
@@ -107,7 +107,7 @@ func (c ChannelUIObject) createChannelObjectIfChanPrefix(channel inputStructs.Ch
 			channelName = fmt.Sprintf("%s%s", channel.ChannelPrefix, strconv.Itoa(j))
 			channelTxPath = paths.JoinPath(channel.ChannelTxPath, fmt.Sprintf("%s.tx", channelName))
 			orgNames := strings.Split(channel.Organizations, ",")
-			channelobjects := c.createChannelConfigObjects(orgNames, channelName, channelTxPath, anchopPeerTxPath, tls, action, organizations)
+			channelobjects := c.createChannelConfigObjects(orgNames, channelName, channelTxPath, anchopPeerTxPath, tls, action, ordererChannel organizations)
 			channelUIObjects = append(channelUIObjects, channelobjects...)
 		}
 		return channelUIObjects
@@ -116,7 +116,7 @@ func (c ChannelUIObject) createChannelObjectIfChanPrefix(channel inputStructs.Ch
 		channelName = fmt.Sprintf("%s%s", channel.ChannelPrefix, strconv.Itoa(j))
 		anchopPeerTxPath = paths.JoinPath(channel.AnchorPeerTxPath, fmt.Sprintf("%s%sanchor.tx", channelName, channel.Organizations))
 		orgNames := strings.Split(channel.Organizations, ",")
-		anchorPeerObjects := c.createChannelConfigObjects(orgNames, channelName, channelTxPath, anchopPeerTxPath, tls, action, organizations)
+		anchorPeerObjects := c.createChannelConfigObjects(orgNames, channelName, channelTxPath, anchopPeerTxPath, tls, action, ordererChannel, organizations)
 		channelUIObjects = append(channelUIObjects, anchorPeerObjects...)
 	}
 	return channelUIObjects
