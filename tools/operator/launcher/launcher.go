@@ -5,7 +5,7 @@
 package launcher
 
 import (
-	//"flag"
+	"fmt"
 	"io/ioutil"
 	"strings"
 
@@ -16,19 +16,17 @@ import (
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	"github.com/hyperledger/fabric-test/tools/operator/ytt"
 	"github.com/hyperledger/fabric-test/tools/operator/paths"
+	"github.com/pkg/errors"
 )
 
-// var networkSpecPath = flag.String("i", "", "Network spec input file path (Required)")
-// var kubeConfigPath = flag.String("k", "", "Kube config file path (Optional for local network)")
-// var action = flag.String("a", "up", "Set action(up or down) (default is up)")
-
-func validateArguments(networkSpecPath string, kubeConfigPath string) {
+func validateArguments(networkSpecPath string, kubeConfigPath string) error {
 
 	if networkSpecPath == "" {
-		logger.CRIT(nil, "Config file not provided")
+		return errors.New("Config file not provided");
 	} else if kubeConfigPath == "" {
 		logger.INFO("Kube config file not provided, proceeding with local environment")
 	}
+	return nil
 }
 
 func doAction(action, env, kubeConfigPath string, config networkspec.Config) error {
@@ -43,41 +41,49 @@ func doAction(action, env, kubeConfigPath string, config networkspec.Config) err
 		err = dc.DockerNetwork(action)
 	}
 	if err != nil {
-		logger.CRIT(err)
+		return err
 	}
 	return nil
 }
 
-func validateBasicConsensusConfig(config networkspec.Config) {
+func validateBasicConsensusConfig(config networkspec.Config) error {
 
 	ordererType := config.Orderer.OrdererType
 	if ordererType == "solo" {
 		if !(len(config.OrdererOrganizations) == 1 && config.OrdererOrganizations[0].NumOrderers == 1) {
-			logger.CRIT(nil, "Consensus type solo should have only one orderer organization and one orderer")
+			return errors.New("Consensus type solo should have only one orderer organization and one orderer")
 		}
 	} else if ordererType == "kafka" {
 		if len(config.OrdererOrganizations) != 1 {
-			logger.CRIT(nil, "Consensus type kafka should have only one orderer organization")
+			return errors.New("Consensus type kafka should have only one orderer organization")
 		}
 	}
+	return nil
 }
 
 func Launcher(action, env, kubeConfigPath, networkSpecPath string) error {
-
+	
+	var network nl.Network
 	var yttObject ytt.YTT
 	err := yttObject.DownloadYtt()
 	if err != nil {
-		logger.CRIT(err)
+		return errors.Errorf("Failed to download ytt with error: %s", err)
 	}
-	validateArguments(networkSpecPath, kubeConfigPath)
+
+	err = validateArguments(networkSpecPath, kubeConfigPath);
+	if err != nil {
+		return errors.Errorf("Failed to validate arguments with error: %s", err))
+	}
+
 	contents, _ := ioutil.ReadFile(networkSpecPath)
 	stringContents := strings.Split(string(contents), "artifacts_location")
 	finalContents := stringContents[0] + "orderer: \n"+ strings.Split(stringContents[1], "orderer:")[1]
-	var network nl.Network
-	config, err := network.GetConfigData(*networkSpecPath)
+	
+	config, err := network.GetConfigData(networkSpecPath)
 	if err != nil {
-		logger.CRIT(err)
+		return errors.Errorf("Failed to get configuration data from network input file with error: %s", err))
 	}
+
 	currentDir, err := paths.GetCurrentDir()
 	baseDir := strings.Split(currentDir, "github.com/hyperledger")[0]
 	if strings.HasPrefix(config.ArtifactsLocation, "github.com/hyperledger") {
@@ -85,20 +91,28 @@ func Launcher(action, env, kubeConfigPath, networkSpecPath string) error {
 	} else if strings.Contains(config.ArtifactsLocation, "../"){
 		config.ArtifactsLocation = paths.JoinPath(currentDir, config.ArtifactsLocation)
 	}
+
 	finalContents = finalContents + fmt.Sprintf("artifacts_location: %s\n", config.ArtifactsLocation)
 	contents = []byte(finalContents)
 	contents = append([]byte("#@data/values \n"), contents...)
 	inputPath := paths.JoinPath(paths.TemplatesDir(), "input.yaml")
 	ioutil.WriteFile(inputPath, contents, 0644)
+	
 	config, err = network.GetConfigData(inputPath)
-
 	if err != nil {
-		logger.CRIT(err)
+		logger.ERROR("Failed to get configuration data from network input file ", networkSpecPath)
+		return err
 	}
 
-	validateBasicConsensusConfig(config)
+	err = validateBasicConsensusConfig(config)
+	if err != nil {
+		logger.ERROR("Failed to validate consensus configuration in netwokr input file ", networkSpecPath)
+		return err
+	}
+
 	err = doAction(action, env, kubeConfigPath, config)
 	if err != nil {
+		logger.ERROR("Failed to perform ", action ," action using network input file ", networkSpecPath)
 		return err
 	}
 	return nil
