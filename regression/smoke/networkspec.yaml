@@ -25,7 +25,7 @@ gossip_enable: true
 enableNodeOUs: true
 
 #! Location where crypto-config and channel-artifacts are stored
-artifacts_location: /Users/suryalanka/gopath/src/github.com/hyperledger/fabric-test/regression/smoke/
+artifacts_location: /hoem/testuser/gopath/src/github.com/hyperledger/fabric-test/regression/smoke/
 
 #! Orderer Config Settings
 orderer:
