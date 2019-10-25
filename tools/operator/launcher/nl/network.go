@@ -13,7 +13,7 @@ import (
 	"github.com/hyperledger/fabric-test/tools/operator/logger"
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	"github.com/hyperledger/fabric-test/tools/operator/paths"
-	"github.com/hyperledger/fabric-test/tools/operator/ytt"
+	ytt "github.com/hyperledger/fabric-test/tools/operator/ytt-helper"
 	yaml "gopkg.in/yaml.v2"
 )
 

@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 	"github.com/hyperledger/fabric-test/tools/operator/testclient/inputStructs"
-	"github.com/hyperledger/fabric-test/tools/operator/logger"
 )
 
 //CryptoConfigDir --
@@ -35,10 +34,7 @@ func PeerOrgsDir(artifactsLocation string) string {
 
 //YTTPath --
 func YTTPath() string {
-	currentDir, err := GetCurrentDir()
-	if err != nil {
-		logger.CRIT(err)
-	}
+	currentDir, _ := GetCurrentDir()
 	if strings.Contains(currentDir, "launcher") {
 		return componentPath(currentDir, "ytt")
 	}
@@ -47,10 +43,7 @@ func YTTPath() string {
 
 //TemplatesDir --
 func TemplatesDir() string {
-	currentDir, err := GetCurrentDir()
-	if err != nil {
-		logger.CRIT(err)
-	}
+	currentDir, _ := GetCurrentDir()
 	if strings.Contains(currentDir, "regression") {
 		return componentPath(currentDir, "../../tools/operator/templates")
 	}
@@ -65,10 +58,7 @@ func TemplateFilePath(fileName string) string {
 
 //ConfigFilesDir --
 func ConfigFilesDir() string {
-	currentDir, err := GetCurrentDir()
-	if err != nil {
-		logger.CRIT(err)
-	}
+	currentDir, _ := GetCurrentDir()
 	if strings.Contains(currentDir, "regression") {
 		return componentPath(currentDir, "../../tools/operator/configFiles")
 	}
@@ -114,16 +104,13 @@ func createDirectory(dirPath string) error {
 	return nil
 }
 
-func componentPath(artifactsLocation, component string) string {
+func componentPath(artifactsLocation, component string) (string) {
 	path := JoinPath(artifactsLocation, component)
 	isExists, _ := dirExists(path)
 	if isExists {
 		return path
 	}
-	err := createDirectory(path)
-	if err != nil {
-		logger.CRIT(err)
-	}
+	_ = createDirectory(path)
 	return path
 }
 
@@ -134,10 +121,7 @@ func JoinPath(oldPath, newPath string) string {
 
 //PTEPath --
 func PTEPath() string{
-	path, err := GetCurrentDir()
-	if err != nil{
-		logger.CRIT(err, "Failed to get the current working directory")
-	}
+	path, _ := GetCurrentDir()
 	if strings.Contains(path, "regression") {
 		return JoinPath(path, "../../tools/PTE/pte-main.js")
 	}
