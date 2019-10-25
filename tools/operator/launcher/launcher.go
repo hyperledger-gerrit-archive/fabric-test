@@ -15,19 +15,23 @@ import (
 	"github.com/hyperledger/fabric-test/tools/operator/networkspec"
 	"github.com/hyperledger/fabric-test/tools/operator/ytt"
 	"github.com/hyperledger/fabric-test/tools/operator/paths"
+	"errors"
 )
 
 // var networkSpecPath = flag.String("i", "", "Network spec input file path (Required)")
 // var kubeConfigPath = flag.String("k", "", "Kube config file path (Optional for local network)")
 // var action = flag.String("a", "up", "Set action(up or down) (default is up)")
 
-func validateArguments(networkSpecPath string, kubeConfigPath string) {
+func validateArguments(networkSpecPath string, kubeConfigPath string) error {
 
 	if networkSpecPath == "" {
-		logger.CRIT(nil, "Config file not provided")
+		logger.ERROR("Config file not provided")
+		err := errors.New("Config file not provided");
+		return err
 	} else if kubeConfigPath == "" {
 		logger.INFO("Kube config file not provided, proceeding with local environment")
 	}
+	return nil
 }
 
 func doAction(action, env, kubeConfigPath string, config networkspec.Config) error {
@@ -42,23 +46,28 @@ func doAction(action, env, kubeConfigPath string, config networkspec.Config) err
 		err = dc.DockerNetwork(action)
 	}
 	if err != nil {
-		logger.CRIT(err)
+		return err
 	}
 	return nil
 }
 
-func validateBasicConsensusConfig(config networkspec.Config) {
+func validateBasicConsensusConfig(config networkspec.Config) error {
 
 	ordererType := config.Orderer.OrdererType
 	if ordererType == "solo" {
 		if !(len(config.OrdererOrganizations) == 1 && config.OrdererOrganizations[0].NumOrderers == 1) {
-			logger.CRIT(nil, "Consensus type solo should have only one orderer organization and one orderer")
+			//logger.ERROR("Consensus type solo should have only one orderer organization and one orderer")
+			err := errors.New("Consensus type solo should have only one orderer organization and one orderer")
+			return err
 		}
 	} else if ordererType == "kafka" {
 		if len(config.OrdererOrganizations) != 1 {
-			logger.CRIT(nil, "Consensus type kafka should have only one orderer organization")
+			//logger.ERROR("Consensus type kafka should have only one orderer organization")
+			err := errors.New("Consensus type kafka should have only one orderer organization")
+			return err
 		}
 	}
+	return nil
 }
 
 func Launcher(action, env, kubeConfigPath, networkSpecPath string) error {
@@ -66,9 +75,13 @@ func Launcher(action, env, kubeConfigPath, networkSpecPath string) error {
 	var yttObject ytt.YTT
 	err := yttObject.DownloadYtt()
 	if err != nil {
-		logger.CRIT(err)
+		return err
 	}
-	validateArguments(networkSpecPath, kubeConfigPath)
+	err = validateArguments(networkSpecPath, kubeConfigPath);
+	if err != nil {
+		return err
+	}
+
 	contents, _ := ioutil.ReadFile(networkSpecPath)
 	contents = append([]byte("#@data/values \n"), contents...)
 	inputPath := paths.JoinPath(paths.TemplatesDir(), "input.yaml")
@@ -76,12 +89,14 @@ func Launcher(action, env, kubeConfigPath, networkSpecPath string) error {
 
 	var network nl.Network
 	config, err := network.GetConfigData(inputPath)
-
 	if err != nil {
-		logger.CRIT(err)
+		return err
 	}
 
-	validateBasicConsensusConfig(config)
+	err = validateBasicConsensusConfig(config)
+	if err != nil {
+		return err
+	}
 	err = doAction(action, env, kubeConfigPath, config)
 	if err != nil {
 		return err

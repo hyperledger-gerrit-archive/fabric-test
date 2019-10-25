@@ -4,24 +4,29 @@ import (
 	"flag"
 	"io/ioutil"
 	"strings"
+	"fmt"
 
 	"github.com/hyperledger/fabric-test/tools/operator/logger"
 	"github.com/hyperledger/fabric-test/tools/operator/testclient/inputStructs"
 	"github.com/hyperledger/fabric-test/tools/operator/testclient/operations"
 	yaml "gopkg.in/yaml.v2"
+	"github.com/pkg/errors"
 )
 
-var testInputFilePath = flag.String("i", "", "Input file for pte (Required)")
-var action = flag.String("a", "", "Action to perform")
+// var testInputFilePath = flag.String("i", "", "Input file for pte (Required)")
+// var action = flag.String("a", "", "Action to perform")
 
-func validateArguments(testInputFilePath string) {
+func validateArguments(action, testInputFilePath string) error {
 
 	if testInputFilePath == "" {
-		logger.CRIT(nil, "Input file not provided")
+		err := errors.New("Input file not provided")
+		return err
 	}
-	if *action == "" {
-		*action = "all"
+	if action == "" {
+		action = "all"
+		//logger.CRIT(nil, "Test client action ", action ," is not supported")
 	}
+	return nil
 }
 
 //GetInputData -- Read in the input data and parse the objects
@@ -65,28 +70,33 @@ func doAction(action string, config inputStructs.Config, testInputFilePath strin
 			var channelUIObject operations.ChannelUIObject
 			err := channelUIObject.ChannelConfigs(config, tls, action)
 			if err != nil {
-				logger.CRIT(err, "Failed to perform ", action, "action on channels; testInputFilePath = ", testInputFilePath)
+				msg := errors.New(fmt.Sprintf("Failed to perform  %s action on channels; testInputFilePath = %s", action, testInputFilePath))
+				return msg
 			}
 		case "install":
 			var installCCUIObject operations.InstallCCUIObject
 			err := installCCUIObject.InstallCC(config, tls)
 			if err != nil {
-				logger.CRIT(err, "Failed to install chaincode; testInputFilePath = ", testInputFilePath)
+				msg := errors.New(fmt.Sprintf("Failed to install chaincode; testInputFilePath = %s", testInputFilePath))
+				return msg
 			}
 		case "instantiate", "upgrade":
 			var instantiateCCUIObject operations.InstantiateCCUIObject
 			err := instantiateCCUIObject.InstantiateCC(config, tls, action)
 			if err != nil {
-				logger.CRIT(err, "Failed to ", action, " chaincode; testInputFilePath = ", testInputFilePath)
+				msg := errors.New(fmt.Sprintf("Failed to %s chaincode; testInputFilePath = %s", action, testInputFilePath))
+				return msg
 			}
 		case "invoke", "query":
 			var invokeQueryUIObject operations.InvokeQueryUIObject
 			err := invokeQueryUIObject.InvokeQuery(config, tls, strings.Title(action))
 			if err != nil {
-				logger.CRIT(err, "Failed to perform ", action, "; testInputFilePath = ", testInputFilePath)
+				msg := errors.New(fmt.Sprintf("Failed to perform %s; testInputFilePath = %s", action, testInputFilePath))
+				return msg
 			}
 		default:
-			logger.CRIT(nil, "Incorrect Unknown (", action, ").Supported actions:", supportedActions)
+			msg := errors.New(fmt.Sprintf("Incorrect Unknown ( %s ).Supported actions: %s ", action, supportedActions))
+			return msg
 		}
 	}
 	return nil
@@ -95,10 +105,10 @@ func doAction(action string, config inputStructs.Config, testInputFilePath strin
 func Testclient(action, testInputFilePath string) error {
 
 	flag.Parse()
-	validateArguments(testInputFilePath)
+	validateArguments(action, testInputFilePath)
 	config, err := GetInputData(testInputFilePath)
 	if err != nil {
-		logger.CRIT(err)
+		return err
 	}
 	err = doAction(action, config, testInputFilePath)
 	if err != nil {
