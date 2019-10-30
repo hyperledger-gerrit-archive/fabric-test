@@ -68,6 +68,4 @@ else
         echo "Go is installed. Version info: $GO_VERSION"
 fi
 
-# Install Govendor
-go get -u github.com/kardianos/govendor
 
