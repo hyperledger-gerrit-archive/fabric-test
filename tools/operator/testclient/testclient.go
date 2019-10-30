@@ -1,7 +1,7 @@
 package testclient
 
 import (
-	"flag"
+	"errors"
 	"io/ioutil"
 	"strings"
 
@@ -11,17 +11,12 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-var testInputFilePath = flag.String("i", "", "Input file for pte (Required)")
-var action = flag.String("a", "", "Action to perform")
+func validateArguments(testInputFilePath string) error {
 
-func validateArguments(testInputFilePath string) {
-
-	if testInputFilePath == "" {
-		logger.CRIT(nil, "Input file not provided")
-	}
-	if *action == "" {
-		*action = "all"
-	}
+    if testInputFilePath == "" {
+        return errors.New("Input file not provided")
+    }
+    return nil
 }
 
 //GetInputData -- Read in the input data and parse the objects
@@ -94,7 +89,6 @@ func doAction(action string, config inputStructs.Config, testInputFilePath strin
 
 func Testclient(action, testInputFilePath string) error {
 
-	flag.Parse()
 	validateArguments(testInputFilePath)
 	config, err := GetInputData(testInputFilePath)
 	if err != nil {

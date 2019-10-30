@@ -4,7 +4,7 @@ import (
 	"os"
 
 	"github.com/hyperledger/fabric-test/tools/operator/paths"
-	"github.com/hyperledger/fabric-test/tools/operator/ytt"
+	ytt "github.com/hyperledger/fabric-test/tools/operator/ytttool"
 )
 
 //CreateConfigTxYaml - to check if the configtx.yaml exists and generates one if not exists
