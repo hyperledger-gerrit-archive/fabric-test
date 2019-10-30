@@ -172,9 +172,9 @@
 #@     else:
 #@       container = {"name": "couchdb-{}".format(input), "image": "hyperledger/fabric-couchdb", "imagePullPolicy": "Always", "resources": config.k8s.resources.couchdb}
 #@     end
-#@     output = [{"name": "dind", "image": "docker:dind", "securityContext": {"privileged": True}, "resources": dindResources}, {"name": input, "image": peer_image, "imagePullPolicy": "Always", "env": env, "volumeMounts": volumeMounts, "command": ["peer"], "args": ["node", "start"], "resources": resources}, container]
+#@     output = [{"name": "dind", "image": "docker:dind", "args": ["dockerd", "-H tcp://0.0.0.0:2375"], "securityContext": {"privileged": True}, "resources": dindResources}, {"name": input, "image": peer_image, "imagePullPolicy": "Always", "env": env, "volumeMounts": volumeMounts, "command": ["peer"], "args": ["node", "start"], "resources": resources}, container]
 #@   else:
-#@     output = [{"name": "dind", "image": "docker:dind", "securityContext": {"privileged": True}, "resources": dindResources}, {"name": input, "image": peer_image, "imagePullPolicy": "Always", "env": env, "volumeMounts": volumeMounts, "command": ["peer"], "args": ["node", "start"], "resources": resources}]
+#@     output = [{"name": "dind", "image": "docker:dind", "args": ["dockerd", "-H tcp://0.0.0.0:2375"], "securityContext": {"privileged": True}, "resources": dindResources}, {"name": input, "image": peer_image, "imagePullPolicy": "Always", "env": env, "volumeMounts": volumeMounts, "command": ["peer"], "args": ["node", "start"], "resources": resources}]
 #@   end
 #@   return output
 #@ end
