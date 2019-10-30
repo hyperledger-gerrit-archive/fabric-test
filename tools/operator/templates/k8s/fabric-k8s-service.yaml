@@ -22,6 +22,7 @@ spec:
     - name: port1
       port: 7054
 #@   end
+#@   port = 31000
 #@   for j in range(0, organization.num_peers):
 ---
 kind: Service
@@ -36,9 +37,13 @@ spec:
   type: #@ config.k8s.service_type
   ports:
     - name: port1
-      port: 7051
+      port: #@ port
+#@    if config.k8s.service_type == "NodePort":
+      nodePort: #@ port
+#@    end
     - name: port2
       port: 9443
+#@   port += 1
 #@ end
 #@ end
 #@ num_ordererOrgs = len(config.orderer_organizations)
@@ -61,6 +66,7 @@ spec:
     - name: port1
       port: 7054
 #@ end
+#@ port = 30000
 #@ for j in range(0, num_orderers):
 ---
 kind: Service
@@ -75,9 +81,13 @@ spec:
   type: #@ config.k8s.service_type
   ports:
     - name: port1
-      port: 7050
+      port: #@ port
+#@    if config.k8s.service_type == "NodePort":
+      nodePort: #@ port
+#@    end
     - name: port2
       port: 8443
+#@    port += 1
 #@ end
 #@ end
 
