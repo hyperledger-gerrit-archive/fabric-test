@@ -126,6 +126,9 @@ invokes:
       keyStart: 0
       payLoadMin: 1024
       payLoadMax: 2048
+    discoveryOpt:
+      localHost: true
+      initFreq: 30000
     args: "put,a1,1"
 
 queries:
@@ -144,4 +147,11 @@ queries:
         options: 
           constFreq: 0
           devFreq: 0
+    eventOpt:
+      type: FilteredBlock
+      listener:  Block
+      timeout: 240000
+    discoveryOpt:
+      localHost: true
+      initFreq: 30000
     args: "get,a1"

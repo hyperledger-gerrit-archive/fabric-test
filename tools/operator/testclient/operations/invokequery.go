@@ -30,6 +30,7 @@ type InvokeQueryUIObject struct {
 	MixOpt          MixOptions            `json:"mixOpt,omitempty"`
 	ConstOpt        ConstantOptions       `json:"constantOpt,omitempty"`
 	EventOpt        EventOptions          `json:"eventOpt,omitempty"`
+	DiscoveryOpt    DiscoveryOptions      `json:"discoveryOpt,omitempty"`
 	CCType          string                `json:"ccType,omitempty"`
 	CCOpt           CCOptions             `json:"ccOpt,omitempty"`
 	Parameters      map[string]Parameters `json:"invoke,omitempty"`
@@ -70,6 +71,12 @@ type CCOptions struct {
 	KeyStart   string `json:"keyStart,omitempty"`
 	PayLoadMin string `json:"payLoadMin,omitempty"`
 	PayLoadMax string `json:"payLoadMax,omitempty"`
+}
+
+//DiscoveryOptions --
+type DiscoveryOptions struct {
+	Localhost bool `json:"localHost,omitempty"`
+	InitFreq  bool `json:"initFreq,omitempty"`
 }
 
 //Parameters --
@@ -123,6 +130,10 @@ func (i InvokeQueryUIObject) createInvokeQueryObjectForOrg(orgName, action, tls 
 	i = InvokeQueryUIObject{LogLevel: "ERROR", InvokeCheck: invokeCheck, TransType: "Invoke", InvokeType: "Move", TargetPeers: invkQueryObject.TargetPeers, TLS: tls, NProcPerOrg: strconv.Itoa(invkQueryObject.NProcPerOrg), NRequest: strconv.Itoa(invkQueryObject.NRequest), RunDur: strconv.Itoa(invkQueryObject.RunDuration), CCType: invkQueryObject.CCOptions.CCType, ChaincodeID: invkQueryObject.ChaincodeName}
 	i.EventOpt = EventOptions{Type: invkQueryObject.EventOptions.Type, Listener: invkQueryObject.EventOptions.Listener, TimeOut: strconv.Itoa(invkQueryObject.EventOptions.TimeOut)}
 	i.CCOpt = CCOptions{KeyStart: strconv.Itoa(invkQueryObject.CCOptions.KeyStart), PayLoadMin: strconv.Itoa(invkQueryObject.CCOptions.PayLoadMin), PayLoadMax: strconv.Itoa(invkQueryObject.CCOptions.PayLoadMax)}
+	if strings.EqualFold("Discovery", invkQueryObject.TargetPeers) {
+		localHost := strings.ToUpper(strconv.FormatBool(invkQueryObject.DiscoveryOptions.Localhost))
+		i.DiscoveryOpt = DiscoveryOptions{Localhost: localHost, InitFreq: invkQueryObject.DiscoveryOptions.InitFreq}
+	}
 	if action == "Query" {
 		i.InvokeType = action
 		i.CCOpt = CCOptions{KeyStart: strconv.Itoa(invkQueryObject.CCOptions.KeyStart)}
@@ -143,6 +154,7 @@ func (i InvokeQueryUIObject) createInvokeQueryObjectForOrg(orgName, action, tls 
 			i.BurstOpt = BurstOptions{BurstFreq0: strconv.Itoa(options.BurstFreq0), BurstDur0: strconv.Itoa(options.BurstDur0), BurstFreq1: strconv.Itoa(options.BurstFreq1), BurstDur1: strconv.Itoa(options.BurstDur1)}
 		case "mix":
 			i.MixOpt = MixOptions{MixFreq: strconv.Itoa(options.MixFreq)}
+		case 
 		}
 		invokeQueryObjects = append(invokeQueryObjects, i)
 	}
