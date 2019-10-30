@@ -47,9 +47,10 @@
 #@   env.append("FABRIC_CA_SERVER_CA_NAME={}".format(container_name))
 #@   env.append("FABRIC_CA_SERVER_CA_CERTFILE=/etc/hyperledger/fabric-ca-server-config/ca/ca.{}-cert.pem".format(orgName))
 #@   env.append("FABRIC_CA_SERVER_CA_KEYFILE=/etc/hyperledger/fabric-ca-server-config/ca/ca-priv_sk")
-#@   env.append("FABRIC_CA_SERVER_TLS_ENABLED={}".format(config.tls))
 #@   if config.tls == "mutual":
 #@     env.append("FABRIC_CA_SERVER_TLS_ENABLED=true")
+#@   else:
+#@     env.append("FABRIC_CA_SERVER_TLS_ENABLED={}".format(config.tls))
 #@   end
 #@   env.append("FABRIC_CA_SERVER_TLS_CERTFILE=/etc/hyperledger/fabric-ca-server-config/tlsca/tlsca.{}-cert.pem".format(orgName))
 #@   env.append("FABRIC_CA_SERVER_TLS_KEYFILE=/etc/hyperledger/fabric-ca-server-config/tlsca/tlsca-priv_sk")
@@ -116,11 +117,11 @@
 #@ end
 
 #@ def orderers(config):
-#@   (port1, port2) = (30000, 30100)
+#@   (ordererUniquerPort, ordererHealthCheckPort) = (30000, 30100)
 #@   for i in range(0, len(config.orderer_organizations)):
 #@     org = config.orderer_organizations[i]
 #@     for j in range(0, org.num_orderers):
-#@       env = ["FABRIC_LOGGING_SPEC={}".format(config.orderer_fabric_logging_spec), "ORDERER_GENERAL_LISTENADDRESS=0.0.0.0", "ORDERER_GENERAL_LISTENPORT={}".format(7050), "ORDERER_GENERAL_GENESISMETHOD=file"]
+#@       env = ["FABRIC_LOGGING_SPEC={}".format(config.orderer_fabric_logging_spec), "ORDERER_GENERAL_LISTENADDRESS=0.0.0.0", "ORDERER_GENERAL_LISTENPORT={}".format(ordererUniquerPort), "ORDERER_GENERAL_GENESISMETHOD=file"]
 #@       env.append("ORDERER_GENERAL_GENESISFILE=/etc/hyperledger/fabric/artifacts/msp/channel-artifacts/genesis.block")
 #@       env.append("ORDERER_GENERAL_LOCALMSPID={}".format(org.msp_id))
 #@       env.append("ORDERER_GENERAL_LOCALMSPDIR=/etc/hyperledger/fabric/artifacts/msp/crypto-config/ordererOrganizations/{}/orderers/orderer{}-{}.{}/msp".format(org.name, j, org.name, org.name))
@@ -143,19 +144,19 @@
 #@       if config.fabric_version.endswith("-stable"):
 #@         image="nexus3.hyperledger.org:10001/hyperledger/fabric-orderer:amd64-{}".format(config.fabric_version)
 #@       end
-#@       ports = ["{}:{}".format(port1,7050), "{}:{}".format(port2,8443)]
+#@       ports = ["{}:{}".format(ordererUniquerPort,ordererUniquerPort), "{}:{}".format(ordererHealthCheckPort,8443)]
 #@       services[container_name] = {"image":image, "environment":env, "working_dir":"/opt/gopath/src/github.com/hyperledger/fabric", "command":"orderer", "volumes":volumes, "ports":ports, "container_name":container_name}
 #@       if config.orderer.orderertype == "kafka":
 #@         services[container_name] = {"image":image, "environment":env, "working_dir":"/opt/gopath/src/github.com/hyperledger/fabric", "command":"orderer", "volumes":volumes, "ports":ports, "container_name":container_name, "depends_on":kafkaList(config.kafka.num_kafka)}
 #@       end
-#@       port1 += 1
-#@       port2 += 1
+#@       ordererUniquerPort += 1
+#@       ordererHealthCheckPort += 1
 #@     end
 #@   end
 #@ end
 
 #@ def peers(config):
-#@   (port1, port2) = (31000, 31100)
+#@   (peerUniquerPort, peerHealthCheckPort) = (31000, 31100)
 #@   for i in range(0, len(config.peer_organizations)):
 #@     org = config.peer_organizations[i]
 #@     for j in range(0, org.num_peers):
@@ -169,17 +170,17 @@
 #@         env.append("CORE_PEER_GOSSIP_ORGLEADER=true")
 #@         env.append("CORE_PEER_GOSSIP_USELEADERELECTION=false")
 #@       end
-#@       env.append("CORE_PEER_GOSSIP_ENDPOINT=peer{}-{}:{}".format(j, org.name, 7051))
-#@       env.append("CORE_PEER_LISTENADDRESS=0.0.0.0:{}".format(7051))
+#@       env.append("CORE_PEER_GOSSIP_ENDPOINT=peer{}-{}:{}".format(j, org.name, peerUniquerPort))
+#@       env.append("CORE_PEER_LISTENADDRESS=0.0.0.0:{}".format(peerUniquerPort))
 #@       env.append("CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:{}".format(7052))
 #@       env.append("CORE_CHAINCODE_EXECUTETIMEOUT=1500s")
 #@       env.append("CORE_PEER_ID=peer{}-{}".format(j, org.name))
 #@       env.append("CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/artifacts/msp/crypto-config/peerOrganizations/{}/peers/peer{}-{}.{}/msp".format(org.name, j, org.name, org.name))
 #@       env.append("CORE_PEER_LOCALMSPID={}".format(org.msp_id))
-#@       env.append("CORE_PEER_ADDRESS=peer{}-{}:{}".format(j, org.name, 7051))
+#@       env.append("CORE_PEER_ADDRESS=peer{}-{}:{}".format(j, org.name, peerUniquerPort))
 #@       env.append("CORE_OPERATIONS_LISTENADDRESS=0.0.0.0:9443")
 #@       env.append("CORE_PEER_CHAINCODEADDRESS=peer{}-{}:{}".format(j, org.name, 7052))
-#@       env.append("CORE_PEER_GOSSIP_EXTERNALENDPOINT=localhost:{}".format(port1))
+#@       env.append("CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer{}-{}:{}".format(j, org.name, peerUniquerPort))
 #@       if config.tls == "mutual":
 #@         env.append("CORE_PEER_TLS_CLIENTROOTCAS_FILES={}".format(" ".join(mutualTLS(config))))
 #@         env.append("CORE_PEER_TLS_CLIENTAUTHREQUIRED=true")
@@ -201,15 +202,15 @@
 #@         env.append("CORE_CHAINCODE_NODE_RUNTIME=nexus3.hyperledger.org:10001/hyperledger/fabric-nodeenv:amd64-{}".format(config.fabric_version))
 #@         image="nexus3.hyperledger.org:10001/hyperledger/fabric-peer:amd64-{}".format(config.fabric_version)
 #@       end
-#@       ports = ["{}:{}".format(port1,7051), "{}:{}".format(port2,9443)]
+#@       ports = ["{}:{}".format(peerUniquerPort,peerUniquerPort), "{}:{}".format(peerHealthCheckPort,9443)]
 #@       services[container_name] = {"image":image, "environment":env, "volumes":volumes, "ports":ports, "working_dir":"/opt/gopath/src/github.com/hyperledger/fabric/peer", "command":"peer node start", "container_name":container_name}
 #@       if config.db_type == "couchdb":
 #@         env.append("CORE_LEDGER_STATE_STATEDATABASE=CouchDB")
 #@         env.append("CORE_LEDGER_STATE_COUCHDBCONFIG_COUCHDBADDRESS=couchdb-{}:5984".format(container_name))
 #@         services[container_name] = {"image":image, "environment":env, "volumes":volumes, "ports":ports, "working_dir":"/opt/gopath/src/github.com/hyperledger/fabric/peer", "command":"peer node start", "container_name":container_name, "depends_on":["couchdb-{}".format(container_name)]}
 #@       end
-#@       port1 += 1
-#@       port2 += 1
+#@       peerUniquerPort += 1
+#@       peerHealthCheckPort += 1
 #@     end
 #@   end
 #@ end
