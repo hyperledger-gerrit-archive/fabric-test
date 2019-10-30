@@ -15,10 +15,16 @@
 #@   output = {"Readers": readwriteset, "Writers": readwriteset, "Admins": admins}
 #@   return output
 #@ end
-#@ def orgOrderers(ordererOrg):
+#@ def orgOrderers(ordererOrg, tls):
+#@  (port1, port2) = (7050, 30000)
 #@  orderers = []
 #@  for i in range(0, ordererOrg.num_orderers):
-#@    orderers.append("orderer{}-{}:7050".format(i, ordererOrg.name))
+#@    if tls == "mutual":
+#@      orderers.append("orderer{}-{}:{}".format(i, ordererOrg.name, port2))
+#@      port2 += 1
+#@    else:
+#@      orderers.append("orderer{}-{}:{}".format(i, ordererOrg.name, port1))
+#@    end
 #@  end
 #@  return orderers
 #@ end
@@ -36,7 +42,7 @@
 #@   if type == "orderer":
 #@     num_organizations = len(config.orderer_organizations)
 #@     for i in range(0, num_organizations):
-#@       output.append({"Name": config.orderer_organizations[i].name, "OrdererEndpoints": orgOrderers(config.orderer_organizations[i]), "ID": config.orderer_organizations[i].msp_id, "MSPDir": artifacts_location+"crypto-config/ordererOrganizations/"+config.orderer_organizations[i].name+"/msp", "Policies": orgPolicies(config.orderer_organizations[i].msp_id, "orderer", config.enableNodeOUs)})
+#@       output.append({"Name": config.orderer_organizations[i].name, "OrdererEndpoints": orgOrderers(config.orderer_organizations[i], config.tls), "ID": config.orderer_organizations[i].msp_id, "MSPDir": artifacts_location+"crypto-config/ordererOrganizations/"+config.orderer_organizations[i].name+"/msp", "Policies": orgPolicies(config.orderer_organizations[i].msp_id, "orderer", config.enableNodeOUs)})
 #@     end
 #@   end
 #@   if type == "peer":

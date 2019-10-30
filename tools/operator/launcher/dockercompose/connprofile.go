@@ -28,7 +28,7 @@ func (d DockerCompose) GetDockerExternalIP() string {
 }
 
 //GetDockerServicePort -- To get the port number of a docker container
-func (d DockerCompose) GetDockerServicePort(serviceName string, forHealth bool) (string, error) {
+func (d DockerCompose) GetDockerServicePort(serviceName, tls string, forHealth bool) (string, error) {
 
 	var port string
 	var containerPorts ContainerPorts
@@ -48,9 +48,13 @@ func (d DockerCompose) GetDockerServicePort(serviceName string, forHealth bool) 
 		ports = append(ports, port)
 	}
 	sort.Strings(ports)
+	healthPortIndex := 1
+	if tls == "mutual"{
+		healthPortIndex = 2
+	}
 	port = containerPorts.Ports[ports[0]][0].HostPort
 	if forHealth {
-		port = containerPorts.Ports[ports[1]][0].HostPort
+		port = containerPorts.Ports[ports[healthPortIndex]][0].HostPort
 	}
 	return port, nil
 }
@@ -75,7 +79,7 @@ func (d DockerCompose) ordererOrgs(config networkspec.Config) (map[string]networ
 		orgName := ordererOrg.Name
 		for i := 0; i < ordererOrg.NumOrderers; i++ {
 			ordererName := fmt.Sprintf("orderer%d-%s", i, orgName)
-			portNumber, err = d.GetDockerServicePort(ordererName, false)
+			portNumber, err = d.GetDockerServicePort(ordererName, config.TLS, false)
 			if err != nil {
 				return orderers, err
 			}
@@ -83,19 +87,19 @@ func (d DockerCompose) ordererOrgs(config networkspec.Config) (map[string]networ
 			orderer.GrpcOptions.SslTarget = ordererName
 			tlscaCertPath := paths.JoinPath(ordererOrgsPath, fmt.Sprintf("%s/orderers/%s.%s/msp/tlscacerts/tlsca.%s-cert.pem", orgName, ordererName, orgName, orgName))
 			cert, err := connProfile.GetCertificateFromFile(tlscaCertPath)
-			if err != nil{
+			if err != nil {
 				return orderers, err
 			}
 			orderer.TLSCACerts.Pem = cert
 			adminCertPath := paths.JoinPath(ordererOrgsPath, fmt.Sprintf("%s/users/Admin@%s/msp/signcerts/Admin@%s-cert.pem", orgName, orgName, orgName))
 			cert, err = connProfile.GetCertificateFromFile(adminCertPath)
-			if err != nil{
+			if err != nil {
 				return orderers, err
 			}
 			orderer.AdminCert = cert
 			privKeyPath := paths.JoinPath(ordererOrgsPath, fmt.Sprintf("%s/users/Admin@%s/msp/keystore/priv_sk", orgName, orgName))
 			cert, err = connProfile.GetCertificateFromFile(privKeyPath)
-			if err != nil{
+			if err != nil {
 				return orderers, err
 			}
 			orderer.PrivateKey = cert
@@ -122,14 +126,14 @@ func (d DockerCompose) certificateAuthorities(peerOrg networkspec.PeerOrganizati
 	orgName := peerOrg.Name
 	for i := 0; i < peerOrg.NumCA; i++ {
 		caName := fmt.Sprintf("ca%d-%s", i, orgName)
-		portNumber, err = d.GetDockerServicePort(caName, false)
+		portNumber, err = d.GetDockerServicePort(caName, config.TLS, false)
 		if err != nil {
 			return CAs, err
 		}
 		CA = networkspec.CertificateAuthority{URL: fmt.Sprintf("%s://%s:%s", protocol, nodeIP, portNumber), CAName: caName}
 		tlscaCertPath := paths.JoinPath(paths.PeerOrgsDir(artifactsLocation), fmt.Sprintf("%s/ca/ca.%s-cert.pem", orgName, orgName))
 		cert, err := connProfile.GetCertificateFromFile(tlscaCertPath)
-		if err != nil{
+		if err != nil {
 			return CAs, err
 		}
 		CA.TLSCACerts.Pem = cert
@@ -156,7 +160,7 @@ func (d DockerCompose) peersPerOrganization(peerorg networkspec.PeerOrganization
 	}
 	for i := 0; i < peerorg.NumPeers; i++ {
 		peerName := fmt.Sprintf("peer%d-%s", i, peerorg.Name)
-		portNumber, err = d.GetDockerServicePort(peerName, false)
+		portNumber, err = d.GetDockerServicePort(peerName, config.TLS, false)
 		if err != nil {
 			return peers, err
 		}
@@ -164,7 +168,7 @@ func (d DockerCompose) peersPerOrganization(peerorg networkspec.PeerOrganization
 		peer.GrpcOptions.SslTarget = peerName
 		tlscaCertPath := paths.JoinPath(peerOrgsLocation, fmt.Sprintf("%s/tlsca/tlsca.%s-cert.pem", peerorg.Name, peerorg.Name))
 		cert, err := connProfile.GetCertificateFromFile(tlscaCertPath)
-		if err != nil{
+		if err != nil {
 			return peers, err
 		}
 		peer.TLSCACerts.Pem = cert
@@ -199,7 +203,7 @@ func (d DockerCompose) GenerateConnectionProfiles(config networkspec.Config) err
 			caList = append(caList, k)
 		}
 		org, err := connProfile.Organization(peerorg, caList)
-		if err != nil{
+		if err != nil {
 			logger.ERROR("Failed to get the organization details")
 			return err
 		}

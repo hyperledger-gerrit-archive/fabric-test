@@ -66,7 +66,7 @@ func (d DockerCompose) checkHealth(componentName string, config networkspec.Conf
 
 	logger.INFO("Checking health for ", componentName)
 	var nodeIP string
-	portNumber, err := d.GetDockerServicePort(componentName, true)
+	portNumber, err := d.GetDockerServicePort(componentName, config.TLS, true)
 	if err != nil {
 		logger.ERROR("Failed to get the port for ", componentName)
 		return err
