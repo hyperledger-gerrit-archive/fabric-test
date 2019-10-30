@@ -48,9 +48,10 @@ func (d DockerCompose) GetDockerServicePort(serviceName string, forHealth bool) 
 		ports = append(ports, port)
 	}
 	sort.Strings(ports)
+
 	port = containerPorts.Ports[ports[0]][0].HostPort
 	if forHealth {
-		port = containerPorts.Ports[ports[1]][0].HostPort
+		port = containerPorts.Ports[ports[2]][0].HostPort
 	}
 	return port, nil
 }
@@ -83,19 +84,19 @@ func (d DockerCompose) ordererOrgs(config networkspec.Config) (map[string]networ
 			orderer.GrpcOptions.SslTarget = ordererName
 			tlscaCertPath := paths.JoinPath(ordererOrgsPath, fmt.Sprintf("%s/orderers/%s.%s/msp/tlscacerts/tlsca.%s-cert.pem", orgName, ordererName, orgName, orgName))
 			cert, err := connProfile.GetCertificateFromFile(tlscaCertPath)
-			if err != nil{
+			if err != nil {
 				return orderers, err
 			}
 			orderer.TLSCACerts.Pem = cert
 			adminCertPath := paths.JoinPath(ordererOrgsPath, fmt.Sprintf("%s/users/Admin@%s/msp/signcerts/Admin@%s-cert.pem", orgName, orgName, orgName))
 			cert, err = connProfile.GetCertificateFromFile(adminCertPath)
-			if err != nil{
+			if err != nil {
 				return orderers, err
 			}
 			orderer.AdminCert = cert
 			privKeyPath := paths.JoinPath(ordererOrgsPath, fmt.Sprintf("%s/users/Admin@%s/msp/keystore/priv_sk", orgName, orgName))
 			cert, err = connProfile.GetCertificateFromFile(privKeyPath)
-			if err != nil{
+			if err != nil {
 				return orderers, err
 			}
 			orderer.PrivateKey = cert
@@ -129,7 +130,7 @@ func (d DockerCompose) certificateAuthorities(peerOrg networkspec.PeerOrganizati
 		CA = networkspec.CertificateAuthority{URL: fmt.Sprintf("%s://%s:%s", protocol, nodeIP, portNumber), CAName: caName}
 		tlscaCertPath := paths.JoinPath(paths.PeerOrgsDir(artifactsLocation), fmt.Sprintf("%s/ca/ca.%s-cert.pem", orgName, orgName))
 		cert, err := connProfile.GetCertificateFromFile(tlscaCertPath)
-		if err != nil{
+		if err != nil {
 			return CAs, err
 		}
 		CA.TLSCACerts.Pem = cert
@@ -164,7 +165,7 @@ func (d DockerCompose) peersPerOrganization(peerorg networkspec.PeerOrganization
 		peer.GrpcOptions.SslTarget = peerName
 		tlscaCertPath := paths.JoinPath(peerOrgsLocation, fmt.Sprintf("%s/tlsca/tlsca.%s-cert.pem", peerorg.Name, peerorg.Name))
 		cert, err := connProfile.GetCertificateFromFile(tlscaCertPath)
-		if err != nil{
+		if err != nil {
 			return peers, err
 		}
 		peer.TLSCACerts.Pem = cert
@@ -199,7 +200,7 @@ func (d DockerCompose) GenerateConnectionProfiles(config networkspec.Config) err
 			caList = append(caList, k)
 		}
 		org, err := connProfile.Organization(peerorg, caList)
-		if err != nil{
+		if err != nil {
 			logger.ERROR("Failed to get the organization details")
 			return err
 		}
