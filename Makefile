@@ -35,6 +35,7 @@
 #   - pre-setup                - installs node, govendor and behave pre-requisites.
 #   - pte                      - builds pte docker image
 #   - clean                    - cleans the docker containers and images.
+#   - gotools                  - installs go tools, such as: ginkgo, golint, goimports, gocov
 #
 # ------------------------------------------------------------------
 
@@ -56,6 +57,8 @@ PRE_SETUP = $(GOPATH)/src/github.com/hyperledger/fabric-test/scripts/pre_setup.s
 PTE_IMAGE = $(DOCKER_NS)/fabric-pte
 TARGET = pte
 STABLE_TAG ?= $(ARCH)-$(BRANCH)-stable
+
+include gotools.mk
 
 .PHONY: ci-smoke
 ci-smoke: fabric pull-images pull-binaries pull-thirdparty-images build-sdk-wrapper smoke-tests
@@ -136,7 +139,7 @@ javaenv: fabric-chaincode-java
 	@cd $(CHAINCODE-JAVA_DIR) && ./gradlew buildimage
 
 .PHONY: smoke-tests
-smoke-tests:
+smoke-tests: gotools
 	cd $(HYPERLEDGER_DIR)/fabric-test/regression/smoke && ./runSmokeTestSuite.sh
 
 .PHONY: daily-tests
