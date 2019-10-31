@@ -72,7 +72,7 @@ var ccDfnTmp;
 var uiContent;
 if (uiFile.endsWith(".json") || uiFile.endsWith(".yaml") || uiFile.endsWith(".yml")) {
     uiContent = testUtil.readConfigFileSubmitter(uiFile);
-    logger.info('[Nid=%d pte-main] input uiContent[%s]: %j', Nid, uiFile, uiContent);
+    logger.debug('[Nid=%d pte-main] input uiContent[%s]: %j', Nid, uiFile, uiContent);
 
     if (typeof (uiContent.txCfgPtr) === 'undefined') {
         txCfgTmp = uiFile;
@@ -90,12 +90,12 @@ if (uiFile.endsWith(".json") || uiFile.endsWith(".yaml") || uiFile.endsWith(".ym
 }
 else {
     uiContent = JSON.parse(uiFile)
-    logger.info('[Nid=%d pte-main] input uiContent[%s]: %j', Nid, uiFile, uiContent.deploy);
+    logger.debug('[Nid=%d pte-main] input uiContent[%s]: %j', Nid, uiFile, uiContent.deploy);
     txCfgPtr = uiContent
     ccDfnPtr = uiContent
 }
-logger.info('input parameters: Nid=%d, uiFile=%s, tStart=%d PTEid=%d', Nid, uiFile, tStart, PTEid);
-logger.info('[Nid=%d pte-main] input ccDfnPtr[%s]: %j input txCfgPtr: %j', Nid, ccDfnTmp, ccDfnPtr, txCfgPtr);
+logger.debug('input parameters: Nid=%d, uiFile=%s, tStart=%d PTEid=%d', Nid, uiFile, tStart, PTEid);
+logger.debug('[Nid=%d pte-main] input ccDfnPtr[%s]: %j input txCfgPtr: %j', Nid, ccDfnTmp, ccDfnPtr, txCfgPtr);
 
 var TLS = testUtil.setTLS(txCfgPtr);
 logger.info('[Nid=%d pte-main] TLS= %d', Nid, TLS);
@@ -255,7 +255,7 @@ function clientNewOrderer(client, org) {
 
     var ordererID = getOrgOrdererID(org);
 
-    logger.info('[clientNewOrderer] org: %s, ordererID: %s', org, ordererID);
+    logger.debug('[clientNewOrderer] org: %s, ordererID: %s', org, ordererID);
     if (TLS > testUtil.TLSDISABLED) {
         data = testUtil.getTLSCert('orderer', ordererID, cpf, cpPath);
         if (data !== null) {
@@ -272,11 +272,11 @@ function clientNewOrderer(client, org) {
     } else {
         orderer = client.newOrderer(orderersCPFList[ordererID].url);
     }
-    logger.info('[clientNewOrderer] orderer: %s', orderersCPFList[ordererID].url);
+    logger.debug('[clientNewOrderer] orderer: %s', orderersCPFList[ordererID].url);
 }
 
 function chainAddOrderer(channel, client, org) {
-    logger.info('[chainAddOrderer] channel name: ', channel.getName());
+    logger.debug('[chainAddOrderer] channel name: ', channel.getName());
 
     var data;
     var cpf = testUtil.findOrgConnProfileSubmitter(cpList, org);
@@ -307,7 +307,7 @@ function chainAddOrderer(channel, client, org) {
             client.newOrderer(orderersCPFList[ordererID].url)
         );
     }
-    logger.info('[chainAddOrderer] channel orderers: %s', channel.getOrderers());
+    logger.debug('[chainAddOrderer] channel orderers: %s', channel.getOrderers());
 }
 
 function channelAddPeer(channel, client, org) {
@@ -315,7 +315,7 @@ function channelAddPeer(channel, client, org) {
     if (channel) {
         channelName = channel.getName()
     }
-    logger.info('[channelAddPeer] channel name: ', channelName);
+    logger.debug('[channelAddPeer] channel name: ', channelName);
     var data;
     var peerTmp;
     var targets = [];
@@ -369,7 +369,7 @@ function channelAddListedPeer(channel, client, org) {
     if (channel) {
         channelName = channel.getName()
     }
-    logger.info('[Nid:chan:org=%d:%s:%s channelAddListedPeer] listOpt: %j', Nid, channelName, org, txCfgPtr.listOpt);
+    logger.debug('[Nid:chan:org=%d:%s:%s channelAddListedPeer] listOpt: %j', Nid, channelName, org, txCfgPtr.listOpt);
     var data;
     var listOpt = txCfgPtr.listOpt;
     var peername;
@@ -417,7 +417,7 @@ function channelAddListedPeer(channel, client, org) {
             }
         }
     }
-    logger.info('[Nid:chan:org=%d:%s:%s channelAddListedPeer] add peer: %s', Nid, channelName, org, channel.getPeers());
+    logger.debug('[Nid:chan:org=%d:%s:%s channelAddListedPeer] add peer: %s', Nid, channelName, org, channel.getPeers());
     return targets;
 }
 
@@ -461,13 +461,13 @@ function channelAddQIPeer(channel, client, qorg, qpeer) {
             }
         }
     }
-    logger.info('[channelAddQIPeer] channel peers: %s', channel.getPeers());
+    logger.debug('[channelAddQIPeer] channel peers: %s', channel.getPeers());
 
     return targets;
 }
 
 function channelAddPeer1(channel, client, org, eventHubs) {
-    logger.info('[channelAddPeer1] channel name: %s, org: %s', channel.getName(), org);
+    logger.debug('[channelAddPeer1] channel name: %s, org: %s', channel.getName(), org);
     var data;
     var peerTmp;
     var targets = [];
@@ -514,13 +514,13 @@ function channelAddPeer1(channel, client, org, eventHubs) {
 }
 
 function channelAddPeerEventJoin(channel, client, org) {
-    logger.info('[channelAddPeerEventJoin] channel name: ', channel.getName());
-            var data;
-            var eh;
-            var peerTmp;
+    logger.debug('[channelAddPeerEventJoin] channel name: ', channel.getName());
+    var data;
+    var eh;
+    var peerTmp;
 
-            var targets = [];
-            var eventHubs = [];
+    var targets = [];
+    var eventHubs = [];
 
     var cpf = testUtil.findOrgConnProfileSubmitter(cpList, org);
     if (0 === testUtil.getConnProfilePropCntSubmitter(cpf, 'peers')) {
@@ -547,8 +547,17 @@ function channelAddPeerEventJoin(channel, client, org) {
                             )
                         );
                     }
+                } else {
+                    targets.push(
+                        client.newPeer(
+                            cpPeers[key].url
+                        )
+                    );
+                    logger.debug('[channelAddPeerEventJoin] peer: ', cpPeers[key].url);
                 }
             }
+        }
+    }
 
     allEventhubs = allEventhubs.concat(eventHubs);
     return { targets: targets, eventHubs: eventHubs };
@@ -564,7 +573,7 @@ function getCCID() {
         chaincode_id = uiContent.chaincodeID + channelID;
     }
     chaincode_ver = uiContent.chaincodeVer;
-    logger.info('[getCCID] Nid: %d, chaincode_id: %s, chaincode_ver: %s', Nid, chaincode_id, chaincode_ver);
+    logger.debug('[getCCID] Nid: %d, chaincode_id: %s, chaincode_ver: %s', Nid, chaincode_id, chaincode_ver);
 }
 
 
@@ -1026,7 +1035,7 @@ async function createOrUpdateOneChannel(client, channelOrgName) {
         var secret;
         var submitter = null;
 
-        hfc.setConfigSetting('key-value-store', 'fabric-common/lib/impl/FileKeyValueStore.js');
+        hfc.setConfigSetting('key-value-store', 'fabric-client/lib/impl/FileKeyValueStore.js');
 
         var cpf = testUtil.findOrgConnProfileSubmitter(cpList, channelOrgName[0]);
         if (null === cpf) {
@@ -1387,7 +1396,7 @@ async function queryBlockchainInfo(channel, client, org) {
         qPeer = txCfgPtr.queryBlockOpt.peer;
         logger.info('[queryBlockchainInfo] query block info org:peer:start:end=%s:%s:%d:%d', qOrg, qPeer, sBlock, eBlock);
 
-        hfc.setConfigSetting('key-value-store', 'fabric-common/lib/impl/FileKeyValueStore.js');
+        hfc.setConfigSetting('key-value-store', 'fabric-client/lib/impl/FileKeyValueStore.js');
         var cryptoSuite = hfc.newCryptoSuite();
         cryptoSuite.setCryptoKeyStore(hfc.newCryptoKeyStore({ path: testUtil.storePathForOrg(Nid, orgName) }));
         client.setCryptoSuite(cryptoSuite);
