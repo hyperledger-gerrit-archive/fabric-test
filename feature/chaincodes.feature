@@ -281,6 +281,8 @@ Examples:
     | github.com/hyperledger/fabric/examples/chaincode/go/marbles02 | GOLANG   |
     |        ../../fabric-test/chaincodes/marbles/node              | NODE     |
 
+# disable all tests with "I vendor", so we do not have to install govendor in pre_setup.sh (for Makefile target pre-setup)
+@skip
 @daily
 Scenario Outline: FAB-6439: Test chaincode enccc_example.go which uses encshim library extensions for <type> orderer
     #To generate good keys, we followed instructions as in the README.md under "github.com/hyperledger/fabric/examples/chaincode/go/enccc_example" folder
@@ -332,6 +334,7 @@ Examples:
     | kafka  |
 
 
+@skip
 @daily
 Scenario Outline: FAB-6650: Test chaincode enccc_example.go negative scenario, passing in bad ENCRYPTION(ENC), IV, and SIGNATURE(SIG) KEYS
   #To generate good keys, we followed instructions as in the README.md under "github.com/hyperledger/fabric/examples/chaincode/go/enccc_example" folder
@@ -372,6 +375,7 @@ Examples:
     |   L6P9jLWR6d6E1KdGJBsUpzEm5QS6uVlS4onsteB+KaQ=         |    L6P9jLWR6d6E1KdGJBsUpzEm5QS6uVlS4onsteB+KaQ        |    +4DANc5uYLTnsH6Yy7v32g=  |  LS0tLS1CRUdJTiBFQyBQUklWQVRFIEtFWS0tLS0tCk1IY0NBUUVFSUhYRkd1eWxyTlQ1WUdtd1E0MVBWeTJqVlZrcXhMMTdBN1pSM0lDL1RGakJvQW9HQ0NxR1NNNDkKQXdFSG9VUURRZ0FFVHdWSEhrbklmUnUyZ3YwWU50R210akpDSHJzdThhekZ1OWZvUy9raUlPN2Q2aWhTWWRjdgpHbEoyNlF0WmtTTlhWNkJDLy91Z25ycGN3bldTdERsc1lRPT0KLS0tLS1FTkQgRUMgUFJJVkFURSBLRVktLS0tLQo                                                                                                                         |
 
 
+@skip
 @shimAPI
 @daily
 Scenario Outline: FAB-5791: Test API in SHIM interface using marbles02 and shimApiDriver chaincodes for <type> orderer <database> db <language> lang

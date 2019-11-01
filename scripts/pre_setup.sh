@@ -19,8 +19,10 @@ npm -v
 echo "node version =======>"
 node -v
 
-###################
-# Install govender
-###################
-echo "Install govendor"
-go get -u github.com/kardianos/govendor
+### No longer needed because we are disabling the chaincodes.feature tests that require "I vendor" steps
+### (i.e. the shipAPI tests). They are being removed and fabric code is redesigned in master branch anyways.
+###  ###################
+###  # Install govender
+###  ###################
+###  echo "Install govendor"
+###  go get -u github.com/kardianos/govendor
