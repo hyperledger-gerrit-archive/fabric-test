@@ -168,7 +168,8 @@ sbecc_go_2chan_endorse() {
   ./pte_driver.sh CITest/FAB-11615-2i/preconfig/sbe_cc/runCases-chan-instantiate-TLS.txt >& "$LogsDir"/"$2"_sbeInstantiate.log
   sleep 60
   echo "-------> Invoke"
-  ./pte_driver.sh CITest/FAB-11615-2i/sbe_cc/runCases-constant-iVal-TLS.txt >& "$LogsDir"/"$2"_sbecc_go_2chan_endorse_i.log
+  ./pte_driver.sh CITest/FAB-11615-2i/sbe_cc/runCases-constant-iVal1-TLS.txt >& "$LogsDir"/"$2"_sbecc_go_2chan1_endorse_i.log
+  ./pte_driver.sh CITest/FAB-11615-2i/sbe_cc/runCases-constant-iVal2-TLS.txt >& "$LogsDir"/"$2"_sbecc_go_2chan2_endorse_i.log
   cp -r "$PTEDir"/pteReport.txt "$LogsDir"/sbecc_go_2chan_endorse_i_pteReport.txt
   cd CITest/scripts
   # Convert Test Report into Aggregate summary

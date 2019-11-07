@@ -53,7 +53,7 @@
     },
     "timeoutOpt": {
         "preConfig": "200000",
-        "request": "45000",
+        "request": "65000",
         "grpcTimeout": "3000"
     },
     "ccType": "sbecc",
