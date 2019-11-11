@@ -145,7 +145,13 @@ func (k K8s) ordererOrganizations(config networkspec.Config) (map[string]network
 				return orderers, err
 			}
 			orderer.AdminCert = cert
-			privKeyPath := paths.JoinPath(ordererOrgsPath, fmt.Sprintf("%s/users/Admin@%s/msp/keystore/priv_sk", orgName, orgName))
+			keystorePath := paths.JoinPath(ordererOrgsPath, fmt.Sprintf("%s/users/Admin@%s/msp/keystore", orgName, orgName))
+
+			privKeyFile, err := ioutil.ReadDir(keystorePath)
+			if err != nil {
+				return orderers, err
+			}
+			privKeyPath := paths.JoinPath(keystorePath, fmt.Sprintf("%s", privKeyFile[0].Name()))
 			cert, err = connProfile.GetCertificateFromFile(privKeyPath)
 			if err != nil {
 				return orderers, err
