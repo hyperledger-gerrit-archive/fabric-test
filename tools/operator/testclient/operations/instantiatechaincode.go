@@ -174,6 +174,7 @@ func (i InstantiateCCUIObject) getEndorsementPolicy(organizations []inputStructs
 	orgs := args[len(args)-1]
 	orgs = orgs[:len(orgs)-1]
 	orgNames := strings.Split(orgs, ",")
+	logger.INFO(fmt.Sprintf("orgNames are ", orgNames))
 	for _, orgName := range orgNames {
 		orgName = strings.TrimSpace(orgName)
 		connProfilePath := paths.GetConnProfilePathForOrg(orgName, organizations)
@@ -191,13 +192,15 @@ func (i InstantiateCCUIObject) getEndorsementPolicy(organizations []inputStructs
 		return endorsementPolicy, err
 	}
 	key := fmt.Sprintf("%d-of", numPolicies)
-	for i := 0; i < numPolicies; i++ {
+	for i := 0; i < len(orgNames); i++ {
 		policy := Policy{SignedBy: i}
 		policies = append(policies, policy)
 	}
 	policyMap := make(map[string][]Policy)
 	policyMap[key] = policies
+	logger.INFO(fmt.Sprintf("endorsement is ", policyMap))
 	endorsementPolicy = &EndorsementPolicy{Identities: identities, Policy: policyMap}
+	logger.INFO(fmt.Sprintf("endorsement is ", endorsementPolicy))
 	return endorsementPolicy, nil
 }
 
