@@ -102,14 +102,6 @@ To build all images and binaries in fabric, fabric-ca, as required by tests (exe
 
 ```
 
-Then, choose a tool and a test to run by following the instructions. For example, to run a Behave test, execute the following:
-
-```
-cd ../feature
-../scripts/install_behave.sh
-behave -t smoke -k
-```
-
 ### Easy Method to build all images and run tests with a single make target
 
 You can run the automated test suites with a makefile target given below. This handles all the steps for you as the procedure installs all the prerequisites that include cloning fabric, fabric-ca repositories, building images and binaries and executing the daily tests or smoke tests in the fabric-test repository. Simply run one of the following commands,
@@ -127,24 +119,6 @@ You can run the automated test suites with a makefile target given below. This h
 ```
 
 ## Tools Used to Execute Tests
-
-#### Behave - functional and system tests
-Please see the README located in the `feature` directory for more detailed information for using and contributing to the Fabric system behave framework.
-
-The tests that utilize this framework cover at least one of the following categories:
-* basic functionality
-* feature behaviors
-* configuration settings - both network and component based
-* negative testing
-* upgrades and fallbacks
-* chaincode API testing
-
-The following are not covered in using this tool:
-* scalability
-* performance
-* long running tests
-* stress testing
-* timed tests
 
 #### NetworkLauncher - dynamically build a Fabric network
 Please see the README located in the `tools/NL` directory for more detailed information for using the command line to run the Networker Launcher to dynamically create a Fabric network on a single host machine.
@@ -175,8 +149,8 @@ Jenkins also triggers a daily CI job (https://jenkins.hyperledger.org/view/fabri
 * Clone the latest commits for repositories being tested, including fabric, fabric-ca, and more
 * Build docker images and binary files
 * Build fabric-ca and fabric peer, orderer, cryptogen and configtxgen
-* Update git submodules and install all the python required modules, including python, python-pytest, and everything else identified in fabric-test/scripts/install_behave.sh.
-* Run `behave daily` tests, and other tests identified in fabric-test/regression/daily/runDailyTestSuite.sh
+* Update git submodules and install all the python required modules, including python, python-pytest
+* Run the tests identified in fabric-test/regression/daily/runDailyTestSuite.sh
 * After the tests are completed, the CI job reports test results and populates the Job console. Click here to view the Test Results report display:
 https://jenkins.hyperledger.org/view/fabric-test/job/fabric-test-daily-x86_64/test_results_analyzer/
 
