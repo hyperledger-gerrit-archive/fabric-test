@@ -30,3 +30,7 @@ go get -u github.com/kardianos/govendor
 ###########################
 echo "Install interruptingcow"
 python -m pip install --user --quiet interruptingcow
+
+cd ../chaincodes/marbles02/go
+go mod tidy
+cd -
