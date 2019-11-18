@@ -37,6 +37,7 @@ func doAction(action, env, kubeConfigPath string, config networkspec.Config) err
 		k8s := k8s.K8s{KubeConfigPath: kubeConfigPath, Config: config}
 		err = k8s.K8sNetwork(action)
 	case "docker":
+		fmt.Println("In docker case")
 		dc := dockercompose.DockerCompose{Config: config}
 		err = dc.DockerNetwork(action)
 	}
@@ -62,7 +63,6 @@ func validateBasicConsensusConfig(config networkspec.Config) error {
 }
 
 func Launcher(action, env, kubeConfigPath, networkSpecPath string) error {
-
 	var network nl.Network
 	var yttObject ytt.YTT
 	err := yttObject.DownloadYtt()
