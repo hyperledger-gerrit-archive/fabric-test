@@ -1980,11 +1980,13 @@ async function performance_main() {
                             logger.info('[performance_main] pte-main:completed:');
                             if (output["Total transactions"]["sent"] == output["Total transactions"]["received"]) {
                                 output["Test Result"] = "PASS"
+                                logger.info('[performance_main] Test Output:', JSON.stringify(output, null, 4));
                             } else {
                                 output["Test Result"] = "FAIL"
+                                logger.info('[performance_main] Test Output:', JSON.stringify(output, null, 4));
+                                throw new Error('[performance_main] Failed to run the test. exiting...');
                             }
 
-                            logger.info('[performance_main] Test Output:', JSON.stringify(output, null, 4));
                         }
 
                     });
