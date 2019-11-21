@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -e
 
 #
 # Copyright IBM Corp. All Rights Reserved.
@@ -282,6 +282,9 @@ echo "        ####################################################### "
 echo "generate crypto ..."
 CRYPTOEXE=$BuildDir/cryptogen
 CRYPTOCFG=$CWD/crypto-config.yaml
+if [ ! -d $MSPDIR ]; then
+  mkdir -p $MSPDIR
+fi
 cd $MSPDir
 # remove existing crypto-config
 rm -rf crypto-config
