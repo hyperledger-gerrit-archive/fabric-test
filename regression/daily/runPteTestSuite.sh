@@ -31,5 +31,5 @@ npm install
      echo "------> Successfully installed npm."
   fi
 
-cd $DAILYDIR && py.test -v --junitxml results_systest_pte.xml systest_pte.py && echo "------> PTE tests completed"
+cd $DAILYDIR && gingko -v && echo "------> PTE tests completed"
 archivePTE
