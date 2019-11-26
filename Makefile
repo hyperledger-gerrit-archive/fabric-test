@@ -38,7 +38,8 @@
 #
 # ------------------------------------------------------------------
 
-TOOL_VERSION = 1.2.0
+export BASE_VERSION=1.4.5
+export BASEIMAGE_RELEASE=0.4.18
 DOCKER_NS = hyperledger
 EXTRA_VERSION ?= $(shell git rev-parse --short HEAD)
 PROJECT_TOOL_VERSION = $(TOOL_VERSION)-$(EXTRA_VERSION)
