@@ -50,19 +50,15 @@
         "payLoadMin": "1",
         "payLoadMax": "1024"
     },
-    "deploy": {
-        "chaincodePath": "github.com/hyperledger/fabric-test/fabric-samples/chaincode/marbles02_private/go",
-        "fcn": "init",
-        "args": []
-    },
     "invoke": {
         "query": {
-            "fcn": "readMarble",
+            "fcn": "readMarblePrivateDetails",
             "args": ["marble"]
         },
         "move": {
             "fcn": "initMarble",
-            "args": ["marble", "grey","35","spike","99"]
+            "transientMap": {"name":"marble", "color":"grey","size":35,"owner":"spike","price":99},
+            "args": []
         }
     },
     "ConnProfilePath": "ConnProfiles/test-network"

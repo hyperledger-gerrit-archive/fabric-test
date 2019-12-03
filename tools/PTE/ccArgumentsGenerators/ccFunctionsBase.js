@@ -22,6 +22,11 @@ class ccFunctionsBase {
         for (let i=0; i<this.ccDfnPtr.invoke.move.args.length; i++) {
             this.testInvokeArgs.push(this.ccDfnPtr.invoke.move.args[i]);
         }
+        this.testInvokeTransientMap;
+        this.testInvokeTransientMapEncoded = {};
+        if ( this.ccDfnPtr.invoke.move.transientMap ) {
+            this.testInvokeTransientMap = this.ccDfnPtr.invoke.move.transientMap;
+        }
         this.testQueryArgs = [];
         for (let i=0; i<this.ccDfnPtr.invoke.query.args.length; i++) {
             this.testQueryArgs.push(this.ccDfnPtr.invoke.query.args[i]);

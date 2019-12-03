@@ -13,11 +13,11 @@
         ]
     },
     "timeoutOpt": {
-        "preConfig": "120000",
+        "preConfig": "240000",
         "request": "180000"
     },
     "deploy": {
-        "chaincodePath": "github.com/hyperledger/fabric-test/fabric-samples/chaincode/marbles02_private/go",
+        "chaincodePath": "github.com/hyperledger/fabric-test/chaincodes/marbles02_private/go",
         "collectionsConfigPath": "github.com/hyperledger/fabric-test/tools/PTE/marblescc_privInputs/collections_config-chan1.json",
         "fcn": "init",
         "args": []
